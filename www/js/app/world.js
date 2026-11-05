@@ -1,8 +1,8 @@
-define(['jquery', 'app/eventmanager', 'app/analytics', 'app/graphics/graphics', 'app/entity/building', 
+define(['jquery', 'app/eventmanager', 'app/graphics/graphics', 'app/entity/building',
 		'app/gamecontent', 'app/gamestate', 'app/action/actionfactory', 'app/entity/monster/monsterfactory',
         'app/entity/block', 'app/entity/gem', 'app/resources', 'app/entity/celestial', 'app/entity/dude',
         'app/entity/star', 'app/entity/worldeffect'], 
-		function($, EventManager, Analytics, Graphics, Building, Content, GameState, 
+		function($, EventManager, Graphics, Building, Content, GameState,
 				ActionFactory, MonsterFactory, Block, Gem, Resources, Celestial, Dude,
 				Star, WorldEffect) {
 	

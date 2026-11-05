@@ -9,8 +9,7 @@
 		}
 	],
 	paths: {
-		'jquery': 'empty:',
-		'google-analytics': 'empty:'
+		'jquery': 'empty:'
 	},
 	optimize: 'uglify',
 	optimizeCss: 'standard',

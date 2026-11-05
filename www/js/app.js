@@ -1,9 +1,6 @@
 requirejs.config({
 	baseUrl: "js/lib",
 	shim: {
-		"google-analytics": {
-			exports: "ga"
-		},
 		"base64": {
 			exports: "Base64"
 		}
@@ -13,11 +10,7 @@ requirejs.config({
 		"jquery": [
 			"https://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min",
 			"jquery-2.0.3.min"
-		],
-		"google-analytics": [
-				"https://www.google-analytics.com/analytics",
-				"analytics"
-			]
+		]
 	},
 	waitSeconds: 0
 });

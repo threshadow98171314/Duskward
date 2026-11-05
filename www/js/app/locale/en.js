@@ -18,8 +18,6 @@ define({
 	DRAGONS: 'Dragons Slain',
 	CASUALNIGHTS: 'Casual Nights',
 	DIFFICULTY: 'Difficulty',
-	SHARE: 'Share',
-	DONATE: 'Donate',
 	NEWGAME: 'New Game',
 	CONFIRM: 'Confirm',
 	CANCEL: 'Cancel',

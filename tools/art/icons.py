@@ -220,6 +220,22 @@ def button(name):
     return c
 
 
+def magic_sparkle():
+    """Drawn over the magic button."""
+    c = Canvas(7, 7)
+    c.rect(3, 0, 3, 6, "v")
+    c.rect(0, 3, 6, 3, "v")
+    c.rect(2, 2, 4, 4, "m")
+    c.set(3, 3, "w")
+    return c
+
+
+def recolor_frame(pixels):
+    """Swaps the original black and white frame colours for the dusk border colours."""
+    swap = {(0, 0, 0): DARK, (255, 255, 255): LIGHT}
+    return [[swap[p[:3]][:3] + (p[3],) if p[3] and p[:3] in swap else p for p in row] for row in pixels]
+
+
 def menu(night):
     c = Canvas(20, 20)
     color = LIGHT if night else DARK

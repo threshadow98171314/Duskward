@@ -137,6 +137,8 @@ def main():
         ("buildings.png", build_buildings),
         ("monsters.png", build_monsters),
         ("icons.png", build_icons),
+        ("expbar.png", lambda: icons.recolor_frame(read_png(LEGACY / "expbar.png"))),
+        ("magic.png", lambda: icons.magic_sparkle().to_rgba()),
         ("mountains.png", lambda: scenery.mountains().to_rgba()),
         ("stars.png", lambda: scenery.stars().to_rgba()),
     )

@@ -12,6 +12,7 @@ import buildings
 import dude
 import resources
 import scenery
+import village
 from pngio import read_png, write_png
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -57,12 +58,24 @@ def build_tiles():
     return sheet
 
 
+# Sprite offsets and levels of each building, in the order of graphics/sprites.js
+BUILDING_ROWS = [
+    (0, village.blacksmith, 8),
+    (640, village.bricklayer, 4),
+    (960, village.sawmill, 8),
+    (1600, village.shack, 4),
+    (1920, lambda level: village.tower(), 5),  # only the first row is used
+    (2320, village.weaver, 4),
+    (LIGHTHOUSE_OFFSET, buildings.lighthouse, 3),
+    (ALTAR_OFFSET, buildings.altar, 3),
+]
+
+
 def build_buildings():
-    sheet = resized(read_png(LEGACY / "buildings.png"), 60, ALTAR_OFFSET + 3 * BUILDING_HEIGHT)
-    for level in (1, 2, 3):
-        row = (level - 1) * BUILDING_HEIGHT
-        paste(sheet, buildings.lighthouse(level).to_rgba(), 0, LIGHTHOUSE_OFFSET + row)
-        paste(sheet, buildings.altar(level).to_rgba(), 0, ALTAR_OFFSET + row)
+    sheet = resized([], 60, ALTAR_OFFSET + 3 * BUILDING_HEIGHT)
+    for offset, draw, levels in BUILDING_ROWS:
+        for level in range(1, levels + 1):
+            paste(sheet, draw(level).to_rgba(), 0, offset + (level - 1) * BUILDING_HEIGHT)
     return sheet
 
 

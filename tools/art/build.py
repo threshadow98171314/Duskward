@@ -9,6 +9,7 @@ Usage: python tools/art/build.py
 import pathlib
 
 import buildings
+import dude
 import resources
 import scenery
 from pngio import read_png, write_png
@@ -21,6 +22,9 @@ TILE = 52
 NIGHT_TILES = 467  # matches the night background offsets in main.css
 DRAGON_TILES = 936
 TILE_COLUMNS = {"grain": 0, "stone": 52, "wood": 104, "clay": 156, "cloth": 208, "mana": 260, "lantern": 312}
+DUDE_OFFSET = 602  # dude and dudenight in graphics/sprites.js
+DUDE_NIGHT_OFFSET = 1018
+DUDE_END = 1434
 BUILDING_HEIGHT = 80
 LIGHTHOUSE_OFFSET = 2640  # also listed in graphics/sprites.js
 ALTAR_OFFSET = 2880
@@ -62,10 +66,20 @@ def build_buildings():
     return sheet
 
 
+def build_monsters():
+    sheet = read_png(LEGACY / "monsters.png")
+    for y in range(DUDE_OFFSET, DUDE_END):
+        sheet[y] = [(0, 0, 0, 0)] * len(sheet[y])
+    paste(sheet, dude.sheet(), 0, DUDE_OFFSET)
+    paste(sheet, dude.sheet(night=True), 0, DUDE_NIGHT_OFFSET)
+    return sheet
+
+
 def main():
     sheets = (
         ("tiles.png", build_tiles),
         ("buildings.png", build_buildings),
+        ("monsters.png", build_monsters),
         ("mountains.png", lambda: scenery.mountains().to_rgba()),
         ("stars.png", lambda: scenery.stars().to_rgba()),
     )

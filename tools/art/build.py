@@ -9,8 +9,8 @@ Usage: python tools/art/build.py
 import pathlib
 
 import buildings
+import resources
 import scenery
-import tiles
 from pngio import read_png, write_png
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -19,7 +19,8 @@ OUT = ROOT / "www" / "img"
 
 TILE = 52
 NIGHT_TILES = 467  # matches the night background offsets in main.css
-LANTERN_COLUMN = 312
+DRAGON_TILES = 936
+TILE_COLUMNS = {"grain": 0, "stone": 52, "wood": 104, "clay": 156, "cloth": 208, "mana": 260, "lantern": 312}
 BUILDING_HEIGHT = 80
 LIGHTHOUSE_OFFSET = 2640  # also listed in graphics/sprites.js
 ALTAR_OFFSET = 2880
@@ -41,11 +42,14 @@ def paste(sheet, sprite, x, y):
 
 
 def build_tiles():
-    sheet = resized(read_png(LEGACY / "tiles.png"), LANTERN_COLUMN + TILE, 988)
-    for level in (1, 2, 3):
-        paste(sheet, tiles.lantern(level).to_rgba(), LANTERN_COLUMN, (level - 1) * TILE)
-        paste(sheet, tiles.lantern(level, night=True).to_rgba(),
-              LANTERN_COLUMN, NIGHT_TILES + (level - 1) * TILE)
+    sheet = resized([], len(TILE_COLUMNS) * TILE, DRAGON_TILES + TILE)
+    for name, x in TILE_COLUMNS.items():
+        for level in range(1, resources.LEVELS[name] + 1):
+            row = (level - 1) * TILE
+            paste(sheet, resources.resource(name, level).to_rgba(), x, row)
+            paste(sheet, resources.resource(name, level, night=True).to_rgba(), x, NIGHT_TILES + row)
+    for name in ("grain", "clay", "cloth"):
+        paste(sheet, resources.dragon_fight(name).to_rgba(), TILE_COLUMNS[name], DRAGON_TILES)
     return sheet
 
 

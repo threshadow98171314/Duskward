@@ -173,6 +173,16 @@ body.night {
 	background-color: #5a3d6b;
 }
 
+/** Night tiles the original stylesheet never pointed at **/
+
+.wood7 .tile.wood .nightSide {
+	background-position: -104px -779px;
+}
+
+.clay3 .tile.clay .nightSide {
+	background-position: -156px -571px;
+}
+
 /** Lantern resource **/
 
 .tile.lantern .daySide {

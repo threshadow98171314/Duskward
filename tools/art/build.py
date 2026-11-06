@@ -9,6 +9,7 @@ Usage: python tools/art/build.py
 import pathlib
 
 import buildings
+import scenery
 import tiles
 from pngio import read_png, write_png
 
@@ -58,7 +59,13 @@ def build_buildings():
 
 
 def main():
-    for name, build in (("tiles.png", build_tiles), ("buildings.png", build_buildings)):
+    sheets = (
+        ("tiles.png", build_tiles),
+        ("buildings.png", build_buildings),
+        ("mountains.png", lambda: scenery.mountains().to_rgba()),
+        ("stars.png", lambda: scenery.stars().to_rgba()),
+    )
+    for name, build in sheets:
         size = write_png(OUT / name, build())
         print(f"wrote www/img/{name} ({size} bytes)")
 

@@ -4,6 +4,75 @@ html:lang(zh-Hant-TW) body {
 	font-family: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", "Heiti TC", sans-serif;
 }
 
+/** Warm dusk palette for the page, the board and the sky **/
+
+html {
+	height: 100%; /* So the body's background covers the whole window */
+}
+
+body {
+	background-color: #f3ead9;
+}
+
+body.night {
+	background-color: #141022;
+}
+
+.menuBar {
+	background-color: #f3ead9;
+}
+
+.night .menuBar {
+	background-color: #141022;
+}
+
+.litBorder {
+	border-color: #3b2a3f;
+}
+
+.night .litBorder {
+	border-color: #e9dcc4;
+}
+
+.tile .daySide {
+	background-color: #fffaf0;
+}
+
+.tile .nightSide {
+	background-color: #241c3a;
+}
+
+.night .tileContainer {
+	background-color: #1b1530;
+}
+
+.world {
+	background-color: #bcdde9;
+	background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0) 30%, rgba(255, 236, 205, 0.75) 100%);
+}
+
+.night .world {
+	background-color: #1a1433;
+	background-image: url(../img/stars.png), linear-gradient(to bottom, rgba(26, 20, 51, 0) 40%, rgba(74, 50, 110, 0.6) 100%);
+}
+
+/* Distant mountains sit above the dusk glow and behind everything in the world */
+.world:after {
+	content: '';
+	position: absolute;
+	z-index: -1;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	height: 60px;
+	background: url(../img/mountains.png) repeat-x left bottom;
+	transition: filter 1400ms linear;
+}
+
+.night .world:after {
+	filter: brightness(0.4) saturate(0.7);
+}
+
 /** Title screen **/
 
 #loadingScreen .subtitle {

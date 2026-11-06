@@ -10,6 +10,7 @@ import pathlib
 
 import buildings
 import dude
+import icons
 import resources
 import scenery
 import village
@@ -79,6 +80,48 @@ def build_buildings():
     return sheet
 
 
+# Areas of icons.png that are redrawn; the rest (volume sliders, dragon effects) is still original
+ICON_AREAS = [(0, 0, 270, 60), (0, 60, 140, 88), (0, 183, 48, 279), (0, 279, 90, 335),
+              (0, 335, 168, 363), (0, 362, 40, 442), (0, 794, 200, 874), (0, 875, 64, 891),
+              (0, 891, 120, 951), (0, 951, 270, 1011), (0, 1011, 52, 1063)]
+
+
+def build_icons():
+    sheet = read_png(LEGACY / "icons.png")
+    for x0, y0, x1, y1 in ICON_AREAS:
+        for y in range(y0, y1):
+            sheet[y][x0:x1] = [(0, 0, 0, 0)] * (x1 - x0)
+    place = lambda canvas, x, y: paste(sheet, canvas.to_rgba(), x, y)
+    for level in range(1, 10):
+        x = (level - 1) * 30
+        place(icons.shield_meter(level), x, 0)
+        place(icons.shield_meter(level, outline=True), x, 30)
+        place(icons.sword_meter(level), x, 951)
+        place(icons.sword_meter(level, outline=True), x, 981)
+    for i, name in enumerate(("confirm", "cancel", "export", "import", "delete")):
+        place(icons.button(name), i * 28, 60)
+    for count in range(1, 5):
+        for frame in range(4):
+            place(icons.shards(count, frame), frame * 12, 183 + (count - 1) * 24)
+    for x, y, kind in ((0, 279, "outline"), (30, 279, "gold"), (60, 279, "fill"),
+                       (0, 307, "nightOutline"), (30, 307, "gold")):
+        place(icons.heart(kind), x, y)
+    for i, name in enumerate(("healthPotion", "manaPotion", "bomb", "equipment", "shard", "callDragon")):
+        place(icons.item(name), i * 28, 335)
+    place(icons.menu(False), 0, 362)
+    place(icons.menu(True), 0, 402)
+    for i, name in enumerate(("resetBoard", "haste", "freezeTime", "phaseChange")):
+        place(icons.spell(name), i * 40, 794)
+        place(icons.spell(name), i * 40, 834)
+    for frame in range(4):
+        place(icons.star(frame), frame * 16, 875)
+        place(icons.sun(frame), frame * 30, 891)
+        place(icons.moon(frame), frame * 30, 921)
+    place(icons.chest(False), 0, 1011)
+    place(icons.chest(True), 0, 1037)
+    return sheet
+
+
 def build_monsters():
     sheet = read_png(LEGACY / "monsters.png")
     for y in range(DUDE_OFFSET, DUDE_END):
@@ -93,6 +136,7 @@ def main():
         ("tiles.png", build_tiles),
         ("buildings.png", build_buildings),
         ("monsters.png", build_monsters),
+        ("icons.png", build_icons),
         ("mountains.png", lambda: scenery.mountains().to_rgba()),
         ("stars.png", lambda: scenery.stars().to_rgba()),
     )

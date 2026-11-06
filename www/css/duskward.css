@@ -438,3 +438,69 @@ body.night {
 .night .duskSkills.ready .skill {
 	background-color: #5a3d6b;
 }
+
+/** Equipment outlines follow the level of the shield and sword **/
+
+.wood2 .shield {
+	background-position: -30px -30px;
+}
+
+.wood3 .shield {
+	background-position: -60px -30px;
+}
+
+.wood4 .shield {
+	background-position: -90px -30px;
+}
+
+.wood5 .shield {
+	background-position: -120px -30px;
+}
+
+.wood6 .shield {
+	background-position: -150px -30px;
+}
+
+.wood7 .shield {
+	background-position: -180px -30px;
+}
+
+.wood8 .shield {
+	background-position: -210px -30px;
+}
+
+.wood9 .shield {
+	background-position: -240px -30px;
+}
+
+.stone2 .sword {
+	background-position: -30px -981px;
+}
+
+.stone3 .sword {
+	background-position: -60px -981px;
+}
+
+.stone4 .sword {
+	background-position: -90px -981px;
+}
+
+.stone5 .sword {
+	background-position: -120px -981px;
+}
+
+.stone6 .sword {
+	background-position: -150px -981px;
+}
+
+.stone7 .sword {
+	background-position: -180px -981px;
+}
+
+.stone8 .sword {
+	background-position: -210px -981px;
+}
+
+.stone9 .sword {
+	background-position: -240px -981px;
+}

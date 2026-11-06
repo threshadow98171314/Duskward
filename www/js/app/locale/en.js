@@ -1,5 +1,8 @@
 define({
+	TITLE: 'Duskward',
+	SUBTITLE: 'The Last Lamp of Afterglow Vale',
 	DAY: 'Day',
+	DAY_N: 'Day {0}',
 	PLAY: 'Play',
 	CLEAR: 'Clear!',
 	CONTINUE: 'Continue',
@@ -17,7 +20,9 @@ define({
 	CAST: 'Spells Cast',
 	DRAGONS: 'Dragons Slain',
 	CASUALNIGHTS: 'Casual Nights',
+	PRESTIGE: 'New Game+ Runs',
 	DIFFICULTY: 'Difficulty',
+	LANGUAGE: 'Language',
 	NEWGAME: 'New Game',
 	CONFIRM: 'Confirm',
 	CANCEL: 'Cancel',
@@ -28,5 +33,40 @@ define({
 	EXPORT_CODE: 'Export code:',
 	IMPORT_CODE: 'Import code:',
 	LONG_LOAD: 'Man, this is taking a long time.',
-	NO_MUSIC: 'Play without music?'
+	NO_MUSIC: 'Play without music?',
+	TAP_TO_CONTINUE: 'Tap to continue',
+	SERA: 'Sera the Lampkeeper',
+
+	STORY_INTRO: [
+		'Long ago, the sun never set on Afterglow Vale.',
+		'Then one day the sky split open. A darkness called the Eclipse crawled out of the rift and began to devour the sun, one bite at a time.',
+		'With every bite, the days grew shorter. Now endless night has swallowed nearly all the world. Only Afterglow Vale, ringed by mountains and warmed by the ancient Duskstone at its heart, still sees a brief sunrise and sunset each day.',
+		'You are the last Duskwarden. By day, gather and rebuild. By night, hold the line by lamplight. One day, you will take back the sun.'
+	],
+
+	JOURNAL: {
+		day1: 'The sun is up. Line up three matching tiles to gather them. Grain keeps your belly full, so don\'t let yourself starve.',
+		day2: 'You made it through your first night. Remember: at night, wood becomes your shield and stone your sword. Everything else... draws things out of the dark.',
+		day3: 'Once the brickworks and the weaver\'s hut are up, clay and cloth will appear on the board. Tap a building to make it your priority.',
+		day4: 'I still remember noon. Shadows so short you could barely see them... You probably don\'t believe me.',
+		day5: 'Upgrade the smithy and the sawmill, and your sword and shield will grow stronger. The nights are getting longer. You\'ll need them.',
+		day6: 'The mountains keep most of the darkness out, but not all of it. Every night, something crosses the ridge.',
+		day7: 'The Eclipse feeds on the sun every day. Look: isn\'t it a little smaller today?',
+		day8: 'Creatures sometimes leave chests behind, and they open on their own at dawn. Potions and powder kegs can save your life in a pinch.',
+		day10: 'Strangers in black robes came to the village, saying the long night will bring rest. They call themselves the Eclipse Cult... Don\'t trust them.',
+		day12: 'If the nights are too much, you can switch to casual mode in the menu. Staying alive matters more than pride.',
+		day15: 'The Duskstone burns dimmer than it used to. We don\'t have much time.',
+		day20: 'The Dawnwyrm... it used to pull the sun across the sky. After the Eclipse came, it never returned.',
+		day25: 'The cult\'s high priest stopped being human long ago. If you meet him, beware the horn he carries.',
+		day30: 'You\'ve held this vale for thirty nights. Your predecessor never lasted this long.',
+		day40: 'I\'m getting old, child. But as long as you stand, Afterglow Vale still has light.',
+		firstNight: 'The sun is down. They\'re coming. Hold the line!',
+		firstDeath: 'Don\'t be afraid. As long as the Duskstone burns, a Duskwarden never truly falls. I\'ve bandaged your wounds. Now get up.',
+		level4: 'You\'re ready to expand the shack into a house. But be careful: the bigger the village, the worse the things it draws at night.',
+		level7: 'You can read the plans for a stone keep now.',
+		level10: 'A castle... Your predecessor never managed to build one.',
+		firstShard: 'A duskshard. Gather four and the Dusk Tower on the hill will shine again.',
+		magic: 'The Dusk Tower shines again! Match four or more tiles at once and duskcrystals will fall onto the board. Gather them to cast spells.',
+		dragon: 'Is that... the Dawnwyrm? Its eyes have gone black. Child, it\'s not what it used to be!'
+	}
 });

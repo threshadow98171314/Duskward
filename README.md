@@ -1,6 +1,10 @@
-# Duskward
+# Duskward 暮守
 
 以 doublespeak games 的《[Gridland](https://github.com/doublespeakgames/gridland)》為基礎改作的網頁遊戲。白天消除方塊來蒐集資源、蓋房子，晚上則要靠消除方塊對抗怪物。
+
+> 太陽正被名為「蝕日者」的黑暗一口一口啃食，白晝一天比一天短。你是餘暉谷最後一位守暮人：白天重建村落，夜晚在燈火下守住山谷，直到把太陽奪回來。
+
+介面預設是繁體中文，可以在選單的「語言」切換成英文。完整的世界觀、玩法和美術規劃請見[設計文件](docs/DESIGN.md)。
 
 ## 在本機執行
 
@@ -19,7 +23,9 @@ python tools/devserver.py
 | 路徑 | 內容 |
 |---|---|
 | `www/` | 遊戲原始碼：未壓縮的 RequireJS 模組、CSS、圖片和音效 |
-| `www/js/app/` | 遊戲邏輯。`engine` 是主流程，`gameboard` 是三消盤面，`world` 管世界與建築，`gamecontent` 存放資源和建築的資料 |
+| `www/js/app/` | 遊戲邏輯。`engine` 是主流程，`gameboard` 是三消盤面，`world` 管世界與建築，`gamecontent` 存放資源和建築的資料，`story` 負責劇情 |
+| `www/js/app/locale/` | 語系檔（`zh-TW`、`en`），介面文字和劇情文字都在這裡 |
+| `docs/DESIGN.md` | 設計文件 |
 | `tools/devserver.py` | 本機開發伺服器 |
 | `tools/brandgen.py` | 產生標題圖、徽章和 favicon |
 | `deploy/` | 原作 1.1.1 版的建置輸出，目前還沒更新 |
@@ -28,7 +34,9 @@ python tools/devserver.py
 
 ## 與原作的差異
 
-- 改名為 Duskward，並換上新的標題圖、徽章和 favicon
+- 改名為 Duskward（暮守），並換上新的標題圖、徽章和 favicon
+- 全新的「餘暉谷」世界觀：開場故事、燈守瑟菈的晨間日誌和事件劇情
+- 繁體中文介面，可切換英文
 - 圖片和音效改讀 repo 內的檔案，不再依賴原作的 CDN
 - 移除 Google Analytics 追蹤碼、分享按鈕、捐款連結和 doublespeak logo
 

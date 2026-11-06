@@ -15,6 +15,7 @@ define(['base64', 'app/entity/building', 'app/entity/block', 'app/eventmanager',
 			this.counts = {};
 			this.prestige = 0;
 			this.prioritizedBuilding = null;
+			this.storySeen = {};
 			this.health = this.maxHealth();
 			E.trigger('newGame');
 		},
@@ -66,6 +67,7 @@ define(['base64', 'app/entity/building', 'app/entity/block', 'app/eventmanager',
 					this.prestige = savedState.prestige || 0;
 					this.health = savedState.health || this.maxHealth();
 					this.prioritizedBuilding = savedState.prioritizedBuilding;
+					this.storySeen = savedState.storySeen || {};
 				} else {
 					this.create(slot);
 				}
@@ -90,7 +92,8 @@ define(['base64', 'app/entity/building', 'app/entity/block', 'app/eventmanager',
 					counts: this.counts,
 					prestige: this.prestige,
 					health: this.health,
-					prioritizedBuilding: this.prioritizedBuilding
+					prioritizedBuilding: this.prioritizedBuilding,
+					storySeen: this.storySeen
 				};
 				for(b in this.buildings) {
 					var building = this.buildings[b];
@@ -131,6 +134,7 @@ define(['base64', 'app/entity/building', 'app/entity/block', 'app/eventmanager',
 				var savedState = JSON.parse(localStorage["slot" + loadedSlot]);
 				savedState.counts = this.counts;
 				savedState.health = this.health;
+				savedState.storySeen = this.storySeen;
 				localStorage["slot" + loadedSlot] = JSON.stringify(savedState);
 			}
 		},

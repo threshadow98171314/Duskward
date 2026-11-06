@@ -250,7 +250,7 @@ define(['jquery', 'app/eventmanager', 'app/textStore', 'app/gameoptions',
 					click: drawDelete.bind(slot, slot)
 				}
 			]);
-			var day = Graphics.make('day').text(Graphics.getText('DAY') + ' ' + slotInfo.day);
+			var day = Graphics.make('day').text(Graphics.getText('DAY_N', slotInfo.day));
 			if(slotInfo.prestiged) {
 				day.prepend(Graphics.make('star'));
 			}
@@ -435,8 +435,9 @@ define(['jquery', 'app/eventmanager', 'app/textStore', 'app/gameoptions',
 				requestAnimationFrame = fallbackAnimationFrame;
 			}
 			
-			textStore = new TextStore();
-			
+			textStore = new TextStore(Options.get('language') || TextStore.detectLocale());
+			$('html').attr('lang', textStore.localeName == 'zh-TW' ? 'zh-Hant-TW' : 'en');
+
 			initStylesheet();
 			scaleToViewport();
 			$(window).off('resize').on('resize', scaleToViewport);
@@ -485,7 +486,11 @@ define(['jquery', 'app/eventmanager', 'app/textStore', 'app/gameoptions',
 		},
 		
 		getText: function(key) {
-			return textStore.get(key);
+			return textStore.get.apply(textStore, arguments);
+		},
+
+		getLocale: function() {
+			return textStore.localeName;
 		},
 		
 		attachHandler: function(moduleName, event, element, handler) {
@@ -998,7 +1003,7 @@ define(['jquery', 'app/eventmanager', 'app/textStore', 'app/gameoptions',
 		},
 		
 		handleDayBreak: function(dayNumber) {
-			var txt = Graphics.getText('DAY');
+			var txt = Graphics.getText('DAY_N', dayNumber);
 			var notifier;
 			if(isDragon) {
 				changeTiles(['clay', 'cloth', 'grain'], '', 'dragonFight');
@@ -1006,7 +1011,7 @@ define(['jquery', 'app/eventmanager', 'app/textStore', 'app/gameoptions',
 				Graphics.setBossHealth(0, 0);
 			}
 			setTimeout(function() {
-				notifier = $('<div>').addClass('dayNotifier').text(txt + " " + dayNumber).appendTo('.world');
+				notifier = $('<div>').addClass('dayNotifier').text(txt).appendTo('.world');
 			}, 1400);
 			setTimeout(function() {
 				$('.monster, .treasureChest').remove();
@@ -1023,6 +1028,10 @@ define(['jquery', 'app/eventmanager', 'app/textStore', 'app/gameoptions',
 		
 		enablePlayButton: function() {
 			$('#loadingScreen .saveSpinner').addClass('hidden');
+			document.title = Graphics.getText('TITLE');
+			if($('#loadingScreen .subtitle').length == 0) {
+				$('#loadingScreen').append(Graphics.make('subtitle').text(Graphics.getText('SUBTITLE')));
+			}
 			Graphics.drawSaveSlots();
 		},
 		

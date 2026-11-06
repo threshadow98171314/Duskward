@@ -1,0 +1,105 @@
+/** Duskward additions, layered on top of main.css **/
+
+html:lang(zh-Hant-TW) body {
+	font-family: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", "Heiti TC", sans-serif;
+}
+
+/** Title screen **/
+
+#loadingScreen .subtitle {
+	position: absolute;
+	top: 148px;
+	width: 100%;
+	text-align: center;
+	font-size: 18px;
+	letter-spacing: 2px;
+	color: #8a4b2e;
+}
+
+/** Story intro **/
+
+.storyIntro {
+	position: absolute;
+	z-index: 30;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0 48px;
+	background: linear-gradient(to bottom, #1d1631 0%, #3d2547 45%, #8c4a4f 75%, #d9824b 100%);
+	color: #fbe9c8;
+	cursor: pointer;
+	transition: opacity 500ms linear;
+}
+
+.storyIntro.hidden,
+.storyText.hidden,
+.journal.hidden {
+	opacity: 0;
+}
+
+.storyText {
+	font-size: 22px;
+	line-height: 1.8;
+	text-align: center;
+	transition: opacity 500ms linear;
+}
+
+.storyHint {
+	position: absolute;
+	bottom: 24px;
+	font-size: 14px;
+	animation: storyHintPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes storyHintPulse {
+	0%, 100% { opacity: 0.35; }
+	50% { opacity: 0.85; }
+}
+
+/** Journal entries from Sera **/
+
+.journal {
+	position: absolute;
+	z-index: 20;
+	top: 6px;
+	left: 6px;
+	right: 6px;
+	padding: 8px 12px;
+	background: rgba(36, 24, 46, 0.9);
+	border: 2px solid #e2a65a;
+	border-radius: 6px;
+	color: #fbe9c8;
+	font-size: 15px;
+	line-height: 1.5;
+	cursor: pointer;
+	transition: opacity 500ms linear;
+}
+
+.journalSpeaker {
+	font-size: 13px;
+	color: #f0b866;
+}
+
+/** Language switch **/
+
+.language li {
+	padding: 6px 14px;
+	margin: 0 4px;
+	cursor: pointer;
+}
+
+.language li.selected {
+	background-color: #f3d9a6;
+}
+
+.night .language li {
+	color: #fff;
+}
+
+.night .language li.selected {
+	background-color: #5a3d6b;
+}

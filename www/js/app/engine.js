@@ -1,10 +1,11 @@
 define(['jquery', 'app/eventmanager', 'app/graphics/graphics',
         'app/gamecontent', 'app/gameboard', 'app/gamestate', 'app/world', 'app/loot',
         'app/magic', 'app/gameoptions', 'app/audio/audio',
-        'app/visibility', 'app/keysequencer', 'app/graphics/difficulty'],
+        'app/visibility', 'app/keysequencer', 'app/graphics/difficulty',
+        'app/graphics/language', 'app/story'],
 		function($, EventManager, Graphics, Content, GameBoard,
 				 GameState, World, Loot, Magic, GameOptions, GameAudio,
-				 Visibility, KeySequencer, Difficulty) {
+				 Visibility, KeySequencer, Difficulty, Language, Story) {
 
 	var DRAG_THRESHOLD = 30; // in pixels
 	var MOBILE_RATIO = 16/10; // height/width
@@ -198,6 +199,8 @@ define(['jquery', 'app/eventmanager', 'app/graphics/graphics',
 			}
 			
 			modules.push(Difficulty);
+			modules.push(Language);
+			modules.push(Story);
 			
 			// Start the game
 			GameOptions.load();

@@ -28,6 +28,7 @@ python tools/devserver.py
 | `docs/DESIGN.md` | 設計文件 |
 | `tools/devserver.py` | 本機開發伺服器 |
 | `tools/brandgen.py` | 產生標題圖、徽章和 favicon |
+| `tools/art/` | 美術工具：用 `python tools/art/build.py` 組裝精靈圖，`legacy/` 保留原作的圖 |
 | `deploy/` | 原作 1.1.1 版的建置輸出，目前還沒更新 |
 
 原作的建置流程（`build.xml`）需要 Java、Apache Ant 和 Closure Compiler，之後會換成新的流程。
@@ -37,6 +38,8 @@ python tools/devserver.py
 - 改名為 Duskward（暮守），並換上新的標題圖、徽章和 favicon
 - 全新的「餘暉谷」世界觀：開場故事、燈守瑟菈的晨間日誌和事件劇情
 - 繁體中文介面，可切換英文
+- 新玩法：黃昏與結界、燈火資源、燈籠和日輪特殊方塊、影縛、連鎖與暮光技
+- 新建築：守夜燈塔、黎明祭壇（各 3 級）
 - 圖片和音效改讀 repo 內的檔案，不再依賴原作的 CDN
 - 移除 Google Analytics 追蹤碼、分享按鈕、捐款連結和 doublespeak logo
 

@@ -103,3 +103,259 @@ html:lang(zh-Hant-TW) body {
 .night .language li.selected {
 	background-color: #5a3d6b;
 }
+
+/** Lantern resource **/
+
+.tile.lantern .daySide {
+	background-position: -312px 0px;
+	transition-delay: 1500ms, 0ms;
+}
+
+.tile.lantern .nightSide {
+	background-position: -312px -467px;
+	transition-delay: 1500ms, 0ms;
+}
+
+.lantern2 .tile.lantern .daySide {
+	background-position: -312px -52px;
+}
+
+.lantern2 .tile.lantern .nightSide {
+	background-position: -312px -519px;
+}
+
+.lantern3 .tile.lantern .daySide {
+	background-position: -312px -104px;
+}
+
+.lantern3 .tile.lantern .nightSide {
+	background-position: -312px -571px;
+}
+
+.block.lantern div,
+.lantern .resourceBar-inner {
+	background-color: #f29a3a;
+}
+
+.resourceBar.lantern {
+	background-color: rgba(242, 154, 58, 0.2);
+}
+
+/** Power tiles and shadow binds **/
+
+.tile.effect_lanternPower:after,
+.tile.effect_sunPower:after,
+.tile.effect_shadowBind:after {
+	content: '';
+	position: absolute;
+	top: 4px;
+	left: 4px;
+	right: 4px;
+	bottom: 4px;
+	border-radius: 6px;
+	pointer-events: none;
+}
+
+.tile.effect_lanternPower:after {
+	box-shadow: inset 0 0 0 3px #f29a3a, inset 0 0 16px 4px rgba(255, 196, 64, 0.75);
+	animation: powerPulse 1.2s ease-in-out infinite;
+}
+
+.tile.effect_sunPower:after {
+	background: radial-gradient(circle, rgba(255, 246, 228, 0.55) 0%, rgba(255, 210, 92, 0) 70%);
+	box-shadow: inset 0 0 0 3px #ffd25c, 0 0 14px 4px rgba(255, 210, 92, 0.9);
+	animation: powerPulse 0.8s ease-in-out infinite;
+}
+
+.tile.effect_shadowBind:after {
+	background: repeating-linear-gradient(45deg, rgba(36, 20, 52, 0.7) 0 6px, rgba(96, 66, 128, 0.7) 6px 9px);
+	box-shadow: inset 0 0 0 2px #2a1838;
+}
+
+@keyframes powerPulse {
+	0%, 100% { opacity: 0.55; }
+	50% { opacity: 1; }
+}
+
+.burst {
+	position: absolute;
+	z-index: 3;
+	pointer-events: none;
+	animation: burstFade 700ms ease-out forwards;
+}
+
+.burst.lanternRow {
+	left: 0;
+	width: 100%;
+	background: linear-gradient(to bottom, rgba(255, 210, 92, 0), rgba(255, 236, 160, 0.9), rgba(255, 210, 92, 0));
+}
+
+.burst.lanternColumn {
+	top: 0;
+	height: 100%;
+	background: linear-gradient(to right, rgba(255, 210, 92, 0), rgba(255, 236, 160, 0.9), rgba(255, 210, 92, 0));
+}
+
+.burst.sunFlash {
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: radial-gradient(circle, rgba(255, 246, 228, 0.95), rgba(255, 210, 92, 0.6) 50%, rgba(255, 210, 92, 0) 80%);
+}
+
+@keyframes burstFade {
+	0% { opacity: 1; }
+	100% { opacity: 0; }
+}
+
+.chainPopup {
+	position: absolute;
+	z-index: 5;
+	top: 40%;
+	left: 0;
+	width: 100%;
+	text-align: center;
+	font-size: 2.2em;
+	font-weight: bold;
+	color: #ffe9a0;
+	text-shadow: 0 0 6px #f29a3a, 2px 2px 0 #3a2350;
+	pointer-events: none;
+	animation: chainRise 1.2s ease-out forwards;
+}
+
+@keyframes chainRise {
+	0% { opacity: 0; transform: translateY(20px) scale(0.8); }
+	20% { opacity: 1; transform: translateY(0) scale(1.1); }
+	100% { opacity: 0; transform: translateY(-40px) scale(1); }
+}
+
+/** Dusk and the ward **/
+
+.world:before {
+	content: '';
+	position: absolute;
+	z-index: -1;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: linear-gradient(to bottom, #6b4a8c 0%, #c8607a 45%, #f29a3a 80%, #ffd27a 100%);
+	opacity: 0;
+	transition: opacity 1400ms linear;
+}
+
+.dusk .world:before {
+	opacity: 0.85;
+}
+
+.dayNotifier.duskNotifier {
+	color: #fff6e4;
+	text-shadow: -1px -1px 0 #7c3a4a, 1px -1px 0 #7c3a4a, -1px 1px 0 #7c3a4a, 1px 1px 0 #7c3a4a;
+}
+
+.dayNotifier.duskNotifier.hidden {
+	opacity: 0;
+}
+
+.statusContainer .ward {
+	position: relative;
+	width: 26px;
+	height: 26px;
+	margin: 6px auto 0;
+	border: 2px solid #e2a65a;
+	border-radius: 50%;
+	overflow: hidden;
+	background-color: rgba(255, 236, 160, 0.15);
+	transition: opacity 300ms linear;
+}
+
+.statusContainer .ward.hidden {
+	opacity: 0;
+}
+
+.statusContainer .ward .fill {
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	width: 100%;
+	background: linear-gradient(to top, #f29a3a, #ffe9a0);
+	transition: height 300ms linear;
+}
+
+.statusContainer .ward .wardValue {
+	position: absolute;
+	top: 50%;
+	width: 100%;
+	margin-top: -8px;
+	line-height: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-weight: bold;
+	color: #3a2350;
+}
+
+/** Afterglow gauge and dusk skills **/
+
+.duskSkills {
+	position: absolute;
+	z-index: 1;
+	top: 0;
+	right: -62px;
+	width: 56px;
+	transition: opacity 300ms linear;
+}
+
+.duskSkills.hidden {
+	opacity: 0;
+}
+
+.duskGauge {
+	position: relative;
+	width: 14px;
+	height: 120px;
+	margin: 0 auto 6px;
+	border: 2px solid;
+	border-radius: 8px;
+	overflow: hidden;
+	background-color: rgba(122, 86, 150, 0.15);
+}
+
+.duskGauge .fill {
+	position: absolute;
+	bottom: 0;
+	width: 100%;
+	height: 0;
+	background: linear-gradient(to top, #7c5696, #f29a3a 60%, #ffe9a0);
+	transition: height 400ms ease-out;
+}
+
+.duskSkills.ready .duskGauge {
+	box-shadow: 0 0 10px 2px rgba(255, 210, 92, 0.8);
+}
+
+.skill {
+	margin: 0 0 6px;
+	padding: 6px 0;
+	border: 2px solid;
+	border-radius: 6px;
+	font-size: 12px;
+	text-align: center;
+	opacity: 0.45;
+	transition: opacity 300ms linear, background-color 300ms linear;
+}
+
+.duskSkills.ready .skill {
+	opacity: 1;
+	cursor: pointer;
+	background-color: #ffe9a0;
+	animation: powerPulse 1.6s ease-in-out infinite;
+}
+
+.night .skill {
+	color: #fff;
+}
+
+.night .duskSkills.ready .skill {
+	background-color: #5a3d6b;
+}

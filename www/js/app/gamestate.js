@@ -16,6 +16,8 @@ define(['base64', 'app/entity/building', 'app/entity/block', 'app/eventmanager',
 			this.prestige = 0;
 			this.prioritizedBuilding = null;
 			this.storySeen = {};
+			this.ward = 0;
+			this.gauge = 0;
 			this.health = this.maxHealth();
 			E.trigger('newGame');
 		},
@@ -68,6 +70,8 @@ define(['base64', 'app/entity/building', 'app/entity/block', 'app/eventmanager',
 					this.health = savedState.health || this.maxHealth();
 					this.prioritizedBuilding = savedState.prioritizedBuilding;
 					this.storySeen = savedState.storySeen || {};
+					this.ward = 0;
+					this.gauge = savedState.gauge || 0;
 				} else {
 					this.create(slot);
 				}
@@ -93,7 +97,8 @@ define(['base64', 'app/entity/building', 'app/entity/block', 'app/eventmanager',
 					prestige: this.prestige,
 					health: this.health,
 					prioritizedBuilding: this.prioritizedBuilding,
-					storySeen: this.storySeen
+					storySeen: this.storySeen,
+					gauge: this.gauge
 				};
 				for(b in this.buildings) {
 					var building = this.buildings[b];
@@ -227,6 +232,32 @@ define(['base64', 'app/entity/building', 'app/entity/block', 'app/eventmanager',
 		
 		maxMana: function() {
 			return 3;
+		},
+
+		// Highest built level of an upgradable building, e.g. 'lighthouse' -> lighthouse3 -> 3
+		buildingLevel: function(className) {
+			var level = 0;
+			for(var i in this.buildings) {
+				var building = this.buildings[i];
+				var name = building.options.type.className;
+				if(building.built && name.indexOf(className) == 0) {
+					var n = +(name.substring(className.length) || 1);
+					level = n > level ? n : level;
+				}
+			}
+			return level;
+		},
+
+		maxWard: function() {
+			return 5 + 5 * this.buildingLevel('lighthouse');
+		},
+
+		skillLevel: function() {
+			return this.buildingLevel('altar');
+		},
+
+		maxGauge: function() {
+			return 100;
 		},
 		
 		magicEnabled: function() {

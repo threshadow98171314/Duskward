@@ -19,6 +19,9 @@ define(['jquery', 'app/eventmanager', 'app/entity/tile',
 	var locked = false;
 	var chain = 0;
 	var checkQueued = false;
+	var pendingPowers = [];
+	var GAUGE_PER_EXTRA_TILE = 5;
+	var GAUGE_PER_CHAIN = 10;
 	
 	var GameBoard = {
 		SEP: 'X',
@@ -32,6 +35,8 @@ define(['jquery', 'app/eventmanager', 'app/entity/tile',
 			Resources.loaded = false;
 			tileString = '';
 			effectString = null;
+			effectMap = {};
+			pendingPowers.length = 0;
 			chain = 0;
 			
 			detectMatches = new RegExp("([^" + GameBoard.SEP + "])\\1{2,}", "g");
@@ -41,6 +46,7 @@ define(['jquery', 'app/eventmanager', 'app/entity/tile',
 			EventManager.bind("refreshBoard", refreshBoard);
 			EventManager.bind("createTileEffect", createEffect);
 			EventManager.bind("tilesSwapped", expireEffects);
+			EventManager.bind("dayBreak", releaseAllBinds);
 			EventManager.bind("afterUnpaused", function() {
 				if(checkQueued) {
 					checkMatches();
@@ -93,9 +99,32 @@ define(['jquery', 'app/eventmanager', 'app/entity/tile',
 		
 		addEffectRandomly: function(effectType) {
 			var row = Math.random() * GameBoard.options.rows;
-			var col = Math.random() * GameBoard.options.rows;
-			
+			var col = Math.random() * GameBoard.options.columns;
+
 			createEffect(row|row, col|col, effectType);
+		},
+
+		bindRandomTile: function() {
+			GameBoard.addEffectRandomly('shadowBind');
+		},
+
+		isBound: function(row, col) {
+			var effect = effectMap[getEffectTile(row, col)];
+			return effect != null && Content.getEffectType(effect.type).immovable == true;
+		},
+
+		availableTiles: function() {
+			return Object.keys(tileMap());
+		},
+
+		findTiles: function(tileChar) {
+			var found = [];
+			for(var i = 0, len = tileString.length; i < len; i++) {
+				if(tileString.charAt(i) == tileChar) {
+					found.push(getPosition(i));
+				}
+			}
+			return found;
 		},
 		
 		canMove: function() {
@@ -120,7 +149,10 @@ define(['jquery', 'app/eventmanager', 'app/entity/tile',
 		if(State.hasBuilding(Content.BuildingType.Weaver)) {
 			map.l = 2;
 		}
-		
+		if(State.hasBuilding(Content.BuildingType.Lighthouse)) {
+			map.f = 1;
+		}
+
 		return map;
 	}
 	
@@ -166,6 +198,9 @@ define(['jquery', 'app/eventmanager', 'app/entity/tile',
 	
 	function refreshBoard() {
 		tileString = "";
+		effectString = null;
+		effectMap = {};
+		pendingPowers.length = 0;
 		require('app/engine').setGraphicsCallback(fill);
 		EventManager.trigger("draw", ['board.clear', {}]);
 	}
@@ -178,32 +213,39 @@ define(['jquery', 'app/eventmanager', 'app/entity/tile',
 		}
 
 		checkQueued = false;
+		applyPendingPowers();
 		generateRowString();
-		
+
 		var vMask = makeMask(tileString), hMask = makeMask(tileString);
 		var matchDetected = false;
-		
+
 		var gemsInColumn = {};
-		
+		var powers = [];
+		var gauge = 0;
+
 		// Detect vertical matches
 		tileString.replace(detectMatches, function(match, p1, offset, string) {
 			matchDetected = true;
 			if(match.length > 3) {
 				var column = getColumn(offset);
 				gemsInColumn[column] = gemsInColumn[column] ? gemsInColumn[column] + 1 : 1;
+				powers.push({ col: column, length: match.length });
 			}
+			gauge += GAUGE_PER_EXTRA_TILE * (match.length - 3);
 			for(var i = 0, l = match.length; i < l; i++) {
 		        vMask[offset + i] = 1;
 		    }
 		});
-		
+
 		// Detect horizontal matches
 		rowString.replace(detectMatches, function(match, p1, offset, string) {
 			matchDetected = true;
 			if(match.length > 3) {
 				var column = getColumn(offset + Math.floor(Math.random() * match.length), true);
 				gemsInColumn[column] = gemsInColumn[column] ? gemsInColumn[column] + 1 : 1;
+				powers.push({ col: column, length: match.length });
 			}
+			gauge += GAUGE_PER_EXTRA_TILE * (match.length - 3);
 			for(var i = 0, l = match.length; i < l; i++) {
 		        hMask[indexFromRowString(offset + i)] = 1;
 		    }
@@ -229,42 +271,16 @@ define(['jquery', 'app/eventmanager', 'app/entity/tile',
 						position: getPosition(i),
 						type: type
 					});
-					// Remove entries in the effectString, if necessary
-					if(effectString) {
-						var effectChar = effectString.charAt(i);
-						setEffectTile(i, HOLE);
-						if(effectChar != NO_EFFECT) {
-							var effect = effectMap[effectChar];
-							effectMap[effectChar] = null;
-							Content.getEffectType(effect.type).onMatch(getRow(i), getColumn(i)).forEach(function(tileMod) {
-								var idx = getIndex(tileMod.row, tileMod.column);
-								switch(tileMod.effect) {
-								case 'remove':
-									setTile(idx, HOLE);
-									setEffectTile(idx, HOLE);
-									var retro = perTile[idx];
-									if(retro && retro != '-') {
-										perTile[idx] = '-';
-										resourcesGained[retro]--;
-									} else if(!retro) {
-										perTile[idx] = '-';
-										toRemove.push({
-											position: {
-												row: tileMod.row,
-												col: tileMod.column	
-											},
-											type: null
-										});
-									}
-									break;
-								// More effects later?
-								}
-							});
-						}
-					}
+					triggerEffect(i, type.char, perTile, resourcesGained, toRemove);
 				}
 			}
-			
+			releaseBindsNear(perTile);
+
+			var powersInColumn = {};
+			powers.forEach(function(power) {
+				(powersInColumn[power.col] = powersInColumn[power.col] || []).push(power);
+			});
+
 			// Remove holes and add new tiles
 			var pCounts = tileMap();
 			var total = getTotal(pCounts);
@@ -317,6 +333,16 @@ define(['jquery', 'app/eventmanager', 'app/entity/tile',
 							effectColumns[colIndex] = NO_EFFECT + effectColumns[colIndex];
 						}
 					}
+					// Big matches leave a power tile among the new tiles in their column
+					(powersInColumn[colIndex] || []).forEach(function(power, k) {
+						if(needed - 1 - k >= 0) {
+							pendingPowers.push({
+								row: needed - 1 - k,
+								col: colIndex,
+								type: power.length >= 5 ? 'sunPower' : 'lanternPower'
+							});
+						}
+					});
 					columns[colIndex] = column;
 				}
 			}
@@ -335,6 +361,13 @@ define(['jquery', 'app/eventmanager', 'app/entity/tile',
 				side: swapSide
 			}]);
 			EventManager.trigger('tilesCleared', [resourcesGained, swapSide, moved]);
+			if(chain > 1) {
+				gauge += GAUGE_PER_CHAIN * (chain - 1);
+				EventManager.trigger('chainCombo', [chain]);
+			}
+			if(gauge > 0) {
+				EventManager.trigger('gaugeGain', [gauge]);
+			}
 		} else {
 			EventManager.trigger('tilesSwapped', [lastSwitch == null]);
 			State.setIfHigher('CHAIN', chain);
@@ -556,12 +589,98 @@ define(['jquery', 'app/eventmanager', 'app/entity/tile',
 		}]);
 	}
 	
+	// Resolves the effect on a cleared tile. Power tiles can set each other off.
+	function triggerEffect(idx, tileChar, perTile, resourcesGained, toRemove) {
+		if(!effectString) {
+			return;
+		}
+		var effectChar = effectString.charAt(idx);
+		var effect = effectMap[effectChar];
+		setEffectTile(idx, HOLE);
+		if(effectChar == NO_EFFECT || effect == null) {
+			return;
+		}
+		effectMap[effectChar] = null;
+		Content.getEffectType(effect.type).onMatch(getRow(idx), getColumn(idx), tileChar).forEach(function(tileMod) {
+			var i = getIndex(tileMod.row, tileMod.column);
+			switch(tileMod.effect) {
+			case 'remove':
+				setTile(i, HOLE);
+				setEffectTile(i, HOLE);
+				var retro = perTile[i];
+				if(retro && retro != '-') {
+					perTile[i] = '-';
+					resourcesGained[retro]--;
+				} else if(!retro) {
+					perTile[i] = '-';
+					toRemove.push({
+						position: {
+							row: tileMod.row,
+							col: tileMod.column
+						},
+						type: null
+					});
+				}
+				break;
+			case 'collect':
+				// Cleared by a power tile, and gathered like a normal match
+				var collectedChar = getTile(i);
+				if(collectedChar != HOLE && !perTile[i]) {
+					var type = Content.getResourceType(collectedChar);
+					perTile[i] = type.className;
+					resourcesGained[type.className] = (resourcesGained[type.className] || 0) + 1;
+					setTile(i, HOLE);
+					toRemove.push({
+						position: getPosition(i),
+						type: type
+					});
+					triggerEffect(i, collectedChar, perTile, resourcesGained, toRemove);
+				}
+				break;
+			}
+		});
+	}
+
+	// Power tiles are placed once the new tiles have landed
+	function applyPendingPowers() {
+		if(pendingPowers.length > 0) {
+			pendingPowers.forEach(function(power) {
+				createEffect(power.row, power.col, power.type);
+			});
+			pendingPowers.length = 0;
+			EventManager.trigger('powerCreated');
+		}
+	}
+
+	// Clearing a tile frees any shadow-bound neighbours
+	function releaseBindsNear(cleared) {
+		for(var key in cleared) {
+			var row = getRow(+key), col = getColumn(+key);
+			[[row - 1, col], [row + 1, col], [row, col - 1], [row, col + 1]].forEach(function(p) {
+				if(p[0] >= 0 && p[0] < GameBoard.options.rows && p[1] >= 0 && p[1] < GameBoard.options.columns &&
+						GameBoard.isBound(p[0], p[1])) {
+					removeEffect(getEffectTile(p[0], p[1]));
+				}
+			});
+		}
+	}
+
+	function releaseAllBinds() {
+		for(var effectChar in effectMap) {
+			var effect = effectMap[effectChar];
+			// removeEffect drops the effect string once the last effect is gone
+			if(effect != null && effectString && Content.getEffectType(effect.type).immovable) {
+				removeEffect(effectChar);
+			}
+		}
+	}
+
 	function expireEffects(matched) {
 		if(matched && effectString) {
 			// Update tile effect durations
 			for(var e in effectMap) {
 				var effect = effectMap[e];
-				if(effect != null) {
+				if(effect != null && !Content.getEffectType(effect.type).permanent) {
 					effect.duration--;
 					if(effect.duration <= 0) {
 						removeEffect(e);

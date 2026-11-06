@@ -116,6 +116,18 @@ define({
 				day: [30, 505],
 				night: 'side'
 			}
+		},
+		Lantern: {
+			char: 'f',
+			className: 'lantern',
+			nightEffect: {
+				'default': 'dawn'
+			},
+			multipliers: {},
+			effectDest: {
+				day: [32, -20],
+				night: 'side'
+			}
 		}
 	},
 	
@@ -143,6 +155,30 @@ define({
 		'tower': function() {
 			var e = require('app/eventmanager');
 			e.trigger('enableMagic');
+		},
+
+		'lighthouse': function() {
+			require('app/eventmanager').trigger('wardCapacityChanged');
+		},
+
+		'lighthouse2': function() {
+			require('app/eventmanager').trigger('wardCapacityChanged');
+		},
+
+		'lighthouse3': function() {
+			require('app/eventmanager').trigger('wardCapacityChanged');
+		},
+
+		'altar': function() {
+			require('app/eventmanager').trigger('enableSkills');
+		},
+
+		'altar2': function() {
+			require('app/eventmanager').trigger('enableSkills');
+		},
+
+		'altar3': function() {
+			require('app/eventmanager').trigger('enableSkills');
 		}
 	},
 	
@@ -608,6 +644,97 @@ define({
 			test: function(State) {
 				return State.gem >= 4;
 			}
+		},
+
+		Lighthouse: {
+			className: 'lighthouse',
+			spriteName: 'lighthouse',
+			position: 390,
+			cost: {
+				stone: 4,
+				wood: 4,
+				clay: 2
+			},
+			requiredLevel: 3,
+			priority: 4
+		},
+
+		Lighthouse2: {
+			className: 'lighthouse2',
+			spriteName: 'lighthouse',
+			position: 390,
+			cost: {
+				stone: 6,
+				clay: 4,
+				lantern: 4
+			},
+			requiredLevel: 1,
+			tileMod: 'lantern',
+			tileLevel: 2,
+			replaces: 'lighthouse',
+			defaultAnimation: 1,
+			priority: 7
+		},
+
+		Lighthouse3: {
+			className: 'lighthouse3',
+			spriteName: 'lighthouse',
+			position: 390,
+			cost: {
+				stone: 8,
+				cloth: 6,
+				lantern: 8
+			},
+			requiredLevel: 1,
+			tileMod: 'lantern',
+			tileLevel: 3,
+			replaces: 'lighthouse2',
+			defaultAnimation: 2,
+			priority: 10
+		},
+
+		Altar: {
+			className: 'altar',
+			spriteName: 'altar',
+			position: 450,
+			cost: {
+				stone: 3,
+				cloth: 3,
+				lantern: 3
+			},
+			requiredLevel: 1,
+			requires: 'lighthouse',
+			priority: 5
+		},
+
+		Altar2: {
+			className: 'altar2',
+			spriteName: 'altar',
+			position: 450,
+			cost: {
+				wood: 6,
+				cloth: 6,
+				lantern: 6
+			},
+			requiredLevel: 1,
+			replaces: 'altar',
+			defaultAnimation: 1,
+			priority: 8
+		},
+
+		Altar3: {
+			className: 'altar3',
+			spriteName: 'altar',
+			position: 450,
+			cost: {
+				clay: 8,
+				cloth: 8,
+				lantern: 10
+			},
+			requiredLevel: 1,
+			replaces: 'altar2',
+			defaultAnimation: 2,
+			priority: 11
 		}
 	},
 	
@@ -663,6 +790,10 @@ define({
 			className: 'haste',
 			duration: 30000
 		},
+		timelamp: {
+			className: 'freezeTime',
+			duration: 10000
+		},
 		frozen: {
 			className: 'frozen',
 			duration: 8000,
@@ -715,7 +846,80 @@ define({
 		}
 	},
 	
+	// Dusk skills, unlocked by the Altar of Dawn and cast with a full Afterglow gauge
+	Skills: {
+		dawnlight: {
+			level: 1,
+			onUse: function() {
+				var E = require('app/eventmanager');
+				if(require('app/engine').isNight()) {
+					E.trigger('damageAll', [10]);
+				} else {
+					E.trigger('dawnlightHarvest', [2]);
+				}
+				E.trigger('dawnlight');
+			}
+		},
+		wardcraft: {
+			level: 2,
+			onUse: function() {
+				var E = require('app/eventmanager'),
+					S = require('app/gamestate');
+				E.trigger('fillWard');
+				E.trigger('healDude', [Math.floor(S.maxHealth() / 4)]);
+				E.trigger('heal');
+			}
+		},
+		timelamp: {
+			level: 3,
+			onUse: function() {
+				var E = require('app/eventmanager'),
+					C = require('app/gamecontent');
+				if(require('app/engine').isNight()) {
+					E.trigger('newStateEffect', [C.StateEffects.timelamp]);
+					E.trigger('freezeTime');
+				} else {
+					E.trigger('extendDay', [5]);
+				}
+			}
+		}
+	},
+
 	TileEffects: {
+		// Left by clearing four tiles at once. Clears its row and column when matched.
+		lanternPower: {
+			permanent: true,
+			onMatch: function(row, column) {
+				var B = require('app/gameboard');
+				var tileMods = [];
+				for(var r = 0; r < B.options.rows; r++) {
+					tileMods.push({ row: r, column: column, effect: 'collect' });
+				}
+				for(var c = 0; c < B.options.columns; c++) {
+					tileMods.push({ row: row, column: c, effect: 'collect' });
+				}
+				require('app/eventmanager').trigger('lanternBurst', [{ row: row, column: column }]);
+				return tileMods;
+			}
+		},
+		// Left by clearing five or more tiles at once. Clears every tile of its kind when matched.
+		sunPower: {
+			permanent: true,
+			onMatch: function(row, column, tileChar) {
+				require('app/eventmanager').trigger('sunBurst', [{ row: row, column: column }]);
+				return require('app/gameboard').findTiles(tileChar).map(function(pos) {
+					return { row: pos.row, column: pos.col, effect: 'collect' };
+				});
+			}
+		},
+		// Cast by shades at night. The tile can't be moved until a neighbour is cleared.
+		shadowBind: {
+			permanent: true,
+			immovable: true,
+			onMatch: function() {
+				return [];
+			}
+		},
 		explosive: {
 			duration: 5,
 			onMatch: function(row, column) {

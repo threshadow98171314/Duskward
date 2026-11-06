@@ -36,6 +36,12 @@ define({
 	NO_MUSIC: 'Play without music?',
 	TAP_TO_CONTINUE: 'Tap to continue',
 	SERA: 'Sera the Lampkeeper',
+	DUSK: 'Dusk',
+	CHAIN_N: 'Chain ×{0}',
+	SKILLS: 'Dusk Skills Used',
+	SKILL_DAWNLIGHT: 'Dawnlight',
+	SKILL_WARDCRAFT: 'Wardcraft',
+	SKILL_TIMELAMP: 'Time Lamp',
 
 	STORY_INTRO: [
 		'Long ago, the sun never set on Afterglow Vale.',
@@ -67,6 +73,11 @@ define({
 		level10: 'A castle... Your predecessor never managed to build one.',
 		firstShard: 'A duskshard. Gather four and the Dusk Tower on the hill will shine again.',
 		magic: 'The Dusk Tower shines again! Match four or more tiles at once and duskcrystals will fall onto the board. Gather them to cast spells.',
-		dragon: 'Is that... the Dawnwyrm? Its eyes have gone black. Child, it\'s not what it used to be!'
+		dragon: 'Is that... the Dawnwyrm? Its eyes have gone black. Child, it\'s not what it used to be!',
+		firstDusk: 'Dusk is here. Before night falls, every tile you clear becomes part of your ward, and it will take the first blows for you tonight.',
+		lighthouse: 'The watchtower is lit! Lanterns will start appearing on the board. By day they\'re building material; light them at night and dawn comes sooner.',
+		altar: 'The Altar of Dawn stands. Chains and big matches fill your Afterglow gauge, and once it\'s full you can unleash a dusk skill.',
+		firstPower: 'See that glowing tile? Clearing four at once leaves a lantern tile, and five leaves a sun tile. Try clearing those too.',
+		skillReady: 'Your Afterglow gauge is full! Tap a skill on the right to use it.'
 	}
 });

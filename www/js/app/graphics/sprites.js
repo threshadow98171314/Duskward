@@ -9,6 +9,8 @@ define(function() {
 		shack: ['buildings', 1600],
 		tower: ['buildings', 1920],
 		weaver: ['buildings', 2320],
+		lighthouse: ['buildings', 2640],
+		altar: ['buildings', 2880],
 
 		// Monsters
 		demon: ['monsters', 0],

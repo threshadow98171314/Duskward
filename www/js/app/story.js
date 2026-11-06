@@ -67,6 +67,20 @@ define(['app/eventmanager', 'app/gamestate', 'app/graphics/story'], function(E, 
 			E.bind('callDragon', function() {
 				tell('dragon');
 			});
+			E.bind('duskFall', function() {
+				tell('firstDusk', EVENT_DELAY);
+			});
+			E.bind('buildingComplete', function(building) {
+				tell(building.options.type.className, EVENT_DELAY);
+			});
+			E.bind('powerCreated', function() {
+				tell('firstPower', EVENT_DELAY);
+			});
+			E.bind('gaugeChanged', function(current, max) {
+				if(current >= max) {
+					tell('skillReady', EVENT_DELAY);
+				}
+			});
 		}
 	};
 });

@@ -105,6 +105,13 @@ define(['app/eventmanager', 'app/entity/worldentity', 'app/graphics/graphics',
 			if(require('app/world').hasEffect('frozen')) {
 				damage /= 2;
 			}
+			// The ward raised at dusk takes the first hits
+			if(State.ward > 0) {
+				var warded = damage > State.ward ? State.ward : damage;
+				State.ward -= warded;
+				damage -= warded;
+				EventManager.trigger('wardChanged', [State.ward, State.maxWard()]);
+			}
 			if(this.shield > 0) {
 				var blocked = damage > this.shield ? this.shield : damage;
 				this.shield -= blocked;

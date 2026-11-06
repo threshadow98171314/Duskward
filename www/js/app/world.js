@@ -7,7 +7,8 @@ define(['jquery', 'app/eventmanager', 'app/graphics/graphics', 'app/entity/build
 				Star, WorldEffect) {
 	
 	var PRESTIGE_MULTIPLIER = 0.5;
-	
+	var DUSK_MOVES = 5; // The last moves of each day are dusk
+
 	var hasteTick = false;
 	var dude = null;
 	var celestial = null;
@@ -23,6 +24,7 @@ define(['jquery', 'app/eventmanager', 'app/graphics/graphics', 'app/entity/build
 	var prioritizedBuilding = null;
 	var recorded = null;
 	var streak = 0;
+	var isDusk = false;
 	
 	var _debugMultiplier = 1;
 	multiplier = function(n) {
@@ -52,6 +54,7 @@ define(['jquery', 'app/eventmanager', 'app/graphics/graphics', 'app/entity/build
 			theDragon = null;
 			var deferredCallbacks = [];
 			streak = 0;
+			isDusk = false;
 			var casualNight = false;
 			
 			EventManager.bind('difficultyChanged', difficultyToggle);
@@ -81,6 +84,14 @@ define(['jquery', 'app/eventmanager', 'app/graphics/graphics', 'app/entity/build
 				fillDefense();
 				fillAttack();
 			});
+			EventManager.bind('fillWard', function() {
+				gainWard(GameState.maxWard());
+			});
+			EventManager.bind('wardCapacityChanged', function() {
+				EventManager.trigger('wardChanged', [GameState.ward, GameState.maxWard()]);
+			});
+			EventManager.bind('extendDay', extendDay);
+			EventManager.bind('dawnlightHarvest', harvest);
 			EventManager.bind('gameLoaded', function() {
 				updateGem();
 				for(var i in GameState.buildings) {
@@ -264,6 +275,10 @@ define(['jquery', 'app/eventmanager', 'app/graphics/graphics', 'app/entity/build
 		isNight: function() {
 			return isNight;
 		},
+
+		isDusk: function() {
+			return isDusk;
+		},
 		
 		startRecording: function() {
 			console.log("Beginning resource recorder");
@@ -356,6 +371,10 @@ define(['jquery', 'app/eventmanager', 'app/graphics/graphics', 'app/entity/build
 			return false;
 		}
 		if(buildingType.test && !buildingType.test(GameState)) {
+			return false;
+		}
+		if(buildingType.requires != null &&
+				!GameState.hasBuilding(Content.getBuildingType(buildingType.requires))) {
 			return false;
 		}
 		if(buildingType.replaces != null) {
@@ -470,6 +489,15 @@ define(['jquery', 'app/eventmanager', 'app/graphics/graphics', 'app/entity/build
 	}
 	
 	function handleTileClear(resourcesGained, side) {
+		// Everything cleared at dusk strengthens the ward for the coming night
+		if(isDusk && !inTransition) {
+			var cleared = 0;
+			for(var t in resourcesGained) {
+				cleared += resourcesGained[t];
+			}
+			gainWard(cleared);
+		}
+
 		// Gain resources
 		for(typeName in resourcesGained) {
 			var type = Content.getResourceType(typeName);
@@ -499,6 +527,10 @@ define(['jquery', 'app/eventmanager', 'app/graphics/graphics', 'app/entity/build
 						break;
 					case "sword":
 						fillAttack();
+						break;
+					case "dawn":
+						// Lighting lanterns brings the dawn closer
+						advanceTime();
 						break;
 					}
 				}
@@ -639,8 +671,44 @@ define(['jquery', 'app/eventmanager', 'app/graphics/graphics', 'app/entity/build
 				var worldWidth = Graphics.worldWidth();
 				celestial.p(Math.floor(worldWidth / numSteps) * celestialPosition);
 				Graphics.moveCelestial(celestial);
+				checkDusk();
 			}
 		}
+	}
+
+	function checkDusk() {
+		var dusk = !isNight && celestialPosition >= World.options.dayMoves - DUSK_MOVES;
+		if(dusk != isDusk) {
+			isDusk = dusk;
+			EventManager.trigger(dusk ? 'duskFall' : 'duskLift');
+		}
+	}
+
+	function extendDay(steps) {
+		if(!isNight && celestial != null) {
+			celestialPosition = Math.max(0, celestialPosition - steps);
+			celestial.p(Math.floor(Graphics.worldWidth() / World.options.dayMoves) * celestialPosition);
+			Graphics.moveCelestial(celestial);
+			checkDusk();
+		}
+	}
+
+	function gainWard(amount) {
+		var max = GameState.maxWard();
+		GameState.ward = Math.min(max, (GameState.ward || 0) + amount);
+		EventManager.trigger('wardChanged', [GameState.ward, max]);
+	}
+
+	function harvest(amount) {
+		// Gather some of every resource currently on the board
+		var gains = {};
+		require('app/gameboard').availableTiles().forEach(function(tileChar) {
+			var type = Content.getResourceType(tileChar);
+			if(type != Content.ResourceType.Mana) {
+				gains[type.className] = amount;
+			}
+		});
+		handleTileClear(gains);
 	}
 	
 	function phaseTransition() {
@@ -650,9 +718,10 @@ define(['jquery', 'app/eventmanager', 'app/graphics/graphics', 'app/entity/build
 		});
 		isNight = !isNight;
 		if(dude.action != null) {
-			dude.action.terminateAction(dude);						
+			dude.action.terminateAction(dude);
 		}
 		celestialPosition = 0;
+		checkDusk();
 		dude.shield = 0;
 		dude.sword = 0;
 		Graphics.updateShield(0, 0);
@@ -670,6 +739,8 @@ define(['jquery', 'app/eventmanager', 'app/graphics/graphics', 'app/entity/build
 			});
 			theDragon = null;
 			streak++;
+			GameState.ward = 0;
+			EventManager.trigger('wardChanged', [0, GameState.maxWard()]);
 			GameState.dayNumber++;
 			GameState.count('NIGHTS', 1);
 			GameState.setIfHigher('ROW', streak);

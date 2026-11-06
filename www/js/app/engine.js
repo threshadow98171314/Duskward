@@ -2,10 +2,10 @@ define(['jquery', 'app/eventmanager', 'app/graphics/graphics',
         'app/gamecontent', 'app/gameboard', 'app/gamestate', 'app/world', 'app/loot',
         'app/magic', 'app/gameoptions', 'app/audio/audio',
         'app/visibility', 'app/keysequencer', 'app/graphics/difficulty',
-        'app/graphics/language', 'app/story'],
+        'app/graphics/language', 'app/story', 'app/graphics/dusk', 'app/skills'],
 		function($, EventManager, Graphics, Content, GameBoard,
 				 GameState, World, Loot, Magic, GameOptions, GameAudio,
-				 Visibility, KeySequencer, Difficulty, Language, Story) {
+				 Visibility, KeySequencer, Difficulty, Language, Story, Dusk, Skills) {
 
 	var DRAG_THRESHOLD = 30; // in pixels
 	var MOBILE_RATIO = 16/10; // height/width
@@ -64,15 +64,17 @@ define(['jquery', 'app/eventmanager', 'app/graphics/graphics',
 	function startDrag(tile) {
 		if(canMove()) {
 			if(activeTile == null) {
-				// Select the tile
-				activeTile = tile;
-				Graphics.selectTile(tile);		
+				// Select the tile, unless a shade has bound it
+				if(!GameBoard.isBound(tile.options.row, tile.options.column)) {
+					activeTile = tile;
+					Graphics.selectTile(tile);
+				}
 			} else {
 				// Either initiate a switch, or deselect
 				var active = activeTile;
 				activeTile = null;
 				Graphics.deselectTile(active);
-				if(tile.isAdjacent(active)) {
+				if(tile.isAdjacent(active) && !GameBoard.isBound(tile.options.row, tile.options.column)) {
 					GameBoard.switchTiles(
 						{row: active.options.row, col: active.options.column}, 
 						{row: tile.options.row, col: tile.options.column}
@@ -95,7 +97,8 @@ define(['jquery', 'app/eventmanager', 'app/graphics/graphics',
 				activeTile = null;
 				Graphics.deselectTile(active);
 				if(active.options.row + dy >= 0 && active.options.row + dy < GameBoard.options.rows &&
-				   active.options.column + dx >= 0 && active.options.column + dx < GameBoard.options.columns) {
+				   active.options.column + dx >= 0 && active.options.column + dx < GameBoard.options.columns &&
+				   !GameBoard.isBound(active.options.row + dy, active.options.column + dx)) {
 					GameBoard.switchTiles(
 						{row: active.options.row, col: active.options.column}, 
 						{row: active.options.row + dy, col: active.options.column + dx}
@@ -201,6 +204,8 @@ define(['jquery', 'app/eventmanager', 'app/graphics/graphics',
 			modules.push(Difficulty);
 			modules.push(Language);
 			modules.push(Story);
+			modules.push(Dusk);
+			modules.push(Skills);
 			
 			// Start the game
 			GameOptions.load();

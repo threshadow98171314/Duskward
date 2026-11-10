@@ -19,6 +19,10 @@ class NoCacheHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header("Cache-Control", "no-store")
         super().end_headers()
 
+    def log_message(self, format, *args):
+        # Per-request logging can block on a full stderr pipe and hang the server
+        pass
+
 
 class DualStackServer(http.server.ThreadingHTTPServer):
     address_family = socket.AF_INET6

@@ -6,6 +6,12 @@
 
 介面預設是繁體中文，可以在選單的「語言」切換成英文。完整的世界觀、玩法和美術規劃請見[設計文件](docs/DESIGN.md)。
 
+## 線上試玩
+
+https://threshadow98171314.github.io/Duskward/
+
+每次推送到 `main`，GitHub Actions 會自動把 `www/` 部署到 GitHub Pages（見 `.github/workflows/pages.yml`）。線上版不含左上角的除錯按鈕。
+
 ## 在本機執行
 
 需要 Python 3，只用到標準函式庫：
@@ -27,6 +33,7 @@ python tools/devserver.py
 | `www/js/app/locale/` | 語系檔（`zh-TW`、`en`），介面文字和劇情文字都在這裡 |
 | `docs/DESIGN.md` | 設計文件 |
 | `tools/devserver.py` | 本機開發伺服器 |
+| `.github/workflows/pages.yml` | 部署到 GitHub Pages 的流程 |
 | `tools/brandgen.py` | 產生標題圖、徽章和 favicon |
 | `tools/art/` | 美術工具：用 `python tools/art/build.py` 組裝精靈圖，`legacy/` 保留原作的圖 |
 | `deploy/` | 原作 1.1.1 版的建置輸出，目前還沒更新 |

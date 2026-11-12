@@ -1,4 +1,10 @@
-define({
+import E from './eventmanager.js';
+import S from './gamestate.js';
+import WorldEffect from './entity/worldeffect.js';
+import { getModule } from './modules.js';
+import B from './gameboard.js';
+
+var Content = {
 	
 	ResourceType: {
 		Grain: {
@@ -133,52 +139,52 @@ define({
 	
 	BuildingCallbacks: {
 		'shack': function() {
-			var e = require('app/eventmanager');
+			var e = E;
 			e.trigger('resourceStoreChanged', [3, 3]);
 		},
 		
 		'house': function() {
-			var e = require('app/eventmanager');
+			var e = E;
 			e.trigger('resourceStoreChanged', [4, 3]);
 		},
 		
 		'fort': function() {
-			var e = require('app/eventmanager');
+			var e = E;
 			e.trigger('resourceStoreChanged', [4, 4]);
 		},
 		
 		'castle': function() {
-			var e = require('app/eventmanager');
+			var e = E;
 			e.trigger('resourceStoreChanged', [5, 4]);
 		},
 		
 		'tower': function() {
-			var e = require('app/eventmanager');
+			var e = E;
 			e.trigger('enableMagic');
 		},
 
 		'lighthouse': function() {
-			require('app/eventmanager').trigger('wardCapacityChanged');
+			E.trigger('wardCapacityChanged');
 		},
 
 		'lighthouse2': function() {
-			require('app/eventmanager').trigger('wardCapacityChanged');
+			E.trigger('wardCapacityChanged');
 		},
 
 		'lighthouse3': function() {
-			require('app/eventmanager').trigger('wardCapacityChanged');
+			E.trigger('wardCapacityChanged');
 		},
 
 		'altar': function() {
-			require('app/eventmanager').trigger('enableSkills');
+			E.trigger('enableSkills');
 		},
 
 		'altar2': function() {
-			require('app/eventmanager').trigger('enableSkills');
+			E.trigger('enableSkills');
 		},
 
 		'altar3': function() {
-			require('app/eventmanager').trigger('enableSkills');
+			E.trigger('enableSkills');
 		}
 	},
 	
@@ -741,36 +747,30 @@ define({
 	LootType: {
 		healthPotion: {
 			onUse: function() {
-				var E = require('app/eventmanager'),
-					S = require('app/gamestate');
 				E.trigger('healDude', [Math.floor(S.maxHealth() / 2)]);
 				E.trigger('heal');
 			}
 		},
 		manaPotion: {
 			onUse: function() {
-				var E = require('app/eventmanager'),
-					S = require('app/gamestate');
 				E.trigger('gainMana', [Math.floor(S.maxMana() / 2)]);
 			}
 		},
 		bomb: {
 			onUse: function() {
-				var E = require('app/eventmanager');
 				E.trigger('damageAll', [20]);
 				E.trigger('bomb');
 			}
 		},
 		equipment: {
 			onUse: function() {
-				var E = require('app/eventmanager');
 				E.trigger('fillEquipment');
 			}
 		},
 		callDragon: {
 			large: true,
 			onUse: function() {
-				require('app/eventmanager').trigger('callDragon');
+				E.trigger('callDragon');
 			}
 		}
 	},
@@ -800,14 +800,14 @@ define({
 			start: function(entity) {
 				entity.paused = true;
 				if(this._worldEffect == null) {
-					this._worldEffect = new (require('app/entity/worldeffect'))({effectClass: 'iceBlock', spriteName: 'dragoneffects'});
+					this._worldEffect = new WorldEffect({effectClass: 'iceBlock', spriteName: 'dragoneffects'});
 					this._worldEffect.p(entity.p());
-					require('app/eventmanager').trigger('newEntity', [this._worldEffect]);
+					E.trigger('newEntity', [this._worldEffect]);
 				}
 			},
 			end: function(entity) {
 				entity.paused = false;
-				require('app/eventmanager').trigger('removeEntity', [this._worldEffect]);
+				E.trigger('removeEntity', [this._worldEffect]);
 				this._worldEffect = null;
 			}
 		}
@@ -816,30 +816,26 @@ define({
 	Spells: {
 		resetBoard: {
 			onUse: function() {
-				var E = require('app/eventmanager');
 				E.trigger('refreshBoard');
 				E.trigger('refreshBoardSpell');
 			}
 		},
 		haste: {
 			onUse: function() {
-				var E = require('app/eventmanager'),
-					C = require('app/gamecontent');
+				var C = Content;
 				E.trigger('newStateEffect', [C.StateEffects.haste]);
 				E.trigger('haste');
 			}
 		},
 		phaseChange: {
 			onUse: function() {
-				var E = require('app/eventmanager');
-				E.trigger('phaseChange', [!require('app/engine').isNight()]);
+				E.trigger('phaseChange', [!getModule('engine').isNight()]);
 				E.trigger('phaseChangeSpell');
 			}
 		},
 		freezeTime: {
 			onUse: function() {
-				var E = require('app/eventmanager'),
-					C = require('app/gamecontent');
+				var C = Content;
 				E.trigger('newStateEffect', [C.StateEffects.freezeTime]);
 				E.trigger('freezeTime');
 			}
@@ -851,8 +847,7 @@ define({
 		dawnlight: {
 			level: 1,
 			onUse: function() {
-				var E = require('app/eventmanager');
-				if(require('app/engine').isNight()) {
+				if(getModule('engine').isNight()) {
 					E.trigger('damageAll', [10]);
 				} else {
 					E.trigger('dawnlightHarvest', [2]);
@@ -863,8 +858,6 @@ define({
 		wardcraft: {
 			level: 2,
 			onUse: function() {
-				var E = require('app/eventmanager'),
-					S = require('app/gamestate');
 				E.trigger('fillWard');
 				E.trigger('healDude', [Math.floor(S.maxHealth() / 4)]);
 				E.trigger('heal');
@@ -873,9 +866,8 @@ define({
 		timelamp: {
 			level: 3,
 			onUse: function() {
-				var E = require('app/eventmanager'),
-					C = require('app/gamecontent');
-				if(require('app/engine').isNight()) {
+				var C = Content;
+				if(getModule('engine').isNight()) {
 					E.trigger('newStateEffect', [C.StateEffects.timelamp]);
 					E.trigger('freezeTime');
 				} else {
@@ -890,7 +882,6 @@ define({
 		lanternPower: {
 			permanent: true,
 			onMatch: function(row, column) {
-				var B = require('app/gameboard');
 				var tileMods = [];
 				for(var r = 0; r < B.options.rows; r++) {
 					tileMods.push({ row: r, column: column, effect: 'collect' });
@@ -898,7 +889,7 @@ define({
 				for(var c = 0; c < B.options.columns; c++) {
 					tileMods.push({ row: row, column: c, effect: 'collect' });
 				}
-				require('app/eventmanager').trigger('lanternBurst', [{ row: row, column: column }]);
+				E.trigger('lanternBurst', [{ row: row, column: column }]);
 				return tileMods;
 			}
 		},
@@ -906,8 +897,8 @@ define({
 		sunPower: {
 			permanent: true,
 			onMatch: function(row, column, tileChar) {
-				require('app/eventmanager').trigger('sunBurst', [{ row: row, column: column }]);
-				return require('app/gameboard').findTiles(tileChar).map(function(pos) {
+				E.trigger('sunBurst', [{ row: row, column: column }]);
+				return B.findTiles(tileChar).map(function(pos) {
 					return { row: pos.row, column: pos.col, effect: 'collect' };
 				});
 			}
@@ -924,8 +915,6 @@ define({
 			duration: 5,
 			onMatch: function(row, column) {
 				// a'splode!
-				var E = require('app/eventmanager'),
-					B = require('app/gameboard');
 				var tileMods = [];
 				for(var r = -1; r < 2; r++) {
 					if(row + r < 0 || row + r >= B.options.rows) continue;
@@ -968,4 +957,6 @@ define({
 	getEffectType: function(effectString) {
 		return this.TileEffects[effectString];
 	}
-});
+};
+
+export default Content;

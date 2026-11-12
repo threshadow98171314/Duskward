@@ -1,5 +1,4 @@
-require(["app/engine"], function(Engine) {
-	
-	// Initialize the board
-	Engine.init();
-});
+import Engine from './engine.js';
+
+// Initialize the board
+Engine.init();

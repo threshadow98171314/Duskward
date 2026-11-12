@@ -1,4 +1,4 @@
-define({
+export default {
 	TITLE: 'Duskward 暮守',
 	SUBTITLE: '暮守 · 餘暉谷的最後一盞燈',
 	DAY: '天',
@@ -80,4 +80,4 @@ define({
 		firstPower: '看到那塊發光的方塊了嗎？一次消掉四塊會留下燈籠方塊，五塊會留下日輪方塊。把它們也消掉試試看。',
 		skillReady: '暮光槽滿了！點一下右邊的技能就能施放。'
 	}
-});
+};

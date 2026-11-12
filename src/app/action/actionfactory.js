@@ -1,40 +1,55 @@
-define(['app/action/moveblock', 'app/action/raisebuilding', 'app/action/moveto', 'app/action/attack', 'app/action/die',
-        'app/action/fastattack', 'app/action/shoot', 'app/action/getloot', 'app/action/climb', 'app/action/lichspell',
-        'app/action/teleport', 'app/action/dragon/land', 'app/action/dragon/bite', 'app/action/dragon/fireball',
-        'app/action/dragon/wingbuffet', 'app/action/slide', 'app/action/dragon/icebeam', 'app/action/dragon/fireblast',
-        'app/action/dragon/die'], 
-		function(MoveBlock, RaiseBuilding, MoveTo, Attack, Die, FastAttack, Shoot, GetLoot, Climb, LichSpell,
-				 Teleport, Land, Bite, Fireball, WingBuffet, Slide, IceBeam, FireBlast, DragonDie) {
+import MoveBlock from './moveblock.js';
+import RaiseBuilding from './raisebuilding.js';
+import MoveTo from './moveto.js';
+import Attack from './attack.js';
+import Die from './die.js';
+import FastAttack from './fastattack.js';
+import Shoot from './shoot.js';
+import GetLoot from './getloot.js';
+import Climb from './climb.js';
+import LichSpell from './lichspell.js';
+import Teleport from './teleport.js';
+import Land from './dragon/land.js';
+import Bite from './dragon/bite.js';
+import Fireball from './dragon/fireball.js';
+import WingBuffet from './dragon/wingbuffet.js';
+import Slide from './slide.js';
+import IceBeam from './dragon/icebeam.js';
+import FireBlast from './dragon/fireblast.js';
+import DragonDie from './dragon/die.js';
+import { register } from '../modules.js';
+
+var ActionFactory = {
+	_actions: {
+		"MoveBlock": MoveBlock,
+		"RaiseBuilding": RaiseBuilding,
+		"MoveTo": MoveTo,
+		"Attack": Attack,
+		"FastAttack": FastAttack,
+		"Shoot": Shoot,
+		"Die": Die,
+		"GetLoot": GetLoot,
+		"Climb": Climb,
+		"LichSpell": LichSpell,
+		"Teleport": Teleport,
+		"Land": Land,
+		"Bite": Bite,
+		"Fireball": Fireball,
+		"WingBuffet": WingBuffet,
+		"Slide": Slide,
+		"IceBeam": IceBeam,
+		"FireBlast": FireBlast,
+		"DragonDie": DragonDie
+	},
 	
-	return {
-		_actions: {
-			"MoveBlock": MoveBlock,
-			"RaiseBuilding": RaiseBuilding,
-			"MoveTo": MoveTo,
-			"Attack": Attack,
-			"FastAttack": FastAttack,
-			"Shoot": Shoot,
-			"Die": Die,
-			"GetLoot": GetLoot,
-			"Climb": Climb,
-			"LichSpell": LichSpell,
-			"Teleport": Teleport,
-			"Land": Land,
-			"Bite": Bite,
-			"Fireball": Fireball,
-			"WingBuffet": WingBuffet,
-			"Slide": Slide,
-			"IceBeam": IceBeam,
-			"FireBlast": FireBlast,
-			"DragonDie": DragonDie
-		},
-		
-		getAction: function(actionName, options) {
-			var action = this._actions[actionName];
-			if(action != null) {
-				return new action(options);
-			}
-			return null;
+	getAction: function(actionName, options) {
+		var action = this._actions[actionName];
+		if(action != null) {
+			return new action(options);
 		}
-	};
-});
+		return null;
+	}
+};
+
+register('action/actionfactory', ActionFactory);
+export default ActionFactory;

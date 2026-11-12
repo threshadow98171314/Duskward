@@ -1,4 +1,4 @@
-define({
+export default {
 	TITLE: 'Duskward',
 	SUBTITLE: 'The Last Lamp of Afterglow Vale',
 	DAY: 'Day',
@@ -80,4 +80,4 @@ define({
 		firstPower: 'See that glowing tile? Clearing four at once leaves a lantern tile, and five leaves a sun tile. Try clearing those too.',
 		skillReady: 'Your Afterglow gauge is full! Tap a skill on the right to use it.'
 	}
-});
+};

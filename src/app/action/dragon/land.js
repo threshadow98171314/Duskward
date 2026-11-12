@@ -1,16 +1,16 @@
-define(['app/action/action'], function(Action) {
-	
-	var Land = function() {};
-	Land.prototype = new Action();
-	Land.constructor = Land;
-	
-	Land.prototype.doAction = function(entity) {
-		entity.hostile = false;
-		require('app/graphics/graphics').landDragon(entity, function() {
-			entity.hostile = true;
-			entity.action = null;
-		});
-	};
+import Action from '../action.js';
+import Graphics from '../../graphics/graphics.js';
 
-	return Land;
-});
+var Land = function() {};
+Land.prototype = new Action();
+Land.constructor = Land;
+
+Land.prototype.doAction = function(entity) {
+	entity.hostile = false;
+	Graphics.landDragon(entity, function() {
+		entity.hostile = true;
+		entity.action = null;
+	});
+};
+
+export default Land;

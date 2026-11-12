@@ -5,13 +5,13 @@ import tseslint from 'typescript-eslint';
 
 export default defineConfig(
 	{
-		ignores: ['dist/', 'node_modules/', 'coverage/', 'public/', 'src/vendor/', 'tools/'],
+		ignores: ['dist/', 'node_modules/', 'coverage/', 'public/', 'tools/', 'src/vendor/*.min.js'],
 	},
 	{
-		// The original game code. ES modules always run in strict mode, so these
-		// catch what strict mode turns into errors, plus a few plain mistakes.
+		// The original game code and libraries. ES modules always run in strict mode,
+		// so these catch what strict mode turns into errors, plus a few plain mistakes.
 		// The code gets the full rule set as it is rewritten in TypeScript.
-		files: ['src/app/**/*.js'],
+		files: ['src/app/**/*.js', 'src/vendor/**/*.js'],
 		languageOptions: {
 			ecmaVersion: 2020,
 			sourceType: 'module',

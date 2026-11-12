@@ -103,11 +103,11 @@ var GameState = {
 				storySeen: this.storySeen,
 				gauge: this.gauge
 			};
-			for(b in this.buildings) {
+			for(var b in this.buildings) {
 				var building = this.buildings[b];
 				state.buildings.push(Building.makeBuilding(building));
 			}
-			for(s in this.stores) {
+			for(var s in this.stores) {
 				var store = this.stores[s];
 				state.stores.push(Block.makeBlock(store));
 			}

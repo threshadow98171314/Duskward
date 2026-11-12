@@ -28,7 +28,7 @@ RaiseBuilding.prototype.doAction = function(dude) {
 			}
 			// Remove replaced building, if necessary
 			if(_action.building.options.type.replaces != null) {
-				replaces = _action.building.getReplaces(State);
+				var replaces = _action.building.getReplaces(State);
 				World.removeBuilding(replaces);
 			}
 		});

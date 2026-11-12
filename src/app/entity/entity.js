@@ -60,11 +60,6 @@ entity.prototype.p = function(param) {
 	return this._position;
 };
 
-entity.prototype.destroy = function() {
-	this.destroyed = true;
-	Events.trigger(this, "EntityDestroyed");
-};
-
 entity.prototype.animate = function() {
 	if(++this.frame >= this.options.animationFrames) {
 		this.frame = 0;

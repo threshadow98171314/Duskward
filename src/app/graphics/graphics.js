@@ -410,7 +410,7 @@ function initStylesheet() {
 }
 
 function newStylesheet(id){
-	style = document.createElement('style');
+	var style = document.createElement('style');
 	if(id) {
 		style.id = id;
 	}
@@ -432,7 +432,6 @@ function setPaused(p) {
 
 var Graphics = {
 	init: function(opts) {
-		loaded = false;
 		isDragon = false;
 		_bossHealth = null
 		$('body').removeClass('night').toggleClass('ios', opts.ios);

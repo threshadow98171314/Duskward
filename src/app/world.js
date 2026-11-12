@@ -37,9 +37,11 @@ var prioritizedBuilding = null;
 var recorded = null;
 var streak = 0;
 var isDusk = false;
+var casualNight = false;
 
 var _debugMultiplier = 1;
-multiplier = function(n) {
+// Debug cheat that multiplies gathered resources, also callable from the browser console
+var multiplier = window.multiplier = function(n) {
 	_debugMultiplier = n > 0 ? n : 1;
 	if(World.getDude()) {
 		reinitializeAllActions();
@@ -54,7 +56,6 @@ var World = {
 	},
 	init: function(opts) {
 		$.extend(this.options, opts);
-		_el = null;
 		dude = null;
 		celestial = null;
 		star = null;
@@ -511,7 +512,7 @@ function handleTileClear(resourcesGained, side) {
 	}
 
 	// Gain resources
-	for(typeName in resourcesGained) {
+	for(var typeName in resourcesGained) {
 		var type = Content.getResourceType(typeName);
 		if(isNight && !inTransition) {
 			var effect = null;

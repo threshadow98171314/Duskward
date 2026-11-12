@@ -10,7 +10,7 @@ if (typeof document.hidden !== "undefined") { // Opera 12.10 and Firefox 18 and 
 	visibilityChangeEvent = "mozvisibilitychange";
 } else if (typeof document.msHidden !== "undefined") {
 	hidden = "msHidden";
-	visibilityChange = "msvisibilitychange";
+	visibilityChangeEvent = "msvisibilitychange";
 } else if (typeof document.webkitHidden !== "undefined") {
 	hidden = "webkitHidden";
 	visibilityChangeEvent = "webkitvisibilitychange";

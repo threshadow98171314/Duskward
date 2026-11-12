@@ -48,7 +48,7 @@ function getLoot(treasure, debugMultiplier) {
 		poolSize++; // Correct for array 0-indexing
 		
 		r = Math.random();
-		for(i in lootPool) {
+		for(var i in lootPool) {
 			lootName = lootPool[i];
 			if(r < (i + 1) / poolSize) {
 				break;

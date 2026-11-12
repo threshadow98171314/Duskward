@@ -227,7 +227,7 @@ var GameAudio = {
 				format = chooseFormat();
 				if(provider != null && format != null) {
 					toLoad = 0;
-					for(s in sounds) {
+					for(var s in sounds) {
 						if(!options.nomusic || !sounds[s].music) {
 							loadSound(sounds[s]);
 						}

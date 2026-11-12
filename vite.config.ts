@@ -28,5 +28,7 @@ export default defineConfig({
 	test: {
 		environment: 'jsdom',
 		include: ['tests/**/*.test.ts'],
+		// The first test to load the game transforms every module
+		testTimeout: 30_000,
 	},
 });

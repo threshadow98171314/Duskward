@@ -139,3 +139,5 @@ _utf8_decode : function (utftext) {
 }
 
 }
+
+export default Base64;

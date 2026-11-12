@@ -15,16 +15,20 @@
 		<meta name="viewport" content="width=device-width">
 		<title>Duskward</title>
 		<meta itemprop="description" name="description" property="og:description" content="Match. Build. Survive.">
-		<meta itemprop="image" property="og:image" content="img/badge.png" />
+		<meta itemprop="image" property="og:image" content="/img/badge.png" />
 		<meta itemprop="name" property="og:title" content="Duskward" />
 		<meta name="apple-mobile-web-app-capable" content="yes" />
 		<meta name="mobile-web-app-capable" content="yes" />
-		<link rel="shortcut icon" href="favicon.ico">
-		<link rel="image_src" href="img/badge.png" />
-		<link rel="apple-touch-icon" href="img/badge.png" />
-		<link rel="stylesheet" type="text/css" href="css/main.css" />
-		<link rel="stylesheet" type="text/css" href="css/duskward.css" />
-		<script type="text/javascript" data-main="js/app" src="js/lib/require.js"></script>
+		<link rel="shortcut icon" href="/favicon.ico">
+		<link rel="image_src" href="/img/badge.png" />
+		<link rel="apple-touch-icon" href="/img/badge.png" />
+		<link rel="stylesheet" type="text/css" href="/css/main.css" />
+		<link rel="stylesheet" type="text/css" href="/css/duskward.css" />
+		<script type="module" src="/src/app/main.js"></script>
+		<script nomodule>
+			// Browsers without ES modules cannot run the game
+			window.location = 'browserWarning.html';
+		</script>
 		<style>
 			@viewport {
 				width: device-width;
@@ -33,12 +37,6 @@
 				user-zoom: fixed;
 			}
 			@-ms-viewport {
-				width: device-width;
-				max-zoom: 1;
-				orientation: portrait;
-				user-zoom: fixed;
-			}
-			@-o-viewport {
 				width: device-width;
 				max-zoom: 1;
 				orientation: portrait;

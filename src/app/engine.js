@@ -140,8 +140,11 @@ function startGame(slot) {
 }
 
 function importSlot(slotNum, importCode) {
-	GameState.import(slotNum, importCode);
-	Graphics.replaceSlot(slotNum, GameState.getSlotInfo(slotNum));
+	if(GameState.import(slotNum, importCode)) {
+		Graphics.replaceSlot(slotNum, GameState.getSlotInfo(slotNum));
+	} else {
+		Graphics.rejectImport(slotNum);
+	}
 }
 
 function isModernBrowser() {

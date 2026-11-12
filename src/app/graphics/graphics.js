@@ -1127,7 +1127,12 @@ var Graphics = {
 		oldSlot.before(newSlot);
 		oldSlot.remove();
 	},
-	
+
+	// Keeps the import form open, so the code can be fixed
+	rejectImport: function(slotIndex) {
+		$('.saveSlot:nth-child(' + (slotIndex + 1) + ') .labelText').text(Graphics.getText('IMPORT_INVALID'));
+	},
+
 	drawSlot: drawSlot
 };
 

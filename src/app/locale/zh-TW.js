@@ -32,6 +32,7 @@ export default {
 	ARE_YOU_SURE: '確定嗎？',
 	EXPORT_CODE: '匯出代碼：',
 	IMPORT_CODE: '匯入代碼：',
+	IMPORT_INVALID: '無法讀取這組代碼，請確認有完整複製：',
 	LONG_LOAD: '載入得有點久……',
 	NO_MUSIC: '不載入音樂直接玩？',
 	TAP_TO_CONTINUE: '點一下繼續',

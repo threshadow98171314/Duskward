@@ -32,6 +32,7 @@ export default {
 	ARE_YOU_SURE: 'Are you sure?',
 	EXPORT_CODE: 'Export code:',
 	IMPORT_CODE: 'Import code:',
+	IMPORT_INVALID: "That code can't be read. Check that you copied all of it:",
 	LONG_LOAD: 'Man, this is taking a long time.',
 	NO_MUSIC: 'Play without music?',
 	TAP_TO_CONTINUE: 'Tap to continue',

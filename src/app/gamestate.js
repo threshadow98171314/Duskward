@@ -3,6 +3,7 @@ import Building from './entity/building.js';
 import Block from './entity/block.js';
 import E from './eventmanager.js';
 import Content from './gamecontent.js';
+import { parseSave, serializeSave } from '../platform/save.ts';
 
 var loadedSlot = 0;
 var GameState = {
@@ -36,7 +37,7 @@ var GameState = {
 	
 	getSlotInfo: function(slot) {
 		try {
-			var savedState = JSON.parse(localStorage["slot" + slot]);
+			var savedState = parseSave(localStorage["slot" + slot]);
 			if(savedState) {
 				return {
 					maxHealth: GameState.maxHealth(savedState.level),
@@ -45,14 +46,15 @@ var GameState = {
 				};
 			}
 		} catch(e) {
-			return 'empty';
+			// localStorage is unavailable, e.g. in some private browsing modes
 		}
+		return 'empty';
 	},
-	
+
 	load: function(slot) {
 		slot = slot || loadedSlot;
 		try {
-			var savedState = JSON.parse(localStorage["slot" + slot]);
+			var savedState = parseSave(localStorage["slot" + slot]);
 			if(savedState) {
 				this.buildings = [];
 				for(var i in savedState.buildings) {
@@ -111,17 +113,23 @@ var GameState = {
 				var store = this.stores[s];
 				state.stores.push(Block.makeBlock(store));
 			}
-			localStorage["slot" + loadedSlot] = JSON.stringify(state);
+			localStorage["slot" + loadedSlot] = serializeSave(state);
 		}
 		return this;
 	},
-	
+
+	// Returns whether the code held a save this version of the game can read
 	import: function(slotNum, importCode) {
 		try {
-			localStorage["slot" + slotNum] = Base64.decode(importCode);
+			var savedState = parseSave(Base64.decode(importCode));
+			if(savedState) {
+				localStorage["slot" + slotNum] = serializeSave(savedState);
+				return true;
+			}
 		} catch(e) {
-			return null;
+			// localStorage is unavailable
 		}
+		return false;
 	},
 	
 	deleteSlot: function(slotNum) {
@@ -138,12 +146,14 @@ var GameState = {
 	},
 	
 	savePersistents: function() {
-		if(typeof Storage != 'undefined' && localStorage && localStorage["slot" + loadedSlot]) {
-			var savedState = JSON.parse(localStorage["slot" + loadedSlot]);
-			savedState.counts = this.counts;
-			savedState.health = this.health;
-			savedState.storySeen = this.storySeen;
-			localStorage["slot" + loadedSlot] = JSON.stringify(savedState);
+		if(typeof Storage != 'undefined' && localStorage) {
+			var savedState = parseSave(localStorage["slot" + loadedSlot]);
+			if(savedState) {
+				savedState.counts = this.counts;
+				savedState.health = this.health;
+				savedState.storySeen = this.storySeen;
+				localStorage["slot" + loadedSlot] = serializeSave(savedState);
+			}
 		}
 	},
 	

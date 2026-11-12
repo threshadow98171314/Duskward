@@ -1,4 +1,4 @@
-"""Assembles the game's sprite sheets in www/img.
+"""Assembles the game's sprite sheets in public/img.
 
 Each sheet starts from the original Gridland art kept in tools/art/legacy, and
 new Duskward sprites are pasted over it or appended to it. As the art overhaul
@@ -18,7 +18,7 @@ from pngio import read_png, write_png
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 LEGACY = ROOT / "tools" / "art" / "legacy"
-OUT = ROOT / "www" / "img"
+OUT = ROOT / "public" / "img"
 
 TILE = 52
 NIGHT_TILES = 467  # matches the night background offsets in main.css
@@ -144,7 +144,7 @@ def main():
     )
     for name, build in sheets:
         size = write_png(OUT / name, build())
-        print(f"wrote www/img/{name} ({size} bytes)")
+        print(f"wrote public/img/{name} ({size} bytes)")
 
 
 if __name__ == "__main__":

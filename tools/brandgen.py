@@ -201,9 +201,9 @@ def make_icon(size, pitch, border):
 
 def main():
     outputs = {
-        ROOT / "www" / "img" / "title.png": make_title(),
-        ROOT / "www" / "img" / "badge.png": make_badge(),
-        ROOT / "www" / "favicon.ico": ico_bytes([(16, make_icon(16, 2, 0)), (32, make_icon(32, 4, 1))]),
+        ROOT / "public" / "img" / "title.png": make_title(),
+        ROOT / "public" / "img" / "badge.png": make_badge(),
+        ROOT / "public" / "favicon.ico": ico_bytes([(16, make_icon(16, 2, 0)), (32, make_icon(32, 4, 1))]),
     }
     for path, data in outputs.items():
         path.write_bytes(data)

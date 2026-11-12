@@ -2,6 +2,7 @@ import $ from '../vendor/jquery.js';
 import EventManager from './eventmanager.js';
 import Content from './gamecontent.js';
 import GameState from './gamestate.js';
+import Block from './entity/block.js';
 
 var Resources = {
 	options : {
@@ -22,9 +23,9 @@ var Resources = {
 	
 	collectResource: function(type, quantity) {
 		if(this.loaded) {
-			require(['app/entity/block'], 
-					function(Block) {
-				// Find a block to fill 
+			// RequireJS ran asynchronous require() callbacks on a 4 ms timeout; keep that timing
+			setTimeout(function() {
+				// Find a block to fill
 				var block = null;
 				for(var i = 0, len = GameState.stores.length; i < len; i++) {
 					var currentBlock = GameState.stores[i];
@@ -51,7 +52,7 @@ var Resources = {
 				if(remainder > 0) {
 					Resources.collectResource(type, remainder);
 				}
-			});
+			}, 4);
 		}
 	},
 

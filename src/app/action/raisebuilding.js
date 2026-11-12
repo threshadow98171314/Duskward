@@ -1,7 +1,7 @@
 import Action from './action.js';
 import Content from '../gamecontent.js';
 import World from '../world.js';
-import GraphicsModule from '../graphics/graphics.js';
+import Graphics from '../graphics/graphics.js';
 import E from '../eventmanager.js';
 import State from '../gamestate.js';
 
@@ -16,7 +16,6 @@ RaiseBuilding.prototype.doAction = function(dude) {
 	var _action = this;
 	dude.move(this.building.dudeSpot(), function(dude) {
 		dude.animation(8);
-		var Graphics = GraphicsModule;
 		_action.hammering = true;
 		Graphics.raiseBuilding(_action.building, function() {
 			_action.building.built = true;
@@ -45,12 +44,13 @@ RaiseBuilding.prototype.doFrameAction = function(frame) {
 RaiseBuilding.prototype.terminateAction = function(dude) {
 	var _action = this;
 	
-	require(['app/graphics/graphics'], function(Graphics) {
+	// RequireJS ran asynchronous require() callbacks on a 4 ms timeout; keep that timing
+	setTimeout(function() {
 		Graphics.stop(dude);
 		dude.makeIdle();
 		dude.action = null;
-		Graphics.sinkBuilding(_action.building);			
-	});
+		Graphics.sinkBuilding(_action.building);
+	}, 4);
 };
 
 export default RaiseBuilding;

@@ -20,30 +20,34 @@ import DragonDie from './dragon/die.js';
 import { register } from '../modules.js';
 
 var ActionFactory = {
-	_actions: {
-		"MoveBlock": MoveBlock,
-		"RaiseBuilding": RaiseBuilding,
-		"MoveTo": MoveTo,
-		"Attack": Attack,
-		"FastAttack": FastAttack,
-		"Shoot": Shoot,
-		"Die": Die,
-		"GetLoot": GetLoot,
-		"Climb": Climb,
-		"LichSpell": LichSpell,
-		"Teleport": Teleport,
-		"Land": Land,
-		"Bite": Bite,
-		"Fireball": Fireball,
-		"WingBuffet": WingBuffet,
-		"Slide": Slide,
-		"IceBeam": IceBeam,
-		"FireBlast": FireBlast,
-		"DragonDie": DragonDie
+	// A function rather than a map: some actions import this factory back, so
+	// they may not have loaded yet when this module runs
+	_actions: function() {
+		return {
+			"MoveBlock": MoveBlock,
+			"RaiseBuilding": RaiseBuilding,
+			"MoveTo": MoveTo,
+			"Attack": Attack,
+			"FastAttack": FastAttack,
+			"Shoot": Shoot,
+			"Die": Die,
+			"GetLoot": GetLoot,
+			"Climb": Climb,
+			"LichSpell": LichSpell,
+			"Teleport": Teleport,
+			"Land": Land,
+			"Bite": Bite,
+			"Fireball": Fireball,
+			"WingBuffet": WingBuffet,
+			"Slide": Slide,
+			"IceBeam": IceBeam,
+			"FireBlast": FireBlast,
+			"DragonDie": DragonDie
+		};
 	},
-	
+
 	getAction: function(actionName, options) {
-		var action = this._actions[actionName];
+		var action = this._actions()[actionName];
 		if(action != null) {
 			return new action(options);
 		}

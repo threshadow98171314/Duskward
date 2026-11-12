@@ -503,8 +503,8 @@ var Graphics = {
 	},
 	
 	attachHandler: function(moduleName, event, element, handler) {
-		var module = require('app/graphics/' + moduleName.toLowerCase());
-		module.attachHandler(event, element, handler);
+		var modules = { gameboard: BoardGraphics, world: WorldGraphics };
+		modules[moduleName.toLowerCase()].attachHandler(event, element, handler);
 	},
 	
 	get: function(selector, context, returnEmpty) {

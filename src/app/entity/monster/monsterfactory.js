@@ -14,25 +14,29 @@ import Lich from './lich.js';
 import Dragon from './dragon.js';
 
 export default {
-	_monsters: {
-		"zombie": Zombie,
-		"rat": Rat,
-		"skeleton": Skeleton,
-		"hauntedArmour": HauntedArmour,
-		"lizardman": Lizardman,
-		"spider": Spider,
-		"earthElemental": EarthElemental,
-		"fireElemental": FireElemental,
-		"waterElemental": WaterElemental,
-		"demon": Demon,
-		"warlock": Warlock,
-		"imp": Imp,
-		"lich": Lich,
-		"dragon": Dragon
+	// A function rather than a map: the monsters reach this factory again through
+	// World, so they may not have loaded yet when this module runs
+	_monsters: function() {
+		return {
+			"zombie": Zombie,
+			"rat": Rat,
+			"skeleton": Skeleton,
+			"hauntedArmour": HauntedArmour,
+			"lizardman": Lizardman,
+			"spider": Spider,
+			"earthElemental": EarthElemental,
+			"fireElemental": FireElemental,
+			"waterElemental": WaterElemental,
+			"demon": Demon,
+			"warlock": Warlock,
+			"imp": Imp,
+			"lich": Lich,
+			"dragon": Dragon
+		};
 	},
-	
+
 	getMonster: function(name, options) {
-		var monster = this._monsters[name];
+		var monster = this._monsters()[name];
 		if(monster != null) {
 			return new monster(options);
 		}

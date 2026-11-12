@@ -1,12 +1,13 @@
+import en from './locale/en.js';
+import zhTW from './locale/zh-TW.js';
+
 var DEFAULT_LOCALE = 'zh-TW';
+var LOCALES = { 'en': en, 'zh-TW': zhTW };
 
 var TextStore = function(locale) {
-	var _this = this;
-	locale = locale || DEFAULT_LOCALE;
+	locale = LOCALES.hasOwnProperty(locale) ? locale : DEFAULT_LOCALE;
 	this.localeName = locale;
-	require(['app/locale/' + locale], function(l) {
-		_this.locale = l;
-	});
+	this.locale = LOCALES[locale];
 };
 
 // Picks a locale from the browser's language list, falling back to Traditional Chinese

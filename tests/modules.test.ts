@@ -133,7 +133,7 @@ describe('module graph', () => {
 	it('registers every module that is looked up late', async () => {
 		await import('../src/app/engine.js');
 		const { getModule } = await import('../src/app/modules.js');
-		for (const name of ['engine', 'world', 'graphics/graphics', 'audio/audio', 'action/actionfactory']) {
+		for (const name of ['engine', 'world', 'graphics/graphics', 'audio/audio']) {
 			expect(getModule(name), name).toBeTypeOf('object');
 		}
 		expect(() => getModule('missing')).toThrow('has not loaded yet');

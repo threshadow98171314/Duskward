@@ -1,5 +1,4 @@
 import E from './eventmanager.js';
-import TreasureChest from './entity/loot/treasurechest.js';
 import GameState from './gamestate.js';
 import Content from './gamecontent.js';
 import World from './world.js';
@@ -13,9 +12,7 @@ function rollForLoot(monster) {
 	var roll = Math.random();
 	if(monster.forceLoot || roll < chance) {
 		// Drop loot!
-		var treasure = new TreasureChest({forceLoot: monster.getLoot()});
-		treasure.p(monster.p());
-		E.trigger('newEntity', [treasure]);
+		E.trigger('dropChest', [monster.p(), monster.getLoot()]);
 	}
 }
 

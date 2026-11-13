@@ -1,7 +1,6 @@
 import Action from '../action.js';
 import EventManager from '../../eventmanager.js';
 import World from '../../world.js';
-import ActionFactory from '../actionfactory.js';
 
 var WingBuffet = function(options) {
 	this.state = 0;
@@ -30,10 +29,7 @@ WingBuffet.prototype.doFrameAction = function(frame) {
 	} else if(frame == 3 && this.state == 1) {
 		EventManager.trigger('flap');
 		if(!World.hasEffect('frozen')) {
-			this.target.action && this.target.action.terminateAction(this.target);
-			this.target.action = ActionFactory
-				.getAction('Slide', { flipped: this.entity.options.flip });
-			this.target.action.doAction(this.target);
+			World.pushKeeper(this.entity.options.flip ? 150 : -150);
 		}
 		World.removeAllEffects('fire');
 	}

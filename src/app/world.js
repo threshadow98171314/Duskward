@@ -18,6 +18,9 @@ import Engine from './engine.js';
 import GameBoard from './gameboard.js';
 import Options from './gameoptions.js';
 import { built } from './effects.js';
+import FieldView from './fieldview.js';
+import { MONSTERS } from '../content/monsters.ts';
+import * as Field from '../core/field.ts';
 import * as Day from '../core/day.ts';
 import { bounty, duskWard, harvestResource } from '../core/harvest.ts';
 import { canBuild as canBuildIn } from '../core/progress.ts';
@@ -25,6 +28,8 @@ import { dragonMultiplier, monsterMultiplier } from '../core/combat.ts';
 
 var hasteTick = false;
 var dude = null;
+// Where the keeper and the monsters are and what they are doing (src/core/field.ts)
+var field = null;
 var celestial = null;
 var gem = null;
 var effects = {};
@@ -61,6 +66,7 @@ var World = {
 	init: function(opts) {
 		$.extend(this.options, opts);
 		dude = null;
+		field = null;
 		celestial = null;
 		star = null;
 		gem = null;
@@ -71,6 +77,10 @@ var World = {
 		var deferredCallbacks = [];
 		streak = 0;
 		moveGathered = {};
+		// For debugging from the browser console
+		window.field = function() {
+			return field;
+		};
 		var casualNight = false;
 		
 		EventManager.bind('difficultyChanged', difficultyToggle);
@@ -95,6 +105,7 @@ var World = {
 		EventManager.bind('resourceStoreChanged', handleResourceStoreChanged);
 		EventManager.bind('prioritizeBuilding', prioritizeBuilding);
 		EventManager.bind('callDragon', callDragon);
+		EventManager.bind('dropChest', dropChest);
 		EventManager.bind('keySequenceComplete', multiplier.bind(this, 5));
 		EventManager.bind('fillEquipment', function() {
 			fillDefense();
@@ -144,115 +155,86 @@ var World = {
 		});
 	},
 	
-	/**
-	 * Returns a function (with the dude as the only parameter) to give the dude something to do.
-	 * Checks for buildable buildings, moveable resources, etc...
-	 */
-	getActivity: function() {
-		if(GameState.health <= 0) {
-			return ActionFactory.getAction("Die");
-		}
+	// By day, what the keeper should work on next: raising a building that has all
+	// it needs, or carrying a block to the building that needs it most
+	nextTask: function() {
 		if(clock.night) {
-			// Look for a monster to fight
-			var closest = World.findClosestMonster();
-			if(closest != null && dude.attackRange(closest)) {
-				return ActionFactory.getAction("Attack", {
-					target: closest
-				});
-			} else if(closest != null) {
-				// Move closer
-				return ActionFactory.getAction("MoveTo", {
-					target: closest
-				});
+			return null;
+		}
+		
+		// If there's a prioritized building, set up the task in advance
+		var priorityMove = null;
+		if(prioritizedBuilding) {
+			for(var b in GameState.stores) {
+				var block = GameState.stores[b];
+				var resource = block.options.type.className;
+				if(!block.gone && block.spaceLeft() == 0 && prioritizedBuilding.requiredResources[resource] > 0) {
+					priorityMove = carryTask(block, prioritizedBuilding);
+				}
 			}
-			// No monsters? Pick up loot!
-			closest = World.findClosestLoot();
-			if(closest != null && dude.p() == closest.p()) {
-				return ActionFactory.getAction("GetLoot", {
-					target: closest
+		}
+		
+		// Look for buildable buildings first
+		var totalNeeded = null;
+		var moveAction = null;
+		var priority = null;
+		for(var t in Content.BuildingType) {
+			var buildingType = Content.BuildingType[t];
+			var building = GameState.getBuilding(buildingType);
+			// Add it to the buildings list, if it should be available to build and it isn't.
+			if(building == null && canBuild(buildingType)) {
+				building = new Building({
+					type: buildingType
 				});
-			} else if(closest != null) {
-				// Move closer
-				return ActionFactory.getAction("MoveTo", {
-					target: closest,
-					useMove: true
-				});
+				GameState.buildings.push(building);
+				Graphics.addToWorld(building);
+				Graphics.setPosition(building, building.p());
 			}
-		} else {
 			
-			// If there's a prioritized building, set up the action in advance
-			var priorityMove = null;
-			if(prioritizedBuilding) {
+			// If it's ready to build, build it.
+			if(building != null && building.readyToBuild()) {
+				return buildTask(building);
+			}
+			
+			// Use the prioritized move, if we have one
+			else if(priorityMove) {
+				moveAction = priorityMove;
+			}
+			
+			// Otherwise, look for moveable resources
+			else if(building != null && !building.built) {
 				for(var b in GameState.stores) {
 					var block = GameState.stores[b];
-					var resource = block.options.type.className;
-					if(!block.gone && block.spaceLeft() == 0 && prioritizedBuilding.requiredResources[resource] > 0) {
-						priorityMove = ActionFactory.getAction("MoveBlock", {
-							block: block,
-							destination: prioritizedBuilding
-						});
-					}
-				}
-			}
-			
-			// Look for buildable buildings first
-			var totalNeeded = null;
-			var moveAction = null;
-			var priority = null;
-			for(var t in Content.BuildingType) {
-				var buildingType = Content.BuildingType[t];
-				var building = GameState.getBuilding(buildingType);
-				// Add it to the buildings list, if it should be available to build and it isn't.
-				if(building == null && canBuild(buildingType)) {
-					building = new Building({
-						type: buildingType
-					});
-					GameState.buildings.push(building);
-					Graphics.addToWorld(building);
-					Graphics.setPosition(building, building.p());
-				}
-				
-				// If it's ready to build, build it.
-				if(building != null && building.readyToBuild()) {
-					return ActionFactory.getAction("RaiseBuilding", {
-						building: building
-					});
-				}
-				
-				// Use the prioritized move, if we have one
-				else if(priorityMove) {
-					moveAction = priorityMove;
-				}
-				
-				// Otherwise, look for moveable resources
-				else if(building != null && !building.built) {
-					for(var b in GameState.stores) {
-						var block = GameState.stores[b];
-						if(!block.gone && block.spaceLeft() == 0) {
-							var resource = block.options.type.className;
-							var required = building.requiredResources[resource];
-							var highPriority = priority == null || buildingType.priority < priority || 
-									(buildingType.priority == priority && 
-											(totalNeeded == null || required > totalNeeded));
-							if(required > 0 && highPriority) {
-								// We can move this block!
-								moveAction = ActionFactory.getAction("MoveBlock", {
-									block: block,
-									destination: building
-								});
-								priority = buildingType.priority;
-								totalNeeded = required;
-							}
+					if(!block.gone && block.spaceLeft() == 0) {
+						var resource = block.options.type.className;
+						var required = building.requiredResources[resource];
+						var highPriority = priority == null || buildingType.priority < priority || 
+								(buildingType.priority == priority && 
+										(totalNeeded == null || required > totalNeeded));
+						if(required > 0 && highPriority) {
+							// We can move this block!
+							moveAction = carryTask(block, building);
+							priority = buildingType.priority;
+							totalNeeded = required;
 						}
 					}
 				}
 			}
-			// If no urgent actions are returned, move the block that is the most required.
-			return moveAction;
 		}
-		
-		// Then give up, and return null
-		return null;
+		// Otherwise, carry the block that is needed most
+		return moveAction;
+	},
+
+	// The keeper stops what they are doing, e.g. on levelling up
+	interruptKeeper: function() {
+		if(field != null) {
+			handleFieldEvents(Field.interrupt(field));
+		}
+	},
+
+	// A wing buffet throws the keeper back
+	pushKeeper: function(distance) {
+		Field.push(field, distance);
 	},
 	
 	removeBuilding: function(building) {
@@ -267,18 +249,6 @@ var World = {
 	
 	getDude: function() {
 		return dude;
-	},
-	
-	findClosestMonster: function() {
-		return findClosest(function(thing) {
-			return thing.hostile && thing.isAlive();
-		});
-	},
-	
-	findClosestLoot: function() {
-		return findClosest(function(thing) {
-			return thing.lootable && !thing.gone;
-		});
 	},
 	
 	canMove: function() {
@@ -362,18 +332,6 @@ function clearPriorityIfNeeded(building) {
 	}
 }
 
-function findClosest(filter) {
-	var closest = null;
-	for(var i in stuff) {
-		var thing = stuff[i];
-		if((filter == null || filter(thing) == true) && (closest == null || 
-				dude.distanceFrom(thing) < dude.distanceFrom(closest))) {
-			closest = thing;
-		}
-	}
-	return closest;
-}
-
 function canBuild(buildingType) {
 	return canBuildIn(buildingType, {
 		level: GameState.level,
@@ -404,13 +362,27 @@ function addMana(num) {
 }
 
 function spawnMonster(monsterType, tiles, side) {
-	var monster = MonsterFactory.getMonster(monsterType, {
+	var monster = Field.spawn(field, monsterType, MONSTERS[monsterType], side, {
 		tiles: tiles,
 		multiplier: monsterMultiplier(GameState.prestige)
 	});
-	Graphics.addMonster(monster, side);
-	stuff.push(monster);
-	return monster;
+	FieldView.addMonster(monster);
+}
+
+function dropChest(x, forceLoot) {
+	// Chests do not survive the daylight
+	if(field == null || !clock.night) {
+		return;
+	}
+	FieldView.addChest(Field.addChest(field, x), forceLoot);
+}
+
+function carryTask(block, building) {
+	return { type: 'carry', to: building.dudeSpot(), block: block, building: building };
+}
+
+function buildTask(building) {
+	return { type: 'build', at: building.dudeSpot(), building: building };
 }
 
 function updateGem() {
@@ -600,29 +572,32 @@ function makeStuffHappen() {
 	// Cheap hack to implement pause
 	if(Engine.paused) return;
 
-	if(hasteTick && World.hasEffect('haste') && !dude.paused) {
-		runEntity(dude);
-	} else if(!hasteTick) {
-		var numEnemies = 0;
+	if(field != null) {
+		field.haste = World.hasEffect('haste');
+		field.timeStopped = World.hasEffect('freezeTime');
+		field.keeperFrozen = World.hasEffect('frozen');
+		handleFieldEvents(Field.tick(field, fieldHost));
+		FieldView.draw(field);
+		var dragonOut = theDragon != null && theDragon.isAlive() ? 1 : 0;
+		GameState.setIfHigher('ATONCE', Field.living(field).length + dragonOut);
+	}
+
+	// Everything else still runs itself: the sun and moon, buildings, effects and the dragon
+	if(!hasteTick) {
+		var frozen = effects['freezeTime'] != null;
 		for(var i = 0; i < stuff.length; i++) {
 			var entity = stuff[i];
-			
-			var frozen = effects['freezeTime'] != null && entity != dude;
-			
-			if((entity.hostile || entity.lootable) && !clock.night) {
-				// Monsters and chests cannot survive the daylight
+			if(entity.hostile && !clock.night) {
+				// The dragon cannot survive the daylight
 				if(entity.action != null) {
 					entity.action.terminateAction(entity);
 				}
 				entity.el().remove();
 				entity.gone = true;
-			} 
+			}
 			if(!entity.gone) {
 				if(!entity.paused && !frozen) {
 					runEntity(entity);
-				}
-				if(entity.hostile) {
-					numEnemies++;
 				}
 			} else if(entity.hostile) {
 				if(clock.night && !entity.wiped) {
@@ -633,31 +608,119 @@ function makeStuffHappen() {
 				GameState.count('KILLED', 1);
 				stuff.splice(i, 1);
 				i--;
-			} else if(entity.lootable) {
-				stuff.splice(i, 1);
-				i--;
-			} else if(entity == dude) {
-				// Dude is dead. Long live the dude.
-				stuff.splice(i, 1);
-				i--;
-				inTransition = true;
-				GameState.count('DEATHS', 1);
-				GameState.savePersistents();
-				Graphics.fadeOut(function() {
-					setTimeout(function() {
-						stuff.length = 0;
-						Graphics.setNight(false);
-					}, 500);
-					setTimeout(function() {
-						Engine.init();
-					}, 1900);
-				});
 			}
 		}
-		GameState.setIfHigher('ATONCE', numEnemies);
 	}
-	
+
 	hasteTick = !hasteTick;
+}
+
+// What the field needs from the rest of the game
+var fieldHost = {
+	keeperAlive: function() {
+		return dude.isAlive();
+	},
+	keeperBlow: function() {
+		var sharp = dude.hasSword();
+		return { damage: dude.getDamage(), sharp: sharp };
+	},
+	hurtKeeper: function(damage, by) {
+		dude.takeDamage(damage, { options: { monsterClass: by } });
+	},
+	nextTask: function() {
+		return World.nextTask();
+	}
+};
+
+function handleFieldEvents(events) {
+	events.forEach(function(event) {
+		switch(event.type) {
+		case 'cue':
+			EventManager.trigger(event.name);
+			break;
+		case 'shot':
+			FieldView.shoot(event.projectile);
+			break;
+		case 'spell':
+			GameBoard.addEffectRandomly(event.spell);
+			EventManager.trigger('lichSpell');
+			break;
+		case 'monsterGone':
+			monsterGone(event.monster);
+			break;
+		case 'chestOpened':
+			EventManager.trigger('pickupLoot', [FieldView.chest(event.chest.id), _debugMultiplier]);
+			Field.removeChest(field, event.chest.id);
+			break;
+		case 'pickedUp':
+			EventManager.trigger('blockUp');
+			Graphics.pickUpBlock(event.task.block);
+			GameState.removeBlock(event.task.block);
+			dude.carrying = event.task.block;
+			break;
+		case 'delivered':
+			dude.carrying = null;
+			event.task.building.requiredResources[event.task.block.options.type.className]--;
+			EventManager.trigger('blockDown', [event.task.block, event.task.building]);
+			break;
+		case 'hammering':
+			Graphics.raiseBuilding(event.task.building, function() {});
+			break;
+		case 'built':
+			buildingRaised(event.task.building);
+			break;
+		case 'abandoned':
+			if(event.task.type == 'carry' && event.carrying) {
+				Resources.returnBlock(event.task.block);
+				dude.carrying = null;
+			} else if(event.task.type == 'build') {
+				Graphics.sinkBuilding(event.task.building);
+			}
+			break;
+		case 'keeperDied':
+			keeperDied();
+			break;
+		}
+	});
+}
+
+function monsterGone(monster) {
+	var view = FieldView.monster(monster.id);
+	if(clock.night && !monster.wiped) {
+		dude.gainXp(monster.xp * _debugMultiplier);
+		advanceTime();
+	}
+	if(view) {
+		EventManager.trigger('monsterKilled', [view]);
+	}
+	GameState.count('KILLED', 1);
+	FieldView.bury(monster.id);
+}
+
+function buildingRaised(building) {
+	building.built = true;
+	EventManager.trigger('buildingComplete', [building]);
+	built(building.options.type);
+	// Remove replaced building, if necessary
+	if(building.options.type.replaces != null) {
+		World.removeBuilding(building.getReplaces(GameState));
+	}
+}
+
+function keeperDied() {
+	// Dude is dead. Long live the dude.
+	inTransition = true;
+	GameState.count('DEATHS', 1);
+	GameState.savePersistents();
+	Graphics.fadeOut(function() {
+		setTimeout(function() {
+			stuff.length = 0;
+			Graphics.setNight(false);
+		}, 500);
+		setTimeout(function() {
+			Engine.init();
+		}, 1900);
+	});
 }
 
 function runEntity(entity) {
@@ -670,12 +733,14 @@ function runEntity(entity) {
 
 function launchDude() {
 	dude = new Dude();
-	stuff.push(dude);
 	dude.makeIdle();
-	dude.action = ActionFactory.getAction("Climb");
-	dude.action.doAction(dude);
 	Graphics.addToWorld(dude);
-	dude.p(Graphics.worldWidth() / 2);
+	field = Field.createField(Graphics.worldWidth());
+	field.night = clock.night;
+	field.casual = Options.get('casualMode', false);
+	Field.climbIn(field);
+	FieldView.init(dude);
+	dude.p(field.keeper.x);
 	Graphics.setPosition(dude, dude.p());
 }
 
@@ -747,8 +812,16 @@ function phaseTransition() {
 		inTransition = false;
 	});
 	var duskChanged = Day.startPhase(clock, World.options, !clock.night);
-	if(dude.action != null) {
-		dude.action.terminateAction(dude);
+	if(!clock.night) {
+		// Open all chests
+		field.chests.forEach(function(chest) {
+			EventManager.trigger('pickupLoot', [FieldView.chest(chest.id), World.getDebugMultiplier()]);
+		});
+	}
+	handleFieldEvents(Field.setNight(field, clock.night));
+	if(!clock.night) {
+		FieldView.clear();
+		field.outsiders = [];
 	}
 	announceDusk(duskChanged);
 	dude.shield = 0;
@@ -760,12 +833,6 @@ function phaseTransition() {
 
 		console.log('casual night? ' + casualNight);
 
-		// Open all chests
-		stuff.forEach(function(thing) {
-			if(thing.lootable) {
-				EventManager.trigger('pickupLoot', [thing, World.getDebugMultiplier()]);
-			}
-		});
 		theDragon = null;
 		streak++;
 		GameState.ward = 0;
@@ -785,31 +852,24 @@ function phaseTransition() {
 }
 
 function difficultyToggle(casualMode) {
+	if(field != null) {
+		field.casual = casualMode;
+	}
 	if(clock.night && casualMode) {
 		casualNight = true;
 	}
 }
 
 function damageAllMonsters(damage) {
-	for(var i in stuff) {
-		var entity = stuff[i];
-		if(entity.hostile && entity.isAlive()) {
-			entity.takeDamage(damage);
-			if(!entity.isAlive() && !entity.isBoss) {
-				entity.wiped = true;
-			}
-		}
+	handleFieldEvents(Field.damageAll(field, damage));
+	if(theDragon != null && theDragon.isAlive()) {
+		theDragon.takeDamage(damage);
 	}
 }
 
 function wipeMonsters() {
-	for(var i in stuff) {
-		var entity = stuff[i];
-		if(entity.hostile && entity.isAlive() && !entity.isBoss) {
-			entity.wiped = true;
-			entity.die();
-			EventManager.trigger('monsterKilled', [entity]);
-		}
+	if(field != null) {
+		Field.wipeOut(field);
 	}
 }
 
@@ -848,6 +908,14 @@ function callDragon() {
 		multiplier: dragonMultiplier(GameState.prestige)
 	});
 	stuff.push(theDragon);
+	field.outsiders = [{
+		id: 0,
+		x: function() { return theDragon.p(); },
+		width: function() { return theDragon.getHitboxWidth(); },
+		// Out of reach while it lands
+		alive: function() { return theDragon != null && theDragon.hostile && theDragon.isAlive(); },
+		hurt: function(damage) { theDragon.takeDamage(damage); }
+	}];
 	theDragon.action = ActionFactory.getAction('Land');
 	theDragon.action.doAction(theDragon);
 	return theDragon;

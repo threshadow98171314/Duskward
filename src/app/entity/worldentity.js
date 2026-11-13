@@ -139,11 +139,10 @@ worldEntity.prototype.takeDamage = function(damage) {
 };
 
 worldEntity.prototype.die = function() {
+	// Entities that can die say how (the dragon); the rest just stop
 	if(this.action != null) {
 		this.action.terminateAction(this);
 	}
-	this.action = getModule('action/actionfactory').getAction("Die");
-	this.action.doAction(this);
 };
 
 worldEntity.prototype.isAlive = function() {

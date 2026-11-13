@@ -2,12 +2,12 @@ import EventManager from '../eventmanager.js';
 import WorldEntity from './worldentity.js';
 import Graphics from '../graphics/graphics.js';
 import State from '../gamestate.js';
-import ActionFactory from '../action/actionfactory.js';
-import Content from '../gamecontent.js';
 import W from '../world.js';
 import * as Combat from '../../core/combat.ts';
 import * as Progress from '../../core/progress.ts';
 
+// The keeper, as drawn in the world. Where the keeper goes and what they do is up
+// to the field (src/core/field.ts); this holds their health and gear.
 var dude = function() {
 	this._el = null;
 	this.carrying = null;
@@ -37,25 +37,6 @@ dude.prototype.isAlive = function() {
 	return State.health > 0;
 };
 
-dude.prototype.getAnimation = function(label) {
-	if(label == "right" && this.carrying != null) {
-		return 9;
-	}
-	return WorldEntity.prototype.getAnimation.call(this, label);
-};
-
-dude.prototype.think = function() {
-	if(this.isIdle() && this.action == null) {
-		var activity = W.getActivity();
-		if(activity != null) {
-			this.action = activity;
-			this.action.doAction(this);
-			return true;
-		}
-	}
-	return false;
-};
-
 dude.prototype.gainXp = function(xp) {
 	var result = Progress.gainXp(State.level, State.xp, xp);
 	State.xp = result.xp;
@@ -66,9 +47,7 @@ dude.prototype.gainXp = function(xp) {
 		State.health = State.maxHealth();
 		Graphics.updateHealth(State.health, State.maxHealth());
 		EventManager.trigger('levelUp', [State.level]);
-		if(this.action != null) {
-			this.action.terminateAction(this);
-		}
+		W.interruptKeeper();
 	}
 	Graphics.updateExperience(State.xp, this.toLevel());
 };
@@ -111,40 +90,11 @@ dude.prototype.takeDamage = function(damage, damager) {
 			Graphics.updateShield(this.shield, State.maxShield());
 		}
 		State.health = result.health;
-		if(State.health == 0 && this.action) {
-			this.action.terminateAction(this);
-		}
 		if(State.health == 0) {
 			EventManager.trigger('dudeDeath', [damager ? damager.options.monsterClass : "unknown"]);
 		}
 		Graphics.updateHealth(State.health, State.maxHealth());
 	}
-};
-
-dude.prototype.animate = function() {
-	WorldEntity.prototype.animate.call(this);
-	if(this.carrying != null) {
-		if(this.frame == 1) {
-			this.held.css({transform: 'translate3d(0px, 1px, 0px)'});
-		} else if(this.frame == 3) {
-			this.held.css({transform: 'translate3d(0px, -1px, 0px)'});
-		} else {
-			this.held[0].style = '';
-		}
-	}
-};
-
-dude.prototype.animationOnce = function(row) {
-	// Unarmed animation
-	if((row == 3 || row == 4) && this.sword == 0) {
-		row += 8;
-	}
-	WorldEntity.prototype.animationOnce.call(this, row);
-};
-
-dude.prototype.speed = function() {
-	var speed = this.options.speed / W.getDebugMultiplier();
-	return !W.hasEffect('haste') ? speed / 2 : speed / 8;
 };
 
 dude.prototype.hasSword = function() {

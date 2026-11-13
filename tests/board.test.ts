@@ -113,6 +113,26 @@ describe('resolveWave', () => {
 		expect(board.chain).toBe(0);
 	});
 
+	it('settles long chains: from the seventh wave, new tiles stay out of line when they can', () => {
+		// The cell left of "aa" fills second; an 'a' there would complete a line
+		const weights = { a: 1, b: 1, c: 1 };
+		let early = 0;
+		for (let seed = 0; seed < 50; seed++) {
+			for (const chain of [0, 6]) {
+				const board = boardOf(['xbc', 'xaa', 'xcb', 'bac']);
+				board.chain = chain;
+				resolveWave(board, { weights, gems: false }, createRandom(seed));
+				if (chain === 6) {
+					expect(hasLine(board), 'seed ' + seed).toBe(false);
+				} else if (hasLine(board)) {
+					early++;
+				}
+			}
+		}
+		// Early in a chain, new tiles still land in line as often as chance has it
+		expect(early).toBeGreaterThan(5);
+	});
+
 	it('turns a line of four into a lantern, and a gem by day', () => {
 		const board = boardOf([
 			'abca',

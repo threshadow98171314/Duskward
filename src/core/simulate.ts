@@ -1,9 +1,11 @@
 // Plays the board without a screen, to see how the rules work out over many moves:
 // how long chains run, how often the board runs out of moves, how much a move
-// gathers, and how often power tiles turn up. The player picks among the swaps
-// that make a match at random, and the same seed always plays the same game.
+// gathers, how often power tiles turn up, and how often a move earns a bounty (as
+// if by day). The player picks among the swaps that make a match at random, and
+// the same seed always plays the same game.
 
 import { type Board, createBoard, fillBoard, resolveWave, swapTiles, type TileWeights, validMoves } from './board.ts';
+import { bounty } from './harvest.ts';
 import { createRandom } from './random.ts';
 
 export interface SimulationOptions {
@@ -29,6 +31,9 @@ export interface SimulationReport {
 	// Power tiles earned per 100 moves
 	lanternsPer100: number;
 	sunsPer100: number;
+	// Moves that gathered enough kinds for a bounty, per 100 moves, and the extra tiles bounties added per move
+	bountiesPer100: number;
+	bountyPerMove: number;
 }
 
 export function simulate(options: SimulationOptions): SimulationReport {
@@ -40,7 +45,7 @@ export function simulate(options: SimulationOptions): SimulationReport {
 
 	const chains: number[] = [];
 	const gathered: Record<string, number> = {};
-	let waves = 0, reshuffles = 0, lanterns = 0, suns = 0;
+	let waves = 0, reshuffles = 0, lanterns = 0, suns = 0, bounties = 0, bountyTiles = 0;
 	for (let move = 0; move < options.moves; move++) {
 		let moves = validMoves(board);
 		if (moves.length === 0) {
@@ -51,11 +56,13 @@ export function simulate(options: SimulationOptions): SimulationReport {
 		const [a, b] = moves[player.int(moves.length)];
 		swapTiles(board, a, b);
 		let chain = 0;
+		const gatheredThisMove: Record<string, number> = {};
 		for (let wave = resolveWave(board, context, tiles); wave.matched; wave = resolveWave(board, context, tiles)) {
 			chain = wave.chain;
 			waves++;
 			for (const [tile, count] of Object.entries(wave.gathered)) {
 				gathered[tile] = (gathered[tile] ?? 0) + count;
+				gatheredThisMove[tile] = (gatheredThisMove[tile] ?? 0) + count;
 			}
 			for (const power of board.pendingPowers) {
 				if (power.type === 'sunPower') {
@@ -66,6 +73,11 @@ export function simulate(options: SimulationOptions): SimulationReport {
 			}
 		}
 		chains.push(chain);
+		const earned = bounty(gatheredThisMove);
+		if (earned !== null) {
+			bounties++;
+			bountyTiles += Object.values(earned.extra).reduce((sum, n) => sum + n, 0);
+		}
 		options.onMove?.(board);
 	}
 
@@ -82,5 +94,7 @@ export function simulate(options: SimulationOptions): SimulationReport {
 		gathered: Object.fromEntries(Object.entries(gathered).sort()),
 		lanternsPer100: round(lanterns / options.moves * 100),
 		sunsPer100: round(suns / options.moves * 100),
+		bountiesPer100: round(bounties / options.moves * 100),
+		bountyPerMove: round(bountyTiles / options.moves),
 	};
 }

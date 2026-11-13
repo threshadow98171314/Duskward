@@ -1,7 +1,8 @@
 // What gathered tiles do. By day they feed the village: grain heals the keeper,
 // gems give mana, and everything else goes to the stores, multiplied by the
 // buildings that work it. By night they arm the keeper or call up monsters. At
-// dusk, everything cleared also strengthens the ward for the coming night.
+// dusk, everything cleared also strengthens the ward for the coming night. A move
+// that gathers many kinds by day earns a bounty on top.
 
 export interface ResourceRule {
 	className: string;
@@ -70,6 +71,35 @@ export function harvestResource(
 		return { type: 'mana', amount };
 	}
 	return { type: 'store', resource: className, amount };
+}
+
+// A move that gathers four or more kinds of resource by day earns a bounty: half as
+// much again of each kind it gathered for every kind past three. Gems are not a
+// resource here, so leave them out of what is passed in.
+export const BOUNTY_KINDS = 4;
+export const BOUNTY_PER_KIND = 0.5;
+
+export interface Bounty {
+	kinds: number;
+	percent: number;
+	// Extra tiles of each kind, to be harvested like the ones the move gathered
+	extra: Record<string, number>;
+}
+
+export function bounty(gathered: Record<string, number>): Bounty | null {
+	const kinds = Object.keys(gathered).filter((kind) => gathered[kind] > 0);
+	if (kinds.length < BOUNTY_KINDS) {
+		return null;
+	}
+	const rate = BOUNTY_PER_KIND * (kinds.length - BOUNTY_KINDS + 1);
+	const extra: Record<string, number> = {};
+	for (const kind of kinds) {
+		const amount = Math.floor(gathered[kind] * rate);
+		if (amount > 0) {
+			extra[kind] = amount;
+		}
+	}
+	return { kinds: kinds.length, percent: Math.round(rate * 100), extra };
 }
 
 // Everything a wave gathered, for a situation that stays the same throughout

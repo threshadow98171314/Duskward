@@ -3,7 +3,7 @@ import Content from '../src/app/gamecontent.js';
 import { absorb, dragonMultiplier, heroDamage, maxShield, maxSword, monsterMultiplier, monsterStat, strength, swordDamage }
 	from '../src/core/combat.ts';
 import { advanceClock, createClock, extendDay, startPhase } from '../src/core/day.ts';
-import { harvest, type HarvestSituation, type ResourceRule } from '../src/core/harvest.ts';
+import { bounty, harvest, type HarvestSituation, type ResourceRule } from '../src/core/harvest.ts';
 import { canBuild, gainXp, MAX_LEVEL, maxHealth, xpToLevel } from '../src/core/progress.ts';
 
 const lengths = { dayMoves: 20, nightMoves: 15 };
@@ -116,6 +116,23 @@ describe('harvest', () => {
 		expect(harvest({ wood: 3 }, situation({ night: true, dusk: true, inTransition: true }), resources)).toEqual([
 			{ type: 'store', resource: 'wood', amount: 3 },
 		]);
+	});
+});
+
+describe('bounty', () => {
+	it('needs four kinds in one move', () => {
+		expect(bounty({ grain: 9, wood: 9, stone: 9 })).toBeNull();
+		expect(bounty({ grain: 9, wood: 9, stone: 9, clay: 0 })).toBeNull();
+		expect(bounty({ grain: 4, wood: 3, stone: 6, clay: 3 })).toEqual({
+			kinds: 4, percent: 50, extra: { grain: 2, wood: 1, stone: 3, clay: 1 },
+		});
+	});
+
+	it('grows by half again for every kind past three', () => {
+		expect(bounty({ grain: 3, wood: 3, stone: 3, clay: 3, cloth: 3 })).toMatchObject({ kinds: 5, percent: 100 });
+		expect(bounty({ grain: 3, wood: 3, stone: 3, clay: 3, cloth: 3, lantern: 3 })).toEqual({
+			kinds: 6, percent: 150, extra: { grain: 4, wood: 4, stone: 4, clay: 4, cloth: 4, lantern: 4 },
+		});
 	});
 });
 

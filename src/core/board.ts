@@ -5,6 +5,8 @@
 // or uses timers: each function changes the board it is given and reports what
 // happened, and the caller animates it. A swap is settled one wave of matches at a
 // time, because the world reacts between waves, e.g. by spawning monsters at night.
+// The longer a chain runs, the less likely new tiles are to land in line, so even a
+// board of few kinds settles within a few dozen waves.
 
 import type { Random } from './random.ts';
 
@@ -67,6 +69,13 @@ export const EXPLOSION_DAMAGE = 30;
 
 const GAUGE_PER_EXTRA_TILE = 5;
 const GAUGE_PER_CHAIN = 10;
+
+// Long chains settle down. From the fourth wave of a move, new tiles are a quarter
+// less likely each wave to land in line with the tiles around them, and from the
+// seventh wave they only do when every kind would. Without this, a board of three
+// kinds can chain for hundreds of waves on a single move.
+const SETTLE_FROM_WAVE = 4;
+const SETTLE_PER_WAVE = 0.25;
 
 const EFFECTS: Record<EffectType, { duration: number; permanent: boolean; immovable: boolean }> = {
 	// Left by clearing four tiles at once; gathers its row and column when matched
@@ -306,7 +315,8 @@ export function resolveWave(board: Board, context: WaveContext, random: Random):
 		}
 	}
 
-	// Let the remaining tiles fall, then drop new ones in at the top
+	// Let the remaining tiles fall
+	const neededIn: number[] = [];
 	for (let column = 0; column < board.columns; column++) {
 		const kept: { tile: Tile; effect: Effect | null }[] = [];
 		for (let row = 0; row < board.rows; row++) {
@@ -316,19 +326,26 @@ export function resolveWave(board: Board, context: WaveContext, random: Random):
 			}
 		}
 		const needed = board.rows - kept.length;
+		neededIn.push(needed);
+		for (let row = 0; row < board.rows; row++) {
+			const i = row * board.columns + column;
+			board.tiles[i] = row < needed ? null : kept[row - needed].tile;
+			board.effects[i] = row < needed ? null : kept[row - needed].effect;
+		}
+	}
+
+	// Then drop new ones in at the top, bottom first
+	const settling = settlingFor(wave.chain);
+	for (let column = 0; column < board.columns; column++) {
+		const needed = neededIn[column];
 		if (needed === 0) {
 			continue;
 		}
 		const gems = context.gems ? (gemsInColumn.get(column) ?? 0) : 0;
-		const fresh: Tile[] = [];
 		for (let row = needed - 1; row >= 0; row--) {
-			fresh[row] = row < gems ? GEM : pickTile({ ...context.weights }, random);
-			wave.added.push({ row, column, tile: fresh[row] });
-		}
-		for (let row = 0; row < board.rows; row++) {
-			const i = row * board.columns + column;
-			board.tiles[i] = row < needed ? fresh[row] : kept[row - needed].tile;
-			board.effects[i] = row < needed ? null : kept[row - needed].effect;
+			const tile = row < gems ? GEM : pickNewTile(board, { row, column }, context.weights, settling, random);
+			board.tiles[row * board.columns + column] = tile;
+			wave.added.push({ row, column, tile });
 		}
 		// Big lines leave a power tile on one of the new tiles in their column
 		powers.filter((power) => power.column === column).forEach((power, k) => {
@@ -432,6 +449,29 @@ function effectTargets(board: Board, type: EffectType, i: number, tile: Tile): {
 		case 'shadowBind':
 			return [];
 	}
+}
+
+// How much less likely new tiles are to land in line, on this wave of a chain
+function settlingFor(chain: number): number {
+	return Math.min(1, Math.max(0, (chain - SETTLE_FROM_WAVE + 1) * SETTLE_PER_WAVE));
+}
+
+// A new tile for an empty cell, with the cells below it already filled
+function pickNewTile(board: Board, at: Position, weights: TileWeights, settling: number, random: Random): Tile {
+	const counts = { ...weights };
+	if (settling > 0) {
+		const i = at.row * board.columns + at.column;
+		const kinds = Object.keys(counts);
+		const lining = kinds.filter((tile) => {
+			board.tiles[i] = tile;
+			return inLine(board, at);
+		});
+		board.tiles[i] = null;
+		if (lining.length < kinds.length) {
+			lining.forEach((tile) => { counts[tile] *= 1 - settling; });
+		}
+	}
+	return pickTile(counts, random);
 }
 
 function pickTile(counts: TileWeights, random: Random): Tile {

@@ -2,7 +2,6 @@ import E from './eventmanager.js';
 import S from './gamestate.js';
 import WorldEffect from './entity/worldeffect.js';
 import { getModule } from './modules.js';
-import B from './gameboard.js';
 
 var Content = {
 	
@@ -876,64 +875,6 @@ var Content = {
 			}
 		}
 	},
-
-	TileEffects: {
-		// Left by clearing four tiles at once. Clears its row and column when matched.
-		lanternPower: {
-			permanent: true,
-			onMatch: function(row, column) {
-				var tileMods = [];
-				for(var r = 0; r < B.options.rows; r++) {
-					tileMods.push({ row: r, column: column, effect: 'collect' });
-				}
-				for(var c = 0; c < B.options.columns; c++) {
-					tileMods.push({ row: row, column: c, effect: 'collect' });
-				}
-				E.trigger('lanternBurst', [{ row: row, column: column }]);
-				return tileMods;
-			}
-		},
-		// Left by clearing five or more tiles at once. Clears every tile of its kind when matched.
-		sunPower: {
-			permanent: true,
-			onMatch: function(row, column, tileChar) {
-				E.trigger('sunBurst', [{ row: row, column: column }]);
-				return B.findTiles(tileChar).map(function(pos) {
-					return { row: pos.row, column: pos.col, effect: 'collect' };
-				});
-			}
-		},
-		// Cast by shades at night. The tile can't be moved until a neighbour is cleared.
-		shadowBind: {
-			permanent: true,
-			immovable: true,
-			onMatch: function() {
-				return [];
-			}
-		},
-		explosive: {
-			duration: 5,
-			onMatch: function(row, column) {
-				// a'splode!
-				var tileMods = [];
-				for(var r = -1; r < 2; r++) {
-					if(row + r < 0 || row + r >= B.options.rows) continue;
-					for(var c = -1; c < 2; c++) {
-						if(column + c < 0 || column + c >= B.options.columns) continue;
-						tileMods.push({
-							row: row + r,
-							column: column + c,
-							effect: 'remove'
-						});
-					}
-				}
-				E.trigger("hurtDude", [30]);
-				E.trigger("tileExplode", [{row: row, column: column}]);
-				
-				return tileMods;
-			}
-		}
-	},
 	
 	getResourceType: function(query) {
 		for(var c in this.ResourceType) {
@@ -952,10 +893,6 @@ var Content = {
 			}
 		}
 		return null;
-	},
-	
-	getEffectType: function(effectString) {
-		return this.TileEffects[effectString];
 	}
 };
 

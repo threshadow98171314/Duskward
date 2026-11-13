@@ -179,6 +179,12 @@ export function findTiles(board: Board, tile: Tile): Position[] {
 
 // Whether any swap the player can make (bound tiles cannot move) would make a match
 export function movesAvailable(board: Board): boolean {
+	return validMoves(board, 1).length > 0;
+}
+
+// The swaps that would make a match, up to limit of them
+export function validMoves(board: Board, limit = Infinity): [Position, Position][] {
+	const moves: [Position, Position][] = [];
 	for (let row = 0; row < board.rows; row++) {
 		for (let column = 0; column < board.columns; column++) {
 			for (const [dr, dc] of [[0, 1], [1, 0]]) {
@@ -192,12 +198,15 @@ export function movesAvailable(board: Board): boolean {
 				const matches = inLine(board, a) || inLine(board, b);
 				swapTiles(board, a, b);
 				if (matches) {
-					return true;
+					moves.push([a, b]);
+					if (moves.length >= limit) {
+						return moves;
+					}
 				}
 			}
 		}
 	}
-	return false;
+	return moves;
 }
 
 // Settles one wave: places pending power tiles, clears every line of three or more,

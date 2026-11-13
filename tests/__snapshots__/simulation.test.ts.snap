@@ -1,0 +1,88 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`simulated play > plays out like this at each stage of the village 1`] = `
+{
+  "3 kinds": {
+    "chains": {
+      "max": 310,
+      "median": 9,
+      "p90": 69,
+      "p99": 162,
+    },
+    "gathered": {
+      "g": 470943,
+      "s": 470541,
+      "w": 472402,
+    },
+    "gatheredPerMove": 706.9,
+    "lanternsPer100": 2867.3,
+    "moves": 2000,
+    "reshuffles": 0,
+    "sunsPer100": 1109.4,
+    "waves": 48446,
+  },
+  "4 kinds": {
+    "chains": {
+      "max": 28,
+      "median": 2,
+      "p90": 7,
+      "p99": 15,
+    },
+    "gathered": {
+      "c": 13366,
+      "g": 13440,
+      "s": 13631,
+      "w": 13408,
+    },
+    "gatheredPerMove": 26.9,
+    "lanternsPer100": 76,
+    "moves": 2000,
+    "reshuffles": 0,
+    "sunsPer100": 13.4,
+    "waves": 6398,
+  },
+  "5 kinds": {
+    "chains": {
+      "max": 11,
+      "median": 1,
+      "p90": 4,
+      "p99": 7,
+    },
+    "gathered": {
+      "c": 3721,
+      "g": 3826,
+      "l": 3782,
+      "s": 3796,
+      "w": 3821,
+    },
+    "gatheredPerMove": 9.5,
+    "lanternsPer100": 20,
+    "moves": 2000,
+    "reshuffles": 0,
+    "sunsPer100": 1.9,
+    "waves": 3775,
+  },
+  "6 kinds": {
+    "chains": {
+      "max": 7,
+      "median": 1,
+      "p90": 3,
+      "p99": 5,
+    },
+    "gathered": {
+      "c": 2306,
+      "f": 1182,
+      "g": 2377,
+      "l": 2263,
+      "s": 2353,
+      "w": 2268,
+    },
+    "gatheredPerMove": 6.4,
+    "lanternsPer100": 10.7,
+    "moves": 2000,
+    "reshuffles": 0,
+    "sunsPer100": 0.7,
+    "waves": 3053,
+  },
+}
+`;

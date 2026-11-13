@@ -5,8 +5,9 @@ import State from '../gamestate.js';
 import ActionFactory from '../action/actionfactory.js';
 import Content from '../gamecontent.js';
 import W from '../world.js';
+import * as Combat from '../../core/combat.ts';
+import * as Progress from '../../core/progress.ts';
 
-var MAX_LEVEL = 26;
 var dude = function() {
 	this._el = null;
 	this.carrying = null;
@@ -56,33 +57,24 @@ dude.prototype.think = function() {
 };
 
 dude.prototype.gainXp = function(xp) {
-	xp = xp || 0;
-	State.xp += xp;
-	if(isNaN(State.xp)){
-		State.xp = 0;
-	}
-	while(State.xp >= this.toLevel()) {
-		if(State.level >= MAX_LEVEL) {
-			State.xp = this.toLevel() - 1;
-		} else {
-			State.xp -= this.toLevel();
-			State.level++;
-			State.counts.LEVEL = State.level;
-			Graphics.levelUp(this);
-			State.health = State.maxHealth();
-			Graphics.updateHealth(State.health, State.maxHealth());
-			EventManager.trigger('levelUp', [State.level]);
-			if(this.action != null) {
-				this.action.terminateAction(this);
-			}
+	var result = Progress.gainXp(State.level, State.xp, xp);
+	State.xp = result.xp;
+	for(var i = 0; i < result.levelsGained; i++) {
+		State.level++;
+		State.counts.LEVEL = State.level;
+		Graphics.levelUp(this);
+		State.health = State.maxHealth();
+		Graphics.updateHealth(State.health, State.maxHealth());
+		EventManager.trigger('levelUp', [State.level]);
+		if(this.action != null) {
+			this.action.terminateAction(this);
 		}
 	}
 	Graphics.updateExperience(State.xp, this.toLevel());
 };
 
 dude.prototype.toLevel = function() {
-	// 40, 160, 360, 640, 1000, 1440, 1960, 2560, 3240, 4000...
-	return 40 * Math.pow(State.level, 2);
+	return Progress.xpToLevel(State.level);
 };
 
 dude.prototype.heal = function(amount) {
@@ -92,39 +84,33 @@ dude.prototype.heal = function(amount) {
 };
 
 dude.prototype.getDamage = function() {
-	
-	// 1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 3, 3...
-	var strengthDamage = State.level < 7 ? 1 : Math.floor((State.level - 1) / 3);
-	
-	if(this.sword > 0) {
+	var hit = Combat.heroDamage(State.level, this.sword, State.highestTileLevel('stone'));
+	if(hit.usesSword) {
 		this.sword--;
 		Graphics.updateSword(this.sword, State.maxSword());
-		return State.swordDamage() + strengthDamage;
 	}
-	
-	return strengthDamage;
+	return hit.damage;
 };
 
 dude.prototype.takeDamage = function(damage, damager) {
 	if(State.health > 0) {
-		if(W.hasEffect('frozen')) {
-			damage /= 2;
-		}
-		// The ward raised at dusk takes the first hits
-		if(State.ward > 0) {
-			var warded = damage > State.ward ? State.ward : damage;
-			State.ward -= warded;
-			damage -= warded;
+		// The ward raised at dusk takes the first hits, then the shield
+		var hadWard = State.ward > 0, hadShield = this.shield > 0;
+		var result = Combat.absorb(damage, {
+			health: State.health,
+			ward: State.ward || 0,
+			shield: this.shield || 0,
+			frozen: W.hasEffect('frozen')
+		});
+		State.ward = result.ward;
+		if(hadWard) {
 			EventManager.trigger('wardChanged', [State.ward, State.maxWard()]);
 		}
-		if(this.shield > 0) {
-			var blocked = damage > this.shield ? this.shield : damage;
-			this.shield -= blocked;
-			damage -= blocked;
+		this.shield = result.shield;
+		if(hadShield) {
 			Graphics.updateShield(this.shield, State.maxShield());
 		}
-		State.health -= damage;
-		State.health = State.health < 0 ? 0 : State.health;
+		State.health = result.health;
 		if(State.health == 0 && this.action) {
 			this.action.terminateAction(this);
 		}

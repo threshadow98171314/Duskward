@@ -36,37 +36,57 @@ export type HarvestEffect =
 	| { type: 'mana'; amount: number }
 	| { type: 'store'; resource: string; amount: number };
 
+// The ward raised at dusk by everything cleared at once; null when it is not dusk
+export function duskWard(gathered: Record<string, number>, situation: HarvestSituation): number | null {
+	if (!situation.dusk || situation.inTransition) {
+		return null;
+	}
+	return Object.values(gathered).reduce((sum, n) => sum + n, 0);
+}
+
+// What one kind of gathered tile does. An effect can change the situation, e.g.
+// lanterns can bring the dawn, so the next kind should be read against a fresh one.
+export function harvestResource(
+	className: string,
+	count: number,
+	situation: HarvestSituation,
+	rule: (className: string) => ResourceRule,
+): HarvestEffect | null {
+	const resource = rule(className);
+	if (situation.night && !situation.inTransition) {
+		const effect = nightEffect(resource, situation);
+		return effect === null ? null : toNightEffect(effect, count);
+	}
+	let amount = count;
+	for (const [building, multiplier] of Object.entries(resource.multipliers ?? {})) {
+		if (situation.hasBuilding(building, true)) {
+			amount *= multiplier;
+		}
+	}
+	amount *= situation.multiplier;
+	if (className === 'grain') {
+		return { type: 'heal', amount };
+	} else if (className === 'mana') {
+		return { type: 'mana', amount };
+	}
+	return { type: 'store', resource: className, amount };
+}
+
+// Everything a wave gathered, for a situation that stays the same throughout
 export function harvest(
 	gathered: Record<string, number>,
 	situation: HarvestSituation,
 	rule: (className: string) => ResourceRule,
 ): HarvestEffect[] {
 	const effects: HarvestEffect[] = [];
-	if (situation.dusk && !situation.inTransition) {
-		effects.push({ type: 'ward', amount: Object.values(gathered).reduce((sum, n) => sum + n, 0) });
+	const ward = duskWard(gathered, situation);
+	if (ward !== null) {
+		effects.push({ type: 'ward', amount: ward });
 	}
 	for (const [className, count] of Object.entries(gathered)) {
-		const resource = rule(className);
-		if (situation.night && !situation.inTransition) {
-			const effect = nightEffect(resource, situation);
-			if (effect !== null) {
-				effects.push(toNightEffect(effect, count));
-			}
-			continue;
-		}
-		let amount = count;
-		for (const [building, multiplier] of Object.entries(resource.multipliers ?? {})) {
-			if (situation.hasBuilding(building, true)) {
-				amount *= multiplier;
-			}
-		}
-		amount *= situation.multiplier;
-		if (className === 'grain') {
-			effects.push({ type: 'heal', amount });
-		} else if (className === 'mana') {
-			effects.push({ type: 'mana', amount });
-		} else {
-			effects.push({ type: 'store', resource: className, amount });
+		const effect = harvestResource(className, count, situation, rule);
+		if (effect !== null) {
+			effects.push(effect);
 		}
 	}
 	return effects;

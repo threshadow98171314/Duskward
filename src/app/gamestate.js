@@ -4,6 +4,8 @@ import Block from './entity/block.js';
 import E from './eventmanager.js';
 import Content from './gamecontent.js';
 import { parseSave, serializeSave } from '../platform/save.ts';
+import * as Combat from '../core/combat.ts';
+import * as Progress from '../core/progress.ts';
 
 var loadedSlot = 0;
 var GameState = {
@@ -198,49 +200,34 @@ var GameState = {
 	},
 	
 	maxHealth: function(lvl) {
-		lvl = lvl || this.level;
-		return 20 + 10 * lvl;
+		return Progress.maxHealth(lvl || this.level);
 	},
-	
+
+	// The highest tile level among built buildings that work a kind of tile, or 1:
+	// wood for the sawmill, stone for the blacksmith
+	highestTileLevel: function(tileMod) {
+		var highest = 1;
+		for(var i in this.buildings) {
+			var building = this.buildings[i];
+			if(building.options.type.tileMod == tileMod &&
+					building.options.type.tileLevel > highest &&
+					building.built) {
+				highest = building.options.type.tileLevel;
+			}
+		}
+		return highest;
+	},
+
 	maxShield: function() {
-		var highestMod = 1;
-		for(var i in this.buildings) {
-			var building = this.buildings[i];
-			if(building.options.type.tileMod == 'wood' && 
-					building.options.type.tileLevel > highestMod &&
-					building.built) {
-				highestMod = building.options.type.tileLevel;
-			}
-		}
-		return 3 * highestMod;
+		return Combat.maxShield(this.highestTileLevel('wood'));
 	},
-	
+
 	maxSword: function() {
-		var highestMod = 1;
-		for(var i in this.buildings) {
-			var building = this.buildings[i];
-			if(building.options.type.tileMod == 'stone' && 
-					building.options.type.tileLevel > highestMod &&
-					building.built) {
-				highestMod = building.options.type.tileLevel;
-			}
-		}
-		// 3, 3, 3, 5, 5, 5, 7, 7, 7...
-		return 3 + (Math.floor((highestMod - 1) / 3) * 2);
+		return Combat.maxSword(this.highestTileLevel('stone'));
 	},
-	
+
 	swordDamage: function() {
-		var highestMod = 1;
-		for(var i in this.buildings) {
-			var building = this.buildings[i];
-			if(building.options.type.tileMod == 'stone' && 
-					building.options.type.tileLevel > highestMod &&
-					building.built) {
-				highestMod = building.options.type.tileLevel;
-			}
-		}
-		// 1, 2, 3, 3, 4, 5, 5, 6, 7... ( + punch damage )
-		return 1 + (highestMod - 1) - Math.floor((highestMod - 1) / 3);
+		return Combat.swordDamage(this.highestTileLevel('stone'));
 	},
 	
 	maxMana: function() {

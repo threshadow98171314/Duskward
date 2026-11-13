@@ -17,18 +17,18 @@ import { register } from './modules.js';
 import Engine from './engine.js';
 import GameBoard from './gameboard.js';
 import Options from './gameoptions.js';
-
-var PRESTIGE_MULTIPLIER = 0.5;
-var DUSK_MOVES = 5; // The last moves of each day are dusk
+import * as Day from '../core/day.ts';
+import { duskWard, harvestResource } from '../core/harvest.ts';
+import { canBuild as canBuildIn } from '../core/progress.ts';
+import { dragonMultiplier, monsterMultiplier } from '../core/combat.ts';
 
 var hasteTick = false;
 var dude = null;
 var celestial = null;
 var gem = null;
 var effects = {};
-var isNight = false;
+var clock = Day.createClock();
 var theDragon = null;
-var celestialPosition = 0;
 var stuff = [];
 var inTransition = false;
 var gameLoop = null;
@@ -36,7 +36,6 @@ var star = null;
 var prioritizedBuilding = null;
 var recorded = null;
 var streak = 0;
-var isDusk = false;
 var casualNight = false;
 
 var _debugMultiplier = 1;
@@ -62,12 +61,10 @@ var World = {
 		gem = null;
 		stuff.length = 0;
 		effects = {};
-		isNight = false;
-		celestialPosition = 0;
+		clock = Day.createClock();
 		theDragon = null;
 		var deferredCallbacks = [];
 		streak = 0;
-		isDusk = false;
 		var casualNight = false;
 		
 		EventManager.bind('difficultyChanged', difficultyToggle);
@@ -152,7 +149,7 @@ var World = {
 		if(GameState.health <= 0) {
 			return ActionFactory.getAction("Die");
 		}
-		if(isNight) {
+		if(clock.night) {
 			// Look for a monster to fight
 			var closest = World.findClosestMonster();
 			if(closest != null && dude.attackRange(closest)) {
@@ -286,11 +283,11 @@ var World = {
 	},
 	
 	isNight: function() {
-		return isNight;
+		return clock.night;
 	},
 
 	isDusk: function() {
-		return isDusk;
+		return clock.dusk;
 	},
 	
 	startRecording: function() {
@@ -335,7 +332,7 @@ var World = {
 };
 
 function prioritizeBuilding(building) {
-	if(isNight) return;
+	if(clock.night) return;
 	if(prioritizedBuilding && prioritizedBuilding == building) {
 		// Clear on a second click
 		clearPriorityIfNeeded(building);
@@ -375,28 +372,16 @@ function findClosest(filter) {
 }
 
 function canBuild(buildingType) {
-	if(GameState.prestige && buildingType.prestigeDependency && 
-			!GameState.hasBuilding(Content.getBuildingType(buildingType.prestigeDependency))) {
-		// This building has a building dependency instead of a level dependency for New Game +
-		return false;
-	} else if(buildingType.requiredLevel != null && 
-			GameState.level < buildingType.requiredLevel) {
-		return false;
-	}
 	if(buildingType.test && !buildingType.test(GameState)) {
 		return false;
 	}
-	if(buildingType.requires != null &&
-			!GameState.hasBuilding(Content.getBuildingType(buildingType.requires))) {
-		return false;
-	}
-	if(buildingType.replaces != null) {
-		var replaceType = Content.getBuildingType(buildingType.replaces);
-		if(!GameState.hasBuilding(replaceType)) {
-			return false;
+	return canBuildIn(buildingType, {
+		level: GameState.level,
+		prestige: GameState.prestige,
+		hasBuilding: function(className) {
+			return GameState.hasBuilding(Content.getBuildingType(className));
 		}
-	}
-	return true;
+	});
 }
 
 function fillDefense() {
@@ -420,7 +405,7 @@ function addMana(num) {
 function spawnMonster(monsterType, tiles, side) {
 	var monster = MonsterFactory.getMonster(monsterType, {
 		tiles: tiles,
-		multiplier: (GameState.prestige * PRESTIGE_MULTIPLIER) + 1
+		multiplier: monsterMultiplier(GameState.prestige)
 	});
 	Graphics.addMonster(monster, side);
 	stuff.push(monster);
@@ -485,14 +470,14 @@ function handleRemoveEntity(entity) {
 }
 
 function handleTilesSwapped() {
-	if(!isNight) {
+	if(!clock.night) {
 		advanceTime();
 		makeDudeHungry();
 	}
 }
 
 function handleNoMoreMoves() {
-	if(isNight) {
+	if(clock.night) {
 		// Take damage
 		dude.takeDamage(Math.floor(dude.hp() / 2));
 	} else {
@@ -501,78 +486,67 @@ function handleNoMoreMoves() {
 	}
 }
 
+// What the rules need to know about the world to settle gathered tiles
+function harvestSituation() {
+	return {
+		night: clock.night,
+		dusk: clock.dusk,
+		inTransition: inTransition,
+		dragon: theDragon != null,
+		hasBuilding: function(className, current) {
+			return GameState.hasBuilding(Content.getBuildingType(className), current);
+		},
+		multiplier: _debugMultiplier
+	};
+}
+
 function handleTileClear(resourcesGained, side) {
 	// Everything cleared at dusk strengthens the ward for the coming night
-	if(isDusk && !inTransition) {
-		var cleared = 0;
-		for(var t in resourcesGained) {
-			cleared += resourcesGained[t];
-		}
-		gainWard(cleared);
+	var ward = duskWard(resourcesGained, harvestSituation());
+	if(ward !== null) {
+		gainWard(ward);
 	}
 
-	// Gain resources
+	// One kind at a time: lighting lanterns can bring the dawn partway through
 	for(var typeName in resourcesGained) {
-		var type = Content.getResourceType(typeName);
-		if(isNight && !inTransition) {
-			var effect = null;
-			if(theDragon && type.dragonEffect) {
-				effect = 'dragon:' + type.dragonEffect;
-			} else {
-				for(var b in type.nightEffect) {
-					if(b == "default" || GameState.hasBuilding(Content.getBuildingType(b))) {
-						effect = type.nightEffect[b];
-						break;
-					}
-				}
-			}
-			if(effect != null) {
-				var nightEffect = effect.split(':');
-				switch(nightEffect[0]) {
-				case "dragon":
-					doDragonAttack(nightEffect[1]);
-					break;
-				case "spawn":
-					spawnMonster(nightEffect[1], resourcesGained[typeName], side);
-					break;
-				case "shield":
-					fillDefense();
-					break;
-				case "sword":
-					fillAttack();
-					break;
-				case "dawn":
-					// Lighting lanterns brings the dawn closer
-					advanceTime();
-					break;
-				}
-			}
-		} else {
-			var quantity = resourcesGained[typeName];
-			// Record
-			if(recorded != null) {
-				recorded += quantity;
-			} 
-			// Apply building multipliers
-			if(type.multipliers) {
-				for(var b in type.multipliers) {
-					var bType = Content.getBuildingType(b);
-					if(GameState.hasBuilding(bType, true)) {
-						quantity *= type.multipliers[b];
-					}
-				}
-			}
-			// Apply debug multiplier
-			quantity *= _debugMultiplier;
-			
-			if(type == Content.ResourceType.Grain) {
-				EventManager.trigger("healDude", [quantity]);
-			} else if(type ==  Content.ResourceType.Mana) {
-				addMana(quantity);
-			} else {
-				Resources.collectResource(Content.getResourceType(typeName), quantity);
-			}
+		var situation = harvestSituation();
+		if(recorded != null && !(situation.night && !situation.inTransition)) {
+			recorded += resourcesGained[typeName];
 		}
+		var effect = harvestResource(typeName, resourcesGained[typeName], situation, Content.getResourceType.bind(Content));
+		if(effect != null) {
+			applyHarvest(effect, side);
+		}
+	}
+}
+
+function applyHarvest(effect, side) {
+	switch(effect.type) {
+	case 'dragon':
+		doDragonAttack(effect.attack);
+		break;
+	case 'spawn':
+		spawnMonster(effect.monster, effect.tiles, side);
+		break;
+	case 'shield':
+		fillDefense();
+		break;
+	case 'sword':
+		fillAttack();
+		break;
+	case 'dawn':
+		// Lighting lanterns brings the dawn closer
+		advanceTime();
+		break;
+	case 'heal':
+		EventManager.trigger("healDude", [effect.amount]);
+		break;
+	case 'mana':
+		addMana(effect.amount);
+		break;
+	case 'store':
+		Resources.collectResource(Content.getResourceType(effect.resource), effect.amount);
+		break;
 	}
 }
 
@@ -590,7 +564,7 @@ function makeStuffHappen() {
 			
 			var frozen = effects['freezeTime'] != null && entity != dude;
 			
-			if((entity.hostile || entity.lootable) && !isNight) {
+			if((entity.hostile || entity.lootable) && !clock.night) {
 				// Monsters and chests cannot survive the daylight
 				if(entity.action != null) {
 					entity.action.terminateAction(entity);
@@ -606,7 +580,7 @@ function makeStuffHappen() {
 					numEnemies++;
 				}
 			} else if(entity.hostile) {
-				if(isNight && !entity.wiped) {
+				if(clock.night && !entity.wiped) {
 					dude.gainXp(entity.getXp() * _debugMultiplier);
 					advanceTime();
 				}
@@ -674,35 +648,33 @@ function advanceTime(steps) {
 		// Time does not advance when frozen
 		return;
 	}
-	steps = steps == null ? 1 : steps;
 	if(celestial != null) {
-		var numSteps = isNight ? World.options.nightMoves : World.options.dayMoves;
-		celestialPosition += steps;
-		if(celestialPosition >= numSteps) {
-			EventManager.trigger('phaseChange', [!isNight]);
+		var result = Day.advanceClock(clock, World.options, steps == null ? 1 : steps);
+		if(result.over) {
+			EventManager.trigger('phaseChange', [!clock.night]);
 		} else {
-			var worldWidth = Graphics.worldWidth();
-			celestial.p(Math.floor(worldWidth / numSteps) * celestialPosition);
-			Graphics.moveCelestial(celestial);
-			checkDusk();
+			moveCelestial();
+			announceDusk(result.duskChanged);
 		}
 	}
 }
 
-function checkDusk() {
-	var dusk = !isNight && celestialPosition >= World.options.dayMoves - DUSK_MOVES;
-	if(dusk != isDusk) {
-		isDusk = dusk;
-		EventManager.trigger(dusk ? 'duskFall' : 'duskLift');
+function moveCelestial() {
+	celestial.p(Math.floor(Graphics.worldWidth() / Day.phaseLength(clock, World.options)) * clock.position);
+	Graphics.moveCelestial(celestial);
+}
+
+function announceDusk(changed) {
+	if(changed) {
+		EventManager.trigger(clock.dusk ? 'duskFall' : 'duskLift');
 	}
 }
 
 function extendDay(steps) {
-	if(!isNight && celestial != null) {
-		celestialPosition = Math.max(0, celestialPosition - steps);
-		celestial.p(Math.floor(Graphics.worldWidth() / World.options.dayMoves) * celestialPosition);
-		Graphics.moveCelestial(celestial);
-		checkDusk();
+	if(!clock.night && celestial != null) {
+		var duskChanged = Day.extendDay(clock, World.options, steps);
+		moveCelestial();
+		announceDusk(duskChanged);
 	}
 }
 
@@ -729,18 +701,17 @@ function phaseTransition() {
 	Graphics.phaseTransition(celestial, function() {
 		inTransition = false;
 	});
-	isNight = !isNight;
+	var duskChanged = Day.startPhase(clock, World.options, !clock.night);
 	if(dude.action != null) {
 		dude.action.terminateAction(dude);
 	}
-	celestialPosition = 0;
-	checkDusk();
+	announceDusk(duskChanged);
 	dude.shield = 0;
 	dude.sword = 0;
 	Graphics.updateShield(0, 0);
 	Graphics.updateSword(0, 0);
 	
-	if(!isNight) {
+	if(!clock.night) {
 
 		console.log('casual night? ' + casualNight);
 
@@ -769,7 +740,7 @@ function phaseTransition() {
 }
 
 function difficultyToggle(casualMode) {
-	if(isNight && casualMode) {
+	if(clock.night && casualMode) {
 		casualNight = true;
 	}
 }
@@ -829,7 +800,7 @@ function callDragon() {
 	theDragon = MonsterFactory.getMonster("dragon", { 
 		flip: dude.p() >= Graphics.worldWidth() / 2, 
 		target: dude ,
-		multiplier: (GameState.prestige + 1) * PRESTIGE_MULTIPLIER
+		multiplier: dragonMultiplier(GameState.prestige)
 	});
 	stuff.push(theDragon);
 	theDragon.action = ActionFactory.getAction('Land');

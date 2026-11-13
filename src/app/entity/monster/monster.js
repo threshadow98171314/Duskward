@@ -2,6 +2,7 @@ import $ from '../../../vendor/jquery.js';
 import WorldEntity from '../worldentity.js';
 import Graphics from '../../graphics/graphics.js';
 import Options from '../../gameoptions.js';
+import { monsterStat } from '../../../core/combat.ts';
 
 var Monster = function(options) {
 	this.options = $.extend({ multiplier: 1 }, this.options, options);
@@ -34,21 +35,11 @@ Monster.prototype.getLoot = function() {
 };
 
 Monster.prototype.getMaxHealth = function() {
-	var isCasual = Options.get('casualMode', false);
-	var maxHealth = this.maxHealth * this.options.multiplier;
-	if(isCasual) {
-		maxHealth = Math.ceil(maxHealth / 2);
-	}
-	return maxHealth;
+	return monsterStat(this.maxHealth, this.options.multiplier, Options.get('casualMode', false));
 };
 
 Monster.prototype.getDamage = function() {
-	var isCasual = Options.get('casualMode', false);
-	var damage = this.damage * this.options.multiplier;
-	if(isCasual) {
-		damage = Math.ceil(damage / 2);
-	}
-	return damage;
+	return monsterStat(this.damage, this.options.multiplier, Options.get('casualMode', false));
 };
 
 Monster.prototype.getXp = function() {

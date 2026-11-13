@@ -42,7 +42,7 @@ npm run dev
 | `npm run lint` | ESLint 檢查 |
 | `npm run check` | 依序執行型別檢查、ESLint 和測試 |
 
-`tests/__snapshots__/simulation.test.ts.snap` 是盤面模擬的統計（連鎖長度、收穫、燈籠與日輪出現的頻率）。改了規則或數值後，這個快照的差異就是改動的影響；確定要這樣改，再用 `npx vitest run -u` 更新。
+`tests/__snapshots__/simulation.test.ts.snap` 是盤面模擬的統計（連鎖長度、收穫、燈籠與日輪出現的頻率），以及每種怪物的單挑報表（要打多久、主角掉多少血）。改了規則或數值後，這個快照的差異就是改動的影響；確定要這樣改，再用 `npx vitest run -u` 更新。
 
 ## 專案結構
 
@@ -51,8 +51,8 @@ npm run dev
 | `index.html` | 遊戲頁面，也是 Vite 的進入點 |
 | `src/app/` | 遊戲邏輯（ES 模組）。`engine` 是主流程，`gameboard` 是三消盤面，`world` 管世界與建築，`gamecontent` 存放資源和建築的資料，`story` 負責劇情 |
 | `src/app/locale/` | 語系檔（`zh-TW`、`en`），介面文字和劇情文字都在這裡 |
-| `src/core/` | 規則核心（TypeScript）：盤面、時間、收穫、成長、戰鬥數值、可指定種子的亂數和模擬，不碰畫面 |
-| `src/content/` | 遊戲內容的資料：資源、建築、道具、法術與暮光技、怪物名單，載入時會檢查 |
+| `src/core/` | 規則核心（TypeScript）：盤面、時間、收穫、成長、戰鬥數值、戰場（主角與怪物的移動和戰鬥）、可指定種子的亂數和模擬，不碰畫面 |
+| `src/content/` | 遊戲內容的資料：資源、建築、道具、法術與暮光技、怪物，載入時會檢查 |
 | `src/platform/` | 用 TypeScript 新寫的平台層，目前有存檔版本與升級 |
 | `src/ui/` | 新的介面元件，目前有錯誤復原畫面 |
 | `src/vendor/` | 沿用的第三方程式：jQuery 2.0.3 和 Base64 |

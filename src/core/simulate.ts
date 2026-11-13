@@ -2,10 +2,14 @@
 // how long chains run, how often the board runs out of moves, how much a move
 // gathers, how often power tiles turn up, and how often a move earns a bounty (as
 // if by day). The player picks among the swaps that make a match at random, and
-// the same seed always plays the same game.
+// the same seed always plays the same game. It also stages fights on the field,
+// to see how long a monster takes to beat and what it costs the keeper.
 
 import { type Board, createBoard, fillBoard, resolveWave, swapTiles, type TileWeights, validMoves } from './board.ts';
+import { absorb, heroDamage, maxShield, maxSword } from './combat.ts';
+import { createField, type FieldHost, type MonsterDef, spawn, tick } from './field.ts';
 import { bounty } from './harvest.ts';
+import { maxHealth } from './progress.ts';
 import { createRandom } from './random.ts';
 
 export interface SimulationOptions {
@@ -96,5 +100,59 @@ export function simulate(options: SimulationOptions): SimulationReport {
 		sunsPer100: round(suns / options.moves * 100),
 		bountiesPer100: round(bounties / options.moves * 100),
 		bountyPerMove: round(bountyTiles / options.moves),
+	};
+}
+
+export interface Keeper {
+	level: number;
+	// The highest level of the stone and wood tiles, which set the sword and the shield
+	stoneLevel: number;
+	woodLevel: number;
+}
+
+export interface FightReport {
+	won: boolean;
+	seconds: number;
+	damageTaken: number;
+	healthLeft: number;
+}
+
+// One keeper, fully armed, against monsters that come from the right, until one side
+// falls (or two minutes pass)
+export function simulateFight(monsters: { kind: string; def: MonsterDef }[], keeper: Keeper): FightReport {
+	const field = createField(480);
+	field.night = true;
+	let health = maxHealth(keeper.level);
+	let sword = maxSword(keeper.stoneLevel);
+	let shield = maxShield(keeper.woodLevel);
+	const start = health;
+	const host: FieldHost = {
+		keeperAlive: () => health > 0,
+		keeperBlow: () => {
+			const blow = heroDamage(keeper.level, sword, keeper.stoneLevel);
+			const sharp = sword > 0;
+			if (blow.usesSword) {
+				sword--;
+			}
+			return { damage: blow.damage, sharp };
+		},
+		hurtKeeper: (damage) => {
+			const result = absorb(damage, { health, ward: 0, shield, frozen: false });
+			health = result.health;
+			shield = result.shield;
+		},
+		nextTask: () => null,
+	};
+	for (const monster of monsters) {
+		spawn(field, monster.kind, monster.def, 'right');
+	}
+	while (field.time < 120_000 && health > 0 && field.monsters.length > 0) {
+		tick(field, host);
+	}
+	return {
+		won: health > 0 && field.monsters.length === 0,
+		seconds: field.time / 1000,
+		damageTaken: Math.round((start - health) * 10) / 10,
+		healthLeft: health,
 	};
 }

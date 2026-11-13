@@ -1,5 +1,94 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`simulated fights > play out like this for each monster 1`] = `
+{
+  "a cultist": {
+    "damageTaken": 0,
+    "healthLeft": 120,
+    "seconds": 6.3,
+    "won": true,
+  },
+  "a dusk golem": {
+    "damageTaken": 0,
+    "healthLeft": 90,
+    "seconds": 7.3,
+    "won": true,
+  },
+  "a gnawer": {
+    "damageTaken": 0,
+    "healthLeft": 40,
+    "seconds": 2.5,
+    "won": true,
+  },
+  "a marsh lurker": {
+    "damageTaken": 0,
+    "healthLeft": 60,
+    "seconds": 4.7,
+    "won": true,
+  },
+  "a mist wraith": {
+    "damageTaken": 2,
+    "healthLeft": 88,
+    "seconds": 4.7,
+    "won": true,
+  },
+  "a night terror": {
+    "damageTaken": 0,
+    "healthLeft": 120,
+    "seconds": 9.1,
+    "won": true,
+  },
+  "a nightweaver": {
+    "damageTaken": 0,
+    "healthLeft": 60,
+    "seconds": 3.3,
+    "won": true,
+  },
+  "a shadowbat": {
+    "damageTaken": 0,
+    "healthLeft": 120,
+    "seconds": 5.3,
+    "won": true,
+  },
+  "a shambler": {
+    "damageTaken": 0,
+    "healthLeft": 30,
+    "seconds": 4.7,
+    "won": true,
+  },
+  "an archer": {
+    "damageTaken": 0,
+    "healthLeft": 40,
+    "seconds": 4.7,
+    "won": true,
+  },
+  "an ember wisp": {
+    "damageTaken": 0,
+    "healthLeft": 90,
+    "seconds": 6.3,
+    "won": true,
+  },
+  "the hierophant": {
+    "damageTaken": 76,
+    "healthLeft": 64,
+    "seconds": 34.9,
+    "won": true,
+  },
+  "three shamblers": {
+    "damageTaken": 10,
+    "healthLeft": 20,
+    "seconds": 10.3,
+    "won": true,
+  },
+  "vacant mail": {
+    "damageTaken": 0,
+    "healthLeft": 60,
+    "seconds": 6.3,
+    "won": true,
+  },
+}
+`;
+
 exports[`simulated play > plays out like this at each stage of the village 1`] = `
 {
   "3 kinds": {

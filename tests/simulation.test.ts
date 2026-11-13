@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { GEM, tileAt } from '../src/core/board.ts';
-import { simulate } from '../src/core/simulate.ts';
+import { MONSTERS } from '../src/content/monsters.ts';
+import type { MonsterDef } from '../src/core/field.ts';
+import { type Keeper, simulate, simulateFight } from '../src/core/simulate.ts';
 
 // The tiles on the board as the village grows: brick layer (clay), weaver (cloth), lighthouse (lantern)
 const STAGES = {
@@ -47,6 +49,33 @@ describe('simulated play', () => {
 	it('plays out like this at each stage of the village', () => {
 		const report = Object.fromEntries(Object.entries(STAGES).map(([stage, weights]) =>
 			[stage, simulate({ seed: 1, moves: 2000, weights })]));
+		expect(report).toMatchSnapshot();
+	});
+});
+
+// Each monster against a fully armed keeper of about the level that first meets it.
+// Like the board report, the snapshot shows what a change to a monster does.
+const MEETINGS: [string, string[], Keeper][] = [
+	['a shambler', ['zombie'], { level: 1, stoneLevel: 1, woodLevel: 1 }],
+	['three shamblers', ['zombie', 'zombie', 'zombie'], { level: 1, stoneLevel: 1, woodLevel: 1 }],
+	['a gnawer', ['rat'], { level: 2, stoneLevel: 1, woodLevel: 1 }],
+	['an archer', ['skeleton'], { level: 2, stoneLevel: 1, woodLevel: 1 }],
+	['vacant mail', ['hauntedArmour'], { level: 4, stoneLevel: 2, woodLevel: 2 }],
+	['a marsh lurker', ['lizardman'], { level: 4, stoneLevel: 2, woodLevel: 2 }],
+	['a nightweaver', ['spider'], { level: 4, stoneLevel: 2, woodLevel: 2 }],
+	['a dusk golem', ['earthElemental'], { level: 7, stoneLevel: 4, woodLevel: 4 }],
+	['an ember wisp', ['fireElemental'], { level: 7, stoneLevel: 4, woodLevel: 4 }],
+	['a mist wraith', ['waterElemental'], { level: 7, stoneLevel: 4, woodLevel: 4 }],
+	['a night terror', ['demon'], { level: 10, stoneLevel: 6, woodLevel: 6 }],
+	['a cultist', ['warlock'], { level: 10, stoneLevel: 6, woodLevel: 6 }],
+	['a shadowbat', ['imp'], { level: 10, stoneLevel: 6, woodLevel: 6 }],
+	['the hierophant', ['lich'], { level: 12, stoneLevel: 8, woodLevel: 8 }],
+];
+
+describe('simulated fights', () => {
+	it('play out like this for each monster', () => {
+		const report = Object.fromEntries(MEETINGS.map(([name, kinds, keeper]) =>
+			[name, simulateFight(kinds.map((kind) => ({ kind, def: MONSTERS[kind as keyof typeof MONSTERS] as MonsterDef })), keeper)]));
 		expect(report).toMatchSnapshot();
 	});
 });

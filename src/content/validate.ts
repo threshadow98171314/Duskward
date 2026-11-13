@@ -3,6 +3,7 @@
 // it loads, so a mistake in a data file stops it right away with a clear message.
 
 import type { BuildingDef, Effect, ItemDef, LootRarity, ResourceDef, SkillDef, SpellDef, StateEffectDef, Use } from './types.ts';
+import type { MonsterDef } from '../core/field.ts';
 
 export interface Content {
 	resources: Record<string, ResourceDef>;
@@ -13,7 +14,11 @@ export interface Content {
 	spells: Record<string, SpellDef>;
 	skills: Record<string, SkillDef>;
 	stateEffects: Record<string, StateEffectDef>;
+	// Every monster that can be called up: those on the field, and the dragon
 	monsters: readonly string[];
+	monsterDefs: Record<string, MonsterDef>;
+	// What spells can do to the board
+	boardSpells: readonly string[];
 	dragonAttacks: readonly string[];
 }
 
@@ -104,6 +109,33 @@ export function validateContent(content: Content): string[] {
 		}
 		if (current !== undefined && current.replaces !== undefined) {
 			problem('building ' + key, 'upgrades in a circle');
+		}
+	}
+
+	for (const [name, monster] of Object.entries(content.monsterDefs)) {
+		const where = 'monster ' + name;
+		for (const stat of ['health', 'damage', 'xp', 'speed', 'width', 'height'] as const) {
+			if (!(monster[stat] > 0)) {
+				problem(where, stat + ' should be above zero');
+			}
+		}
+		const attacks = monster.parts.filter((part) => part.type === 'melee' || part.type === 'ranged');
+		if (attacks.length !== 1) {
+			problem(where, 'should have one way to attack, melee or ranged');
+		}
+		for (const part of monster.parts) {
+			if (part.type === 'melee' && (part.hits.length === 0 || part.hits.some((frame) => frame < 0 || frame > 3))) {
+				problem(where, 'melee hits should land on frames 0 to 3');
+			}
+			if (part.type === 'cast' && !content.boardSpells.includes(part.spell)) {
+				problem(where, 'casts unknown spell ' + part.spell);
+			}
+			if ((part.type === 'cast' || part.type === 'teleport') && !(part.first >= 0 && part.every > 0)) {
+				problem(where, part.type + ' should come round after a while');
+			}
+		}
+		if (monster.loot !== undefined && content.items[monster.loot] === undefined) {
+			problem(where, 'drops unknown item ' + monster.loot);
 		}
 	}
 

@@ -57,8 +57,15 @@ describe('game content', () => {
 		expect(() => checkContent(content)).toThrow('loot pool rare: unknown item crown');
 	});
 
+	it('catches monsters that cannot fight', () => {
+		expect(broken((c) => { c.monsterDefs.zombie.parts = []; })).toContain('monster zombie: should have one way to attack, melee or ranged');
+		expect(broken((c) => { c.monsterDefs.lich.parts.push({ type: 'cast', spell: 'curse', first: 1, every: 2 }); }))
+			.toContain('monster lich: casts unknown spell curse');
+		expect(broken((c) => { c.monsterDefs.rat.speed = 0; })).toContain('monster rat: speed should be above zero');
+	});
+
 	it('only names monsters and dragon attacks the game has', () => {
-		expect(Object.keys(monsters).sort()).toEqual([...CONTENT.monsters].sort());
+		expect([...Object.keys(CONTENT.monsterDefs), ...Object.keys(monsters)].sort()).toEqual([...CONTENT.monsters].sort());
 		for (const attack of CONTENT.dragonAttacks) {
 			expect(actions, attack).toHaveProperty([attack]);
 		}
@@ -67,6 +74,9 @@ describe('game content', () => {
 	it('draws buildings and monsters with existing sprites', () => {
 		for (const building of Object.values(Content.BuildingType) as { className: string; spriteName: string }[]) {
 			expect(Sprites.getFilename(building.spriteName), building.className).not.toBeNull();
+		}
+		for (const [name, monster] of Object.entries(CONTENT.monsterDefs)) {
+			expect(Sprites.getFilename(monster.sprite), name).not.toBeNull();
 		}
 		for (const [name, monster] of Object.entries(monsters)) {
 			const spriteName = monster.prototype.options?.spriteName;

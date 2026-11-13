@@ -66,7 +66,12 @@ export default {
 		E.bind('lootGained', function(lootName) {
 			if(lootName == 'shard') {
 				tell('firstShard', EVENT_DELAY);
+			} else if(lootName == 'dawnHeart') {
+				tell('dawnHeart', EVENT_DELAY);
 			}
+		});
+		E.bind('dragonDefeated', function() {
+			tell('dragonDefeated', EVENT_DELAY);
 		});
 		E.bind('callDragon', function() {
 			tell('dragon');

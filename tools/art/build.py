@@ -83,7 +83,7 @@ def build_buildings():
 
 # Areas of icons.png that are redrawn; the rest (volume sliders, dragon effects) is still original
 ICON_AREAS = [(0, 0, 270, 60), (0, 60, 140, 88), (0, 183, 48, 279), (0, 279, 90, 335),
-              (0, 335, 168, 363), (0, 362, 40, 442), (0, 794, 200, 874), (0, 875, 64, 891),
+              (0, 335, 196, 363), (0, 362, 40, 442), (0, 794, 200, 874), (0, 875, 64, 891),
               (0, 891, 120, 951), (0, 951, 270, 1011), (0, 1011, 52, 1063)]
 
 
@@ -107,7 +107,7 @@ def build_icons():
     for x, y, kind in ((0, 279, "outline"), (30, 279, "gold"), (60, 279, "fill"),
                        (0, 307, "nightOutline"), (30, 307, "gold")):
         place(icons.heart(kind), x, y)
-    for i, name in enumerate(("healthPotion", "manaPotion", "bomb", "equipment", "shard", "callDragon")):
+    for i, name in enumerate(("healthPotion", "manaPotion", "bomb", "equipment", "shard", "callDragon", "dawnHeart")):
         place(icons.item(name), i * 28, 335)
     place(icons.menu(False), 0, 362)
     place(icons.menu(True), 0, 402)
@@ -134,8 +134,15 @@ def build_monsters():
     return sheet
 
 
+def build_dragon():
+    sheet = read_png(LEGACY / "dragonsprite.png")
+    monsters.paint_dragon(sheet)
+    return sheet
+
+
 def main():
     sheets = (
+        ("dragonsprite.png", build_dragon),
         ("tiles.png", build_tiles),
         ("buildings.png", build_buildings),
         ("monsters.png", build_monsters),

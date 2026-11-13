@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import ActionFactory from '../src/app/action/actionfactory.js';
 import MonsterFactory from '../src/app/entity/monster/monsterfactory.js';
 import Content from '../src/app/gamecontent.js';
 import Sprites from '../src/app/graphics/sprites.js';
@@ -12,7 +11,6 @@ import { validateContent } from '../src/content/validate.ts';
 type MonsterClass = { prototype: { options?: { spriteName?: string } } };
 
 const monsters = MonsterFactory._monsters() as Record<string, MonsterClass>;
-const actions = ActionFactory._actions() as Record<string, unknown>;
 
 // A copy of the content to break on purpose
 function broken(change: (content: GameContent) => void): string[] {
@@ -83,11 +81,14 @@ describe('game content', () => {
 		expect(broken((c) => { c.monsterDefs.rat.speed = 0; })).toContain('monster rat: speed should be above zero');
 	});
 
-	it('only names monsters and dragon attacks the game has', () => {
-		expect([...Object.keys(CONTENT.monsterDefs), ...Object.keys(monsters)].sort()).toEqual([...CONTENT.monsters].sort());
-		for (const attack of CONTENT.dragonAttacks) {
-			expect(actions, attack).toHaveProperty([attack]);
-		}
+	it('only names monsters the game has', () => {
+		expect([...Object.keys(CONTENT.monsterDefs), ...Object.keys(CONTENT.bosses)].sort()).toEqual([...CONTENT.monsters].sort());
+		expect(Object.keys(monsters)).toEqual(Object.keys(CONTENT.bosses));
+	});
+
+	it('catches tiles that provoke attacks the dragon does not have', () => {
+		expect(broken((c) => { c.resources.Grain.dragonEffect = 'tailSwipe'; })).toContain('resource Grain: unknown dragon attack tailSwipe');
+		expect(broken((c) => { c.bosses.dragon.far = 'roar'; })).toContain('boss dragon: falls back on unknown strike roar');
 	});
 
 	it('draws buildings and monsters with existing sprites', () => {

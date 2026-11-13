@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { BOSSES } from '../src/content/bosses.ts';
 import { MONSTERS } from '../src/content/monsters.ts';
 import {
-	addChest, BUILD_MS, carrying, climbIn, createField, damageAll, type Field, type FieldEvent, type FieldHost,
-	type MonsterDef, push, setNight, spawn, STOCKPILE, type Task, tick, TICK_MS, wipeOut,
+	addChest, type BossDef, BUILD_MS, callBoss, carrying, climbIn, createField, damageAll, type Field, type FieldEvent,
+	type FieldHost, type MonsterDef, provoke, push, setNight, spawn, STOCKPILE, type Task, tick, TICK_MS, wipeOut,
 } from '../src/core/field.ts';
 
 const WIDTH = 480;
@@ -179,12 +180,87 @@ describe('the keeper at night', () => {
 		expect(events('keeperDied').length).toBe(1);
 	});
 
-	it('fights whatever else is on the field too', () => {
-		const { field, run } = setup();
-		let health = 3;
-		field.outsiders.push({ id: 99, x: () => 330, width: () => 60, alive: () => health > 0, hurt: (n) => { health -= n; } });
-		run(4000);
-		expect(health).toBe(0);
+});
+
+describe('bosses', () => {
+	const dragon = BOSSES.dragon as BossDef;
+	const strikes = (events: { event: FieldEvent }[]) =>
+		events.map(({ event }) => event.type === 'bossStrike' ? event.strike : '').filter(Boolean);
+
+	it('land first, out of reach, then fight back', () => {
+		const { field, log, run, events } = setup({ keeperX: 100 });
+		field.keeperFrozen = true;
+		const boss = callBoss(field, 'dragon', dragon, 430);
+		run(3900);
+		expect(events('bossStrike')).toEqual([]);
+		expect(field.keeper.activity.type).toBe('idle');
+		run(1000);
+		// Far from the keeper, the dragon spits fire; it always finds its mark
+		expect(strikes(log.events)[0]).toBe('fireball');
+		expect(log.hurts[0]).toMatchObject({ damage: 4, by: 'dragon' });
+		expect(boss.state).not.toBe('landing');
+	});
+
+	it('bite a keeper who comes close, and shrug off part of every blow', () => {
+		const { field, log, run } = setup({ keeperX: 100 });
+		const boss = callBoss(field, 'dragon', dragon, 300, 2);
+		run(4000 + 6000);
+		expect(strikes(log.events)).toContain('bite');
+		expect(log.hurts.some((hurt) => hurt.damage === boss.damage)).toBe(true);
+		// The keeper hits for 1 here, all of it taken by the dragon's hide
+		expect(boss.hp).toBe(boss.maxHp);
+	});
+
+	it('use the attacks the keeper provokes before their own', () => {
+		const { field, log, run, events } = setup({ keeperX: 100 });
+		field.keeperFrozen = true;
+		callBoss(field, 'dragon', dragon, 430);
+		provoke(field, 'iceBeam');
+		provoke(field, 'fireBlast');
+		run(4000 + 3000);
+		expect(strikes(log.events).slice(0, 3)).toEqual(['iceBeam', 'fireBlast', 'fireball']);
+		expect(events('freezeKeeper').length).toBe(1);
+		expect(events('fireLit')[0].event).toMatchObject({ fire: { x: 100 } });
+		// The fire under the keeper burns every 200 ms, and melts the ice
+		expect(log.hurts.filter((hurt) => hurt.damage === 2).length).toBeGreaterThan(3);
+		expect(events('thaw').length).toBeGreaterThan(0);
+	});
+
+	it('blow the keeper back with their wings, and the fires out', () => {
+		const { field, run, events } = setup({ keeperX: 200 });
+		field.keeperFrozen = true;
+		callBoss(field, 'dragon', dragon, 430);
+		provoke(field, 'fireBlast');
+		run(4000 + 1400);
+		expect(field.fires.length).toBe(1);
+		field.keeperFrozen = false;
+		provoke(field, 'wingBuffet');
+		// The wings wait for the fireball the dragon had already started
+		run(2400);
+		expect(field.fires).toEqual([]);
+		expect(events('fireOut').length).toBe(1);
+		expect(field.keeper.x).toBeLessThan(200);
+	});
+
+	it('take a while to die, then leave the field', () => {
+		const { field, run, events } = setup({ keeperX: 100 });
+		field.keeperFrozen = true;
+		const boss = callBoss(field, 'dragon', dragon, 430);
+		run(4100);
+		damageAll(field, 2000);
+		expect(boss.state).toBe('dying');
+		run(dragon.dying - 100);
+		expect(events('bossGone')).toEqual([]);
+		run(200);
+		expect(events('bossGone')[0].event).toMatchObject({ boss: { kind: 'dragon', hp: 0 } });
+		expect(field.boss).toBeNull();
+	});
+
+	it('do not last into the day', () => {
+		const { field } = setup();
+		callBoss(field, 'dragon', dragon, 430);
+		setNight(field, false);
+		expect(field.boss).toBeNull();
 	});
 });
 

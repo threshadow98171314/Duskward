@@ -97,6 +97,14 @@ def item(name):
         c.poly([(7, 1), (10, 6), (7, 12), (4, 6)], "m")
         c.poly([(7, 1), (7, 12), (4, 6)], "v")
         c.set(6, 4, "w")
+    elif name == "dawnHeart":
+        # The Dawn Heart: a warm gem still holding a little of the morning
+        c.ellipse(4.5, 5.5, 2.7, 2.7, "y")
+        c.ellipse(9.5, 5.5, 2.7, 2.7, "y")
+        c.poly([(2, 6), (12, 6), (7, 12)], "y")
+        c.recolor("y", "o", lambda x, y: y >= 9)
+        c.set(4, 4, "w")
+        c.set(3, 5, "Y")
     else:  # callDragon: the Dawnwyrm's horn
         c.poly([(2, 10), (4, 6), (9, 3), (12, 2), (11, 5), (6, 9), (4, 12)], "n")
         c.rect(5, 7, 6, 9, "u")

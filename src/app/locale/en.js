@@ -96,6 +96,8 @@ export default {
 		firstShard: 'A duskshard. Gather four and the Dusk Tower on the hill will shine again.',
 		magic: 'The Dusk Tower shines again! Match four or more tiles at once and duskcrystals will fall onto the board. Gather them to cast spells.',
 		dragon: 'Is that... the Dawnwyrm? Its eyes have gone black. Child, it\'s not what it used to be!',
+		dragonDefeated: 'The Dawnwyrm has fallen. It left behind a Dawn Heart, still warm: the light it carried from all those years of drawing the sun.',
+		dawnHeart: 'The Dawn Heart... even at night, it is warm in your hands. Raise it after dark, and its light may draw the Eclipse down from the sky.',
 		firstDusk: 'Dusk is here. Before night falls, every tile you clear becomes part of your ward, and it will take the first blows for you tonight.',
 		lighthouse: 'The watchtower is lit! Lanterns will start appearing on the board. By day they\'re building material; light them at night and dawn comes sooner.',
 		altar: 'The Altar of Dawn stands. Chains and big matches fill your Afterglow gauge, and once it\'s full you can unleash a dusk skill.',

@@ -329,6 +329,13 @@ body.night {
 	100% { opacity: 0; transform: translateY(-40px) scale(1); }
 }
 
+/** The Dawn Heart, left by the Fallen Dawnwyrm **/
+
+.loot.dawnHeart,
+.button.dawnHeart div:nth-child(1) {
+	background-position: -168px -335px;
+}
+
 /** Monsters that came with Duskward **/
 
 .shade {

@@ -1,13 +1,11 @@
 import $ from '../../../vendor/jquery.js';
 import Monster from './monster.js';
-import ActionFactory from '../../action/actionfactory.js';
 import G from '../../graphics/graphics.js';
 import Sprites from '../../graphics/sprites.js';
 import EventManager from '../../eventmanager.js';
-import World from '../../world.js';
 
 var ANIMATION_ROWS = 5;
-var hardness = 2;
+var THRASH_SPEED = 400;
 
 var postureSpeedStylesheet = null;
 var headMount = { x: 20, y: 97 };
@@ -83,19 +81,17 @@ function explodeSegment(segment) {
 	}, 400);
 }
 
+// The Fallen Dawnwyrm as drawn: its body, neck and head, and the show of each of
+// its strikes. What it does and when is up to the field (src/core/field.ts).
 var Dragon = function(options) {
 	this.options = $.extend({}, this.options, {}, options);
-	
-	this.maxHealth = 1000;
-	this.damage = 4;
-	this.xp = 5000;
-	
+	this.boss = this.options.boss;
+	this.timers = [];
+
 	this.hp(this.getMaxHealth());
 	this.headFrame = 0;
 	this.headState = 'close';
 	this.target = this.options.target;
-	this.attackQueue = [];
-	this.uninterruptable = true;
 	this.isBoss = true;
 	
 	if(!postureSpeedStylesheet) {
@@ -124,14 +120,6 @@ Dragon.prototype.el = function() {
 		this._segments.push(G.make('head').appendTo(this._segments[2]));
 	}
 	return this._el;
-};
-
-Dragon.prototype.die = function() {
-	if(this.action != null) {
-		this.action.terminateAction(this);
-	}
-	this.action = ActionFactory.getAction("DragonDie");
-	this.action.doAction(this);
 };
 
 Dragon.prototype.getHead = function() {
@@ -209,45 +197,6 @@ Dragon.prototype.setNeckMount = function(pos) {
 	this._segments[0].css(css);
 };
 
-Dragon.prototype.think = function() {
-	if(this.isIdle() && this.isAlive() && this.action == null) {
-		if(this.attackQueue.length > 0) {
-			this.action = ActionFactory.getAction(
-				this.attackQueue.splice(0, 1), 
-				{ target: this.target }
-			);
-		} else if(this.target.isAlive() && this.distanceFrom(this.target) < 5) {
-			this.action = ActionFactory.getAction('Bite', { target: this.target });
-		} else if(this.target.isAlive()) {
-			this.action = ActionFactory.getAction('Fireball', { target: this.target });
-		}
-		if(this.action != null) {
-			this.action.doAction(this);
-			return true;
-		} else {
-			this.setPosture('idle', 1000);
-		}
-	}
-	return false;
-};
-
-Dragon.prototype.takeDamage = function(damage) {
-	damage -= hardness;
-	Monster.prototype.takeDamage.call(this, damage < 0 ? 0 : damage);
-};
-
-Dragon.prototype.queueAttack = function(attackName) {
-	this.attackQueue.push(attackName);
-};
-
-Dragon.prototype.getFireballDamage = function() {
-	return 4;
-};
-
-Dragon.prototype.getFireBlastDamage = function() {
-	return this.getFireballDamage();
-};
-
 Dragon.prototype.explode = function(delay) {
 	var _this = this;
 	var segmentNum = _this._segments.length - 1;
@@ -262,7 +211,6 @@ Dragon.prototype.explode = function(delay) {
 				var explosion = G.make('dragonExplosion').appendTo(_this.el());
 				explosion.css('left');
 				explosion.addClass('exploded');
-				World.gameOver();
 				_this.el().addClass('gone');
 				setTimeout(function() {
 					explosion.remove();
@@ -352,6 +300,139 @@ Dragon.prototype.setPosture = function(p, speed) {
 			}, speed);
 		}
 	}
+};
+
+Dragon.prototype.getMaxHealth = function() {
+	return this.boss ? this.boss.maxHp : 1;
+};
+
+Dragon.prototype.later = function(callback, delay) {
+	this.timers.push(setTimeout(callback, delay));
+};
+
+// Stops every show in progress, e.g. when day breaks mid-fight
+Dragon.prototype.cancel = function() {
+	this.timers.forEach(clearTimeout);
+	this.timers = [];
+};
+
+function boom(x) {
+	var explosion = G.make('fireBoom').css('transform', 'translateX(' + x + 'px)');
+	G.addToWorld(explosion);
+	explosion.css('left');
+	explosion.addClass('exploded');
+	setTimeout(function() {
+		explosion.remove();
+	}, 400);
+}
+
+// A strike begins
+Dragon.prototype.strike = function(name, targetX) {
+	var _this = this;
+	switch(name) {
+	case 'fireball':
+		this.setPosture('aim', 500);
+		this.later(function() {
+			var angle = -_this.absHeadPos.r;
+			var delta = -Math.sqrt(Math.pow(targetX - _this.absHeadPos.x, 2) + Math.pow(_this.absHeadPos.y, 2));
+			_this.setPosture('shoot', 200);
+			_this.projectile = G.make('dragonFireball').css({
+				top: _this.absHeadPos.y,
+				left: _this.absHeadPos.x,
+				transform: 'rotate(' + angle + 'deg) translateX(0)'
+			});
+			G.addToWorld(_this.projectile);
+			_this.projectile.css('left'); // Force redraw before animation
+			_this.projectile.css('transform', 'rotate(' + angle + 'deg) translateX(' + delta + 'px)');
+			EventManager.trigger('shootFire');
+		}, 500);
+		break;
+	case 'bite':
+		this.setPosture('aimbite', 600);
+		this.later(function() {
+			_this.setPosture('bite', 200);
+		}, 600);
+		break;
+	case 'iceBeam':
+	case 'fireBlast':
+		this.setPosture('aimClose', 100);
+		this.later(function() {
+			if(name == 'fireBlast') {
+				var reach = Math.sqrt(Math.pow(targetX - _this.absHeadPos.x, 2) + Math.pow(_this.absHeadPos.y, 2));
+				_this.beam = G.make('fireBlast').css('width', (reach - 60) + 'px');
+			} else {
+				_this.beam = G.make('iceBeam');
+			}
+			_this.setPosture('aimOpen', 500);
+			_this.getHead().append(_this.beam);
+			EventManager.trigger('charge');
+		}, 100);
+		break;
+	case 'wingBuffet':
+		this.animationOnce(3, function(frame) {
+			_this.setNeckMount([{ x: 25, y: 105 }, { x: 37, y: 65 }, { x: 65, y: 46 }, { x: 65, y: 46 }][frame]);
+		});
+		this.later(function() {
+			_this.animationOnce(4, function(frame) {
+				_this.setNeckMount([{ x: 65, y: 70 }, { x: 30, y: 80 }, null, { x: 25, y: 105 }][frame]);
+			});
+		}, 800);
+		this.later(function() {
+			_this.setNeckMount();
+		}, 1600);
+		break;
+	}
+};
+
+// A strike lands where the keeper is now
+Dragon.prototype.land = function(name, targetX, hit) {
+	var beam = this.beam;
+	switch(name) {
+	case 'fireball':
+		if(this.projectile) {
+			this.projectile.remove();
+			this.projectile = null;
+		}
+		boom(targetX);
+		EventManager.trigger('explodeFire');
+		break;
+	case 'bite':
+		if(hit) {
+			EventManager.trigger('sharpHit');
+		}
+		break;
+	case 'iceBeam':
+		EventManager.trigger('ice');
+		this.later(function() {
+			beam && beam.remove();
+		}, 200);
+		break;
+	case 'fireBlast':
+		beam && beam.remove();
+		boom(targetX);
+		break;
+	case 'wingBuffet':
+		EventManager.trigger('flap');
+		break;
+	}
+};
+
+// Thrashes, then comes apart segment by segment
+Dragon.prototype.dying = function() {
+	var _this = this;
+	var dir = 'up';
+	(function thrash() {
+		if(_this.exploding) {
+			return;
+		}
+		_this.setPosture('thrash' + dir, THRASH_SPEED);
+		dir = dir == 'up' ? 'down' : 'up';
+		_this.later(thrash, THRASH_SPEED);
+	})();
+	this.later(function() {
+		_this.exploding = true;
+		_this.explode(800);
+	}, 1500);
 };
 
 export default Dragon;

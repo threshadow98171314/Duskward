@@ -31,6 +31,9 @@ function apply(effect) {
 	case 'callDragon':
 		E.trigger('callDragon');
 		break;
+	case 'callEclipse':
+		E.trigger('callEclipse');
+		break;
 	case 'refreshBoard':
 		E.trigger('refreshBoard');
 		break;

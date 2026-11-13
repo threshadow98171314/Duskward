@@ -19,6 +19,11 @@ export const ITEMS = {
 		large: true,
 		use: [{ type: 'callDragon' }],
 	},
+	// Left by the Fallen Dawnwyrm. At night, it calls down the Eclipse.
+	dawnHeart: {
+		large: true,
+		use: [{ type: 'callEclipse' }],
+	},
 } satisfies Record<string, ItemDef>;
 
 // A chest holds an item from one pool, picked by rarity, then evenly within the pool

@@ -1013,11 +1013,7 @@ var Graphics = {
 	handleDayBreak: function(dayNumber) {
 		var txt = Graphics.getText('DAY_N', dayNumber);
 		var notifier;
-		if(isDragon) {
-			changeTiles(['clay', 'cloth', 'grain'], '', 'dragonFight');
-			isDragon = false;
-			Graphics.setBossHealth(0, 0);
-		}
+		Graphics.endDragonFight();
 		setTimeout(function() {
 			notifier = $('<div>').addClass('dayNotifier').text(txt).appendTo('.world');
 		}, 1400);
@@ -1043,6 +1039,15 @@ var Graphics = {
 		Graphics.drawSaveSlots();
 	},
 	
+	// The board goes back to normal once the dragon is beaten, or day breaks
+	endDragonFight: function() {
+		if(isDragon) {
+			changeTiles(['clay', 'cloth', 'grain'], '', 'dragonFight');
+			isDragon = false;
+			Graphics.setBossHealth(0, 0);
+		}
+	},
+
 	setBossHealth: function(hp, max) {
 		if(_bossHealth == null) {
 			_bossHealth = Graphics.make('bossHealth noshow').append(Graphics.make());

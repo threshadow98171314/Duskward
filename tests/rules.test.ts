@@ -103,7 +103,7 @@ describe('harvest', () => {
 
 	it('turns gathered tiles into dragon attacks while the dragon is out', () => {
 		expect(harvest({ grain: 3, wood: 3 }, situation({ night: true, dragon: true }), resources)).toEqual([
-			{ type: 'dragon', attack: 'WingBuffet' },
+			{ type: 'dragon', attack: 'wingBuffet' },
 			{ type: 'shield' },
 		]);
 	});

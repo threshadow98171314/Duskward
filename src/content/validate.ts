@@ -3,7 +3,7 @@
 // it loads, so a mistake in a data file stops it right away with a clear message.
 
 import type { BuildingDef, Effect, ItemDef, LootRarity, ResourceDef, SkillDef, SpellDef, StateEffectDef, Use } from './types.ts';
-import type { MonsterDef } from '../core/field.ts';
+import type { BossDef, MonsterDef } from '../core/field.ts';
 import type { Call } from '../core/night.ts';
 
 export interface Content {
@@ -21,7 +21,7 @@ export interface Content {
 	calls: Call[];
 	// What spells can do to the board
 	boardSpells: readonly string[];
-	dragonAttacks: readonly string[];
+	bosses: Record<string, BossDef>;
 }
 
 // Returns every problem found; an empty list means the content is sound
@@ -58,7 +58,7 @@ export function validateContent(content: Content): string[] {
 		if (resource.attracts !== undefined && !monsters.has(resource.attracts)) {
 			problem(where, 'draws unknown monster ' + resource.attracts);
 		}
-		if (resource.dragonEffect !== undefined && !content.dragonAttacks.includes(resource.dragonEffect)) {
+		if (resource.dragonEffect !== undefined && content.bosses.dragon?.strikes[resource.dragonEffect] === undefined) {
 			problem(where, 'unknown dragon attack ' + resource.dragonEffect);
 		}
 		for (const [building, multiplier] of Object.entries(resource.multipliers)) {
@@ -141,6 +141,22 @@ export function validateContent(content: Content): string[] {
 		}
 		if (monster.loot !== undefined && content.items[monster.loot] === undefined) {
 			problem(where, 'drops unknown item ' + monster.loot);
+		}
+	}
+	for (const [name, boss] of Object.entries(content.bosses)) {
+		const where = 'boss ' + name;
+		for (const strike of [boss.close, boss.far]) {
+			if (boss.strikes[strike] === undefined) {
+				problem(where, 'falls back on unknown strike ' + strike);
+			}
+		}
+		for (const [strikeName, strike] of Object.entries(boss.strikes)) {
+			if (!(strike.lands >= 0 && strike.ends >= strike.lands)) {
+				problem(where, strikeName + ' should land before it ends');
+			}
+		}
+		if (boss.loot !== undefined && content.items[boss.loot] === undefined) {
+			problem(where, 'drops unknown item ' + boss.loot);
 		}
 	}
 	for (const call of content.calls) {

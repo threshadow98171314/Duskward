@@ -125,13 +125,71 @@ export interface Projectile {
 	lands: number;
 }
 
-// Something on the field the keeper can fight but the field does not run: the dragon, for now
-export interface Outsider {
+// One of a boss's attacks. Times are from the start of the attack: when it lands,
+// and when the boss is ready for the next one.
+export interface StrikeDef {
+	lands: number;
+	ends: number;
+	damage?: number;
+	// Hits with the boss's own damage, which grows in New Game+
+	scaled?: boolean;
+	// Only lands if the keeper is this close, edge to edge
+	within?: number;
+	freeze?: boolean;
+	// Throws the keeper this far away from the boss, unless the keeper is frozen
+	push?: number;
+	// Leaves fire on the ground where the keeper stands
+	burn?: { width: number; damage: number; every: number; lasts: number };
+	// Blows out every fire on the field
+	clearsFire?: boolean;
+}
+
+export interface BossDef {
+	sprite: string;
+	width: number;
+	health: number;
+	damage: number;
+	// Taken off every blow it receives
+	hardness: number;
+	xp: number;
+	// How long it takes to arrive before it can fight, and to die
+	landing: number;
+	dying: number;
+	// What it does when no attack is waiting: one strike if the keeper is close, another if not
+	close: string;
+	far: string;
+	closeGap: number;
+	strikes: Record<string, StrikeDef>;
+	// Left behind when it falls
+	loot?: string;
+}
+
+export interface Boss {
 	id: number;
-	x(): number;
-	width(): number;
-	alive(): boolean;
-	hurt(damage: number): void;
+	kind: string;
+	def: BossDef;
+	x: number;
+	hp: number;
+	maxHp: number;
+	damage: number;
+	state: 'landing' | 'ready' | 'striking' | 'dying';
+	// When the current state began
+	since: number;
+	strike: string | null;
+	landed: boolean;
+	// Attacks the keeper's tiles provoked, waiting their turn
+	queue: string[];
+}
+
+// Fire left burning on the ground
+export interface Fire {
+	id: number;
+	x: number;
+	width: number;
+	damage: number;
+	every: number;
+	until: number;
+	next: number;
 }
 
 // What the keeper does by day
@@ -162,7 +220,15 @@ export type FieldEvent =
 	| { type: 'built'; task: Task }
 	// Night fell or the keeper was called away: a carried block goes back, a building sinks
 	| { type: 'abandoned'; task: Task; carrying: boolean }
-	| { type: 'keeperDied' };
+	| { type: 'keeperDied' }
+	| { type: 'bossStrike'; boss: Boss; strike: string }
+	| { type: 'strikeLands'; boss: Boss; strike: string; hit: boolean }
+	| { type: 'bossDying'; boss: Boss }
+	| { type: 'bossGone'; boss: Boss }
+	| { type: 'freezeKeeper' }
+	| { type: 'thaw' }
+	| { type: 'fireLit'; fire: Fire }
+	| { type: 'fireOut'; fire: Fire };
 
 interface Errand {
 	task: Task;
@@ -178,7 +244,8 @@ export interface Field {
 	monsters: Actor[];
 	chests: Chest[];
 	projectiles: Projectile[];
-	outsiders: Outsider[];
+	boss: Boss | null;
+	fires: Fire[];
 	errand: Errand | null;
 	// Spell and skill effects
 	haste: boolean;
@@ -200,7 +267,8 @@ export function createField(width: number, keeperX = width / 2): Field {
 		monsters: [],
 		chests: [],
 		projectiles: [],
-		outsiders: [],
+		boss: null,
+		fires: [],
 		errand: null,
 		haste: false,
 		timeStopped: false,
@@ -275,6 +343,7 @@ export function damageAll(field: Field, damage: number): FieldEvent[] {
 			monster.wiped = true;
 		}
 	}
+	hurtBoss(field, damage, events);
 	return events;
 }
 
@@ -298,6 +367,8 @@ export function setNight(field: Field, night: boolean): FieldEvent[] {
 		field.monsters = [];
 		field.projectiles = [];
 		field.chests = [];
+		field.boss = null;
+		field.fires = [];
 	}
 	return events;
 }
@@ -362,6 +433,8 @@ export function tick(field: Field, host: FieldHost): FieldEvent[] {
 		}
 	}
 	land(field, host, events);
+	runBoss(field, host, events, step);
+	burn(field, host, events);
 
 	for (const monster of field.monsters) {
 		if (monster.gone) {
@@ -398,8 +471,8 @@ function gap(a: Actor, b: { x: number; width: number }): number {
 function foes(field: Field): { id: number; x: number; width: number }[] {
 	return [
 		...living(field).map((monster) => ({ id: monster.id, x: monster.x, width: monster.width })),
-		...field.outsiders.filter((outsider) => outsider.alive())
-			.map((outsider) => ({ id: outsider.id, x: outsider.x(), width: outsider.width() })),
+		...(field.boss !== null && (field.boss.state === 'ready' || field.boss.state === 'striking')
+			? [{ id: field.boss.id, x: field.boss.x, width: field.boss.def.width }] : []),
 	];
 }
 
@@ -545,11 +618,10 @@ function actKeeper(field: Field, host: FieldHost, events: FieldEvent[]): void {
 				const blow = host.keeperBlow();
 				events.push({ type: 'cue', name: blow.sharp ? 'sharpHit' : 'bluntHit' });
 				const monster = living(field).find((m) => m.id === activity.target);
-				const outsider = field.outsiders.find((o) => o.id === activity.target && o.alive());
 				if (monster !== undefined) {
 					hurtMonster(monster, blow.damage, events);
-				} else if (outsider !== undefined) {
-					outsider.hurt(blow.damage);
+				} else if (field.boss !== null && field.boss.id === activity.target) {
+					hurtBoss(field, blow.damage, events);
 				}
 			}
 			if (keeper.frame === FRAMES - 1) {
@@ -757,4 +829,142 @@ function land(field: Field, host: FieldHost, events: FieldEvent[]): void {
 // Whether the keeper is carrying a block, for drawing
 export function carrying(field: Field): boolean {
 	return field.errand !== null && field.errand.stage === 'deliver';
+}
+
+// A boss arrives: it takes a while to land before it can fight or be fought
+export function callBoss(field: Field, kind: string, def: BossDef, x: number, multiplier = 1): Boss {
+	field.boss = {
+		id: field.nextId++,
+		kind,
+		def,
+		x,
+		hp: monsterStat(def.health, multiplier, field.casual),
+		maxHp: monsterStat(def.health, multiplier, field.casual),
+		damage: monsterStat(def.damage, multiplier, field.casual),
+		state: 'landing',
+		since: field.time,
+		strike: null,
+		landed: false,
+		queue: [],
+	};
+	return field.boss;
+}
+
+// The keeper's tiles provoke one of the boss's attacks, which waits its turn
+export function provoke(field: Field, strike: string): void {
+	if (field.boss !== null && field.boss.state !== 'dying' && field.boss.def.strikes[strike] !== undefined) {
+		field.boss.queue.push(strike);
+	}
+}
+
+export function hurtBoss(field: Field, damage: number, events: FieldEvent[] = []): void {
+	const boss = field.boss;
+	if (boss === null || boss.state === 'dying') {
+		return;
+	}
+	boss.hp = Math.max(0, boss.hp - Math.max(0, damage - boss.def.hardness));
+	if (boss.hp === 0) {
+		boss.state = 'dying';
+		boss.since = field.time;
+		events.push({ type: 'bossDying', boss });
+	}
+}
+
+function runBoss(field: Field, host: FieldHost, events: FieldEvent[], step: boolean): void {
+	const boss = field.boss;
+	if (boss === null) {
+		return;
+	}
+	const elapsed = field.time - boss.since;
+	if (boss.state === 'dying') {
+		if (elapsed >= boss.def.dying) {
+			field.boss = null;
+			events.push({ type: 'bossGone', boss });
+		}
+		return;
+	}
+	if (boss.state === 'landing') {
+		if (elapsed >= boss.def.landing) {
+			boss.state = 'ready';
+			boss.since = field.time;
+		}
+		return;
+	}
+	if (boss.state === 'striking') {
+		const strike = boss.def.strikes[boss.strike!];
+		if (!boss.landed && elapsed >= strike.lands) {
+			boss.landed = true;
+			landStrike(field, boss, strike, host, events);
+		}
+		if (elapsed >= strike.ends) {
+			boss.state = 'ready';
+			boss.since = field.time;
+			boss.strike = null;
+		}
+		return;
+	}
+	// Ready: like everyone else, the boss decides on its steps
+	if (step) {
+		const close = gap(field.keeper, { x: boss.x, width: boss.def.width }) < boss.def.closeGap;
+		boss.strike = boss.queue.shift() ?? (close ? boss.def.close : boss.def.far);
+		boss.state = 'striking';
+		boss.since = field.time;
+		boss.landed = false;
+		events.push({ type: 'bossStrike', boss, strike: boss.strike });
+	}
+}
+
+function landStrike(field: Field, boss: Boss, strike: StrikeDef, host: FieldHost, events: FieldEvent[]): void {
+	const keeper = field.keeper;
+	const hit = strike.within === undefined || gap(keeper, { x: boss.x, width: boss.def.width }) < strike.within;
+	events.push({ type: 'strikeLands', boss, strike: boss.strike!, hit });
+	if (!hit) {
+		return;
+	}
+	const damage = strike.scaled ? boss.damage : strike.damage;
+	if (damage !== undefined) {
+		host.hurtKeeper(damage, boss.kind);
+	}
+	if (strike.freeze) {
+		events.push({ type: 'freezeKeeper' });
+	}
+	if (strike.push !== undefined && !field.keeperFrozen) {
+		push(field, keeper.x < boss.x ? -strike.push : strike.push);
+	}
+	if (strike.burn !== undefined) {
+		const fire: Fire = {
+			id: field.nextId++,
+			x: keeper.x,
+			width: strike.burn.width,
+			damage: strike.burn.damage,
+			every: strike.burn.every,
+			until: field.time + strike.burn.lasts,
+			next: field.time,
+		};
+		field.fires.push(fire);
+		events.push({ type: 'fireLit', fire });
+	}
+	if (strike.clearsFire) {
+		for (const fire of field.fires) {
+			events.push({ type: 'fireOut', fire });
+		}
+		field.fires = [];
+	}
+}
+
+// Fires burn the keeper while the keeper stands in them, and melt the dragon's ice
+function burn(field: Field, host: FieldHost, events: FieldEvent[]): void {
+	for (const fire of field.fires) {
+		if (fire.until <= field.time) {
+			events.push({ type: 'fireOut', fire });
+		} else if (Math.abs(field.keeper.x - fire.x) < fire.width / 2 && fire.next <= field.time) {
+			fire.next = field.time + fire.every;
+			events.push({ type: 'cue', name: 'burn' });
+			host.hurtKeeper(fire.damage, field.boss?.kind ?? 'fire');
+			if (field.keeperFrozen) {
+				events.push({ type: 'thaw' });
+			}
+		}
+	}
+	field.fires = field.fires.filter((fire) => fire.until > field.time);
 }

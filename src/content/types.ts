@@ -65,6 +65,7 @@ export type Effect =
 	| { type: 'fillEquipment' }
 	| { type: 'fillWard' }
 	| { type: 'callDragon' }
+	| { type: 'callEclipse' }
 	| { type: 'refreshBoard' }
 	// Turns day to night or night to day
 	| { type: 'phaseChange' }

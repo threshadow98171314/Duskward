@@ -8,7 +8,7 @@ export const RESOURCES = {
 	Grain: {
 		char: 'g',
 		className: 'grain',
-		dragonEffect: 'WingBuffet',
+		dragonEffect: 'wingBuffet',
 		nightEffect: {
 			'castle': 'spawn:demon',
 			'fort': 'spawn:earthElemental',
@@ -70,7 +70,7 @@ export const RESOURCES = {
 	Clay: {
 		char: 'c',
 		className: 'clay',
-		dragonEffect: 'IceBeam',
+		dragonEffect: 'iceBeam',
 		nightEffect: {
 			'bricklayer4': 'spawn:imp',
 			'bricklayer3': 'spawn:waterElemental',
@@ -91,7 +91,7 @@ export const RESOURCES = {
 	Cloth: {
 		char: 'l',
 		className: 'cloth',
-		dragonEffect: 'FireBlast',
+		dragonEffect: 'fireBlast',
 		nightEffect: {
 			'weaver4': 'spawn:warlock',
 			'weaver3': 'spawn:fireElemental',

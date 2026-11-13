@@ -67,7 +67,8 @@ def paint_frame(cell, paint):
     """Repaints one frame (a grid of RGBA pixels) in place."""
     h = len(cell)
     w = len(cell[0])
-    filled = [[cell[y][x][3] > 0 for x in range(w)] for y in range(h)]
+    # Faint stray pixels in the original sheets are not part of the shape
+    filled = [[cell[y][x][3] >= 128 for x in range(w)] for y in range(h)]
     accents = [[tuple(cell[y][x]) == (255, 0, 255, 255) for x in range(w)] for y in range(h)]
     # Depth inside the silhouette: 1 on the edge, growing inwards
     depth = [[0] * w for _ in range(h)]
@@ -338,3 +339,22 @@ def draw_new(sheet):
                 x0, y0 = frame * w, offset + row * h
                 for y in range(h):
                     sheet[y0 + y][x0:x0 + w] = cell[y]
+
+
+# The Fallen Dawnwyrm: once the gold of morning, now dimmed by the Eclipse, with
+# only a rim of dawn light left on it. The dragon sheet holds its body (four
+# frames to a row, flipped rows after the first five), its head (closed, half
+# open and open, flipped below) and one segment of neck, flipped below.
+DRAGON = dict(rim=(255, 210, 92), top=(132, 92, 120), bottom=(58, 36, 64), outline=(16, 8, 20))
+
+
+def _cells(x0, y0, w, h, cols, rows):
+    return [(x0 + c * w, y0 + r * h, w, h) for r in range(rows) for c in range(cols)]
+
+
+def paint_dragon(sheet):
+    for x, y, w, h in _cells(0, 0, 204, 164, 4, 10) + _cells(0, 1640, 81, 30, 3, 2) + _cells(0, 1700, 24, 24, 1, 2):
+        cell = [sheet[y + dy][x:x + w] for dy in range(h)]
+        paint_frame(cell, DRAGON)
+        for dy in range(h):
+            sheet[y + dy][x:x + w] = cell[dy]

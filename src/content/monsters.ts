@@ -111,11 +111,9 @@ export const CALLS: Call[] = [
 	{ monster: 'duskcrow', when: 'nightfall', fromDay: 3, flock: 2, growEvery: 4, most: 5 },
 ];
 
-// The dragon is still its own entity (src/app/entity/monster/dragon.js) until it moves onto the field
+// Every monster, bosses included (see bosses.ts)
 export const MONSTER_IDS = [...Object.keys(MONSTERS), 'dragon'];
 
 // What monsters' spells can do to the board (effects in src/core/board.ts)
 export const BOARD_SPELLS = ['explosive', 'shadowBind'] as const;
 
-// What gathering a tile can make the dragon do
-export const DRAGON_ATTACKS = ['WingBuffet', 'IceBeam', 'FireBlast'] as const;

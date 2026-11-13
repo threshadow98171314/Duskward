@@ -4,7 +4,6 @@ import Graphics from './graphics/graphics.js';
 import Building from './entity/building.js';
 import Content from './gamecontent.js';
 import GameState from './gamestate.js';
-import ActionFactory from './action/actionfactory.js';
 import MonsterFactory from './entity/monster/monsterfactory.js';
 import Block from './entity/block.js';
 import Gem from './entity/gem.js';
@@ -20,6 +19,7 @@ import Options from './gameoptions.js';
 import { built } from './effects.js';
 import FieldView from './fieldview.js';
 import { CALLS, MONSTERS } from '../content/monsters.ts';
+import { BOSSES } from '../content/bosses.ts';
 import { chainCalls, nightfallCalls } from '../core/night.ts';
 import * as Field from '../core/field.ts';
 import * as Day from '../core/day.ts';
@@ -35,7 +35,10 @@ var celestial = null;
 var gem = null;
 var effects = {};
 var clock = Day.createClock();
+// How the dragon looks while it is on the field
 var theDragon = null;
+// Fires burning on the ground, by the field's id
+var fires = {};
 var stuff = [];
 // The ice the dragon's breath leaves around the keeper
 var iceBlock = null;
@@ -55,9 +58,6 @@ var _debugMultiplier = 1;
 // Debug cheat that multiplies gathered resources, also callable from the browser console
 var multiplier = window.multiplier = function(n) {
 	_debugMultiplier = n > 0 ? n : 1;
-	if(World.getDude()) {
-		reinitializeAllActions();
-	}
 };
 
 var World = {
@@ -236,10 +236,6 @@ var World = {
 		}
 	},
 
-	// A wing buffet throws the keeper back
-	pushKeeper: function(distance) {
-		Field.push(field, distance);
-	},
 	
 	removeBuilding: function(building) {
 		building.obsolete = true;
@@ -420,15 +416,6 @@ function updateGem() {
 	}
 }
 
-function reinitializeAllActions() {
-	for(var i in stuff) {
-		var entity = stuff[i];
-		if(!entity.uninterruptable && entity.action != null) {
-			entity.action.reinitialize(entity);
-		}
-	}
-}
-
 function addStateEffect(effect) {
 	var existingEffect = effects[effect.className];
 	if(existingEffect != null) {
@@ -442,10 +429,7 @@ function addStateEffect(effect) {
 			thawKeeper();
 		}
 		effects[effect.className] = null;
-		reinitializeAllActions();
 	}, effect.duration);
-	
-	reinitializeAllActions();
 }
 
 function endStateEffect(effect) {
@@ -528,7 +512,7 @@ function harvestSituation() {
 		night: clock.night,
 		dusk: clock.dusk,
 		inTransition: inTransition,
-		dragon: theDragon != null,
+		dragon: field != null && field.boss != null && field.boss.kind == 'dragon',
 		hasBuilding: function(className, current) {
 			return GameState.hasBuilding(Content.getBuildingType(className), current);
 		},
@@ -608,36 +592,17 @@ function makeStuffHappen() {
 		field.keeperFrozen = World.hasEffect('frozen');
 		handleFieldEvents(Field.tick(field, fieldHost));
 		FieldView.draw(field);
-		var dragonOut = theDragon != null && theDragon.isAlive() ? 1 : 0;
-		GameState.setIfHigher('ATONCE', Field.living(field).length + dragonOut);
+		if(theDragon != null && field.boss != null && theDragon.hp() !== field.boss.hp) {
+			theDragon.hp(field.boss.hp);
+		}
+		GameState.setIfHigher('ATONCE', Field.living(field).length + (field.boss != null ? 1 : 0));
 	}
 
-	// Everything else still runs itself: the sun and moon, buildings, effects and the dragon
-	if(!hasteTick) {
-		var frozen = effects['freezeTime'] != null;
+	// Everything else just animates: the sun and moon, buildings, effects and the dragon
+	if(!hasteTick && effects['freezeTime'] == null) {
 		for(var i = 0; i < stuff.length; i++) {
-			var entity = stuff[i];
-			if(entity.hostile && !clock.night) {
-				// The dragon cannot survive the daylight
-				if(entity.action != null) {
-					entity.action.terminateAction(entity);
-				}
-				entity.el().remove();
-				entity.gone = true;
-			}
-			if(!entity.gone) {
-				if(!entity.paused && !frozen) {
-					runEntity(entity);
-				}
-			} else if(entity.hostile) {
-				if(clock.night && !entity.wiped) {
-					dude.gainXp(entity.getXp() * _debugMultiplier);
-					advanceTime();
-				}
-				EventManager.trigger('monsterKilled', [entity]);
-				GameState.count('KILLED', 1);
-				stuff.splice(i, 1);
-				i--;
+			if(!stuff[i].gone && !stuff[i].paused) {
+				runEntity(stuff[i]);
 			}
 		}
 	}
@@ -716,6 +681,32 @@ function handleFieldEvents(events) {
 		case 'keeperDied':
 			keeperDied();
 			break;
+		case 'bossStrike':
+			theDragon && theDragon.strike(event.strike, field.keeper.x);
+			break;
+		case 'strikeLands':
+			theDragon && theDragon.land(event.strike, field.keeper.x, event.hit);
+			break;
+		case 'freezeKeeper':
+			EventManager.trigger('newStateEffect', [Content.StateEffects.frozen]);
+			break;
+		case 'thaw':
+			if(World.hasEffect('frozen')) {
+				EventManager.trigger('endStateEffect', [Content.StateEffects.frozen]);
+			}
+			break;
+		case 'fireLit':
+			lightFire(event.fire);
+			break;
+		case 'fireOut':
+			putOutFire(event.fire.id);
+			break;
+		case 'bossDying':
+			theDragon && theDragon.dying();
+			break;
+		case 'bossGone':
+			bossGone(event.boss);
+			break;
 		}
 	});
 }
@@ -743,6 +734,52 @@ function buildingRaised(building) {
 	}
 }
 
+function lightFire(fire) {
+	var view = new WorldEffect({ effectClass: 'fire', spriteName: 'dragoneffects', row: 1, animationFrames: 4 });
+	view.p(fire.x);
+	fires[fire.id] = view;
+	EventManager.trigger('newEntity', [view]);
+}
+
+function putOutFire(id) {
+	var view = fires[id];
+	if(view) {
+		delete fires[id];
+		EventManager.trigger('removeEntity', [view]);
+	}
+}
+
+// The dragon finishes coming apart (it removes its own body) and leaves the heart of the dawn behind
+function bossGone(boss) {
+	if(clock.night) {
+		dude.gainXp(boss.def.xp * _debugMultiplier);
+		advanceTime();
+	}
+	GameState.count('KILLED', 1);
+	GameState.count('DRAGONS', 1);
+	dismissDragon(false);
+	Graphics.endDragonFight();
+	if(boss.def.loot) {
+		dropChest(boss.x, boss.def.loot);
+	}
+	EventManager.trigger('dragonDefeated');
+}
+
+// Takes the dragon off the field: right away at daybreak, or after its death throes
+function dismissDragon(now) {
+	if(theDragon != null) {
+		handleRemoveEntity(theDragon);
+		if(now) {
+			theDragon.cancel();
+			theDragon.el().remove();
+		}
+		theDragon = null;
+	}
+	for(var id in fires) {
+		putOutFire(id);
+	}
+}
+
 function keeperDied() {
 	// Dude is dead. Long live the dude.
 	inTransition = true;
@@ -760,11 +797,8 @@ function keeperDied() {
 }
 
 function runEntity(entity) {
-	// Only animate if a new action wasn't created
+	// Effects and buildings may have something to do; everything animates
 	entity.think() || entity.animate();
-	if(entity.action != null) {
-		entity.action.doFrameAction(entity.frame);
-	}
 }
 
 function launchDude() {
@@ -857,7 +891,7 @@ function phaseTransition() {
 	handleFieldEvents(Field.setNight(field, clock.night));
 	if(!clock.night) {
 		FieldView.clear();
-		field.outsiders = [];
+		dismissDragon(true);
 	}
 	announceDusk(duskChanged);
 	dude.shield = 0;
@@ -869,7 +903,6 @@ function phaseTransition() {
 
 		console.log('casual night? ' + casualNight);
 
-		theDragon = null;
 		streak++;
 		GameState.ward = 0;
 		EventManager.trigger('wardChanged', [0, GameState.maxWard()]);
@@ -899,9 +932,6 @@ function difficultyToggle(casualMode) {
 
 function damageAllMonsters(damage) {
 	handleFieldEvents(Field.damageAll(field, damage));
-	if(theDragon != null && theDragon.isAlive()) {
-		theDragon.takeDamage(damage);
-	}
 }
 
 function wipeMonsters() {
@@ -938,28 +968,19 @@ function handleResourceStoreChanged(rows, cols) {
 	Resources.setSize(rows, cols);
 }
 
+// The horn calls the dragon down, on the far side from the keeper
 function callDragon() {
-	theDragon = MonsterFactory.getMonster("dragon", { 
-		flip: dude.p() >= Graphics.worldWidth() / 2, 
-		target: dude ,
-		multiplier: dragonMultiplier(GameState.prestige)
-	});
+	var flip = dude.p() >= Graphics.worldWidth() / 2;
+	var boss = Field.callBoss(field, 'dragon', BOSSES.dragon, flip ? 50 : Graphics.worldWidth() - 50,
+		dragonMultiplier(GameState.prestige));
+	theDragon = MonsterFactory.getMonster('dragon', { flip: flip, target: dude, boss: boss });
+	theDragon.hostile = false;
 	stuff.push(theDragon);
-	field.outsiders = [{
-		id: 0,
-		x: function() { return theDragon.p(); },
-		width: function() { return theDragon.getHitboxWidth(); },
-		// Out of reach while it lands
-		alive: function() { return theDragon != null && theDragon.hostile && theDragon.isAlive(); },
-		hurt: function(damage) { theDragon.takeDamage(damage); }
-	}];
-	theDragon.action = ActionFactory.getAction('Land');
-	theDragon.action.doAction(theDragon);
-	return theDragon;
+	Graphics.landDragon(theDragon);
 }
 
 function doDragonAttack(attackName) {
-	theDragon.queueAttack(attackName);
+	Field.provoke(field, attackName);
 }
 
 register('world', World);

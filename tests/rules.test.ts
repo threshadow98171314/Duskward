@@ -164,6 +164,9 @@ describe('progress', () => {
 		expect(canBuild(house, village(4, 1, ['shack', 'blacksmith']))).toBe(true);
 		expect(canBuild(house, village(3, 1, ['shack', 'blacksmith']))).toBe(false);
 		expect(canBuild({ requires: 'tower' }, village(9, 0, ['tower']))).toBe(true);
+		// The tower waits for all four dusk crystal shards
+		expect(canBuild({ requiredGems: 4 }, { ...village(9, 0), gems: 3 })).toBe(false);
+		expect(canBuild({ requiredGems: 4 }, { ...village(1, 0), gems: 4 })).toBe(true);
 	});
 });
 

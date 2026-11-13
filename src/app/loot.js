@@ -7,12 +7,6 @@ import World from './world.js';
 var BASE_DROP = 0.05;
 var TILE_DROP = 0.15;
 
-var probabilities = {
-	rare: 0.10,
-	uncommon: 0.35,
-	common: 1
-};
-
 function rollForLoot(monster) {
 	// %15 chance for normal monster, %15 for every tile after that.
 	var chance = (monster.dropChance || BASE_DROP) * 3 + (monster.dropChance || TILE_DROP) * (monster.options.tiles - 3);
@@ -37,23 +31,14 @@ function getLoot(treasure, debugMultiplier) {
 	} else {
 		var r = Math.random();
 		var lootPool = null;
-		for(var rarity in probabilities) {
-			if(r < probabilities[rarity]) {
+		for(var rarity in Content.lootRarity) {
+			if(r < Content.lootRarity[rarity]) {
 				lootPool = Content.lootPools[rarity];
 				break;
 			}
 		}
-		var poolSize = 0;
-		for(poolSize in lootPool) {}
-		poolSize++; // Correct for array 0-indexing
-		
-		r = Math.random();
-		for(var i in lootPool) {
-			lootName = lootPool[i];
-			if(r < (i + 1) / poolSize) {
-				break;
-			}
-		}
+		// Every item in the pool is as likely as the others
+		lootName = lootPool[Math.floor(Math.random() * lootPool.length)];
 	}
 	
 	E.trigger("lootGained", [lootName, treasure]);

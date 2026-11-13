@@ -1,5 +1,5 @@
 import Action from './action.js';
-import Content from '../gamecontent.js';
+import { built } from '../effects.js';
 import World from '../world.js';
 import Graphics from '../graphics/graphics.js';
 import E from '../eventmanager.js';
@@ -22,10 +22,7 @@ RaiseBuilding.prototype.doAction = function(dude) {
 			E.trigger('buildingComplete', [_action.building]);
 			dude.makeIdle();
 			dude.action = null;
-			var cb = Content.BuildingCallbacks[_action.building.options.type.className];
-			if(cb) {
-				cb();
-			}
+			built(_action.building.options.type);
 			// Remove replaced building, if necessary
 			if(_action.building.options.type.replaces != null) {
 				var replaces = _action.building.getReplaces(State);

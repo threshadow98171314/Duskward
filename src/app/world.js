@@ -17,6 +17,7 @@ import { register } from './modules.js';
 import Engine from './engine.js';
 import GameBoard from './gameboard.js';
 import Options from './gameoptions.js';
+import { built } from './effects.js';
 import * as Day from '../core/day.ts';
 import { bounty, duskWard, harvestResource } from '../core/harvest.ts';
 import { canBuild as canBuildIn } from '../core/progress.ts';
@@ -30,6 +31,8 @@ var effects = {};
 var clock = Day.createClock();
 var theDragon = null;
 var stuff = [];
+// The ice the dragon's breath leaves around the keeper
+var iceBlock = null;
 var inTransition = false;
 var gameLoop = null;
 var star = null;
@@ -117,10 +120,7 @@ var World = {
 					}
 					building.el().css('bottom', '0px');
 					building.el().find('.blockPile').css('top', '100%');
-					var cb = Content.BuildingCallbacks[building.options.type.className];
-					if(cb) {
-						deferredCallbacks.push(cb);
-					}
+					deferredCallbacks.push(built.bind(null, building.options.type));
 				} else if(!building.obsolete && canBuild(building.options.type)) {
 					Graphics.addToWorld(building);
 					Graphics.setPosition(building, building.p());
@@ -375,12 +375,10 @@ function findClosest(filter) {
 }
 
 function canBuild(buildingType) {
-	if(buildingType.test && !buildingType.test(GameState)) {
-		return false;
-	}
 	return canBuildIn(buildingType, {
 		level: GameState.level,
 		prestige: GameState.prestige,
+		gems: GameState.gem || 0,
 		hasBuilding: function(className) {
 			return GameState.hasBuilding(Content.getBuildingType(className));
 		}
@@ -440,9 +438,13 @@ function addStateEffect(effect) {
 	if(existingEffect != null) {
 		clearTimeout(existingEffect);
 	}
-	effect.start && effect.start(dude);
+	if(effect.freezesKeeper) {
+		freezeKeeper();
+	}
 	effects[effect.className] = setTimeout(function() {
-		effect.end && effect.end(dude);
+		if(effect.freezesKeeper) {
+			thawKeeper();
+		}
 		effects[effect.className] = null;
 		reinitializeAllActions();
 	}, effect.duration);
@@ -455,8 +457,25 @@ function endStateEffect(effect) {
 	effects[effect.className] = null;
 	if(existingEffect != null) {
 		clearTimeout(existingEffect);
-		effect.end && effect.end(dude);
+		if(effect.freezesKeeper) {
+			thawKeeper();
+		}
 	}
+}
+
+function freezeKeeper() {
+	dude.paused = true;
+	if(iceBlock == null) {
+		iceBlock = new WorldEffect({effectClass: 'iceBlock', spriteName: 'dragoneffects'});
+		iceBlock.p(dude.p());
+		EventManager.trigger('newEntity', [iceBlock]);
+	}
+}
+
+function thawKeeper() {
+	dude.paused = false;
+	EventManager.trigger('removeEntity', [iceBlock]);
+	iceBlock = null;
 }
 
 function handleNewEntity(entity) {

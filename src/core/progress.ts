@@ -37,11 +37,14 @@ export interface BuildingRule {
 	prestigeDependency?: string;
 	requires?: string;
 	replaces?: string;
+	// Dusk crystal shards needed before it appears
+	requiredGems?: number;
 }
 
 export interface Village {
 	level: number;
 	prestige: number;
+	gems?: number;
 	hasBuilding(className: string): boolean;
 }
 
@@ -55,6 +58,9 @@ export function canBuild(rule: BuildingRule, village: Village): boolean {
 		return false;
 	}
 	if (rule.replaces != null && !village.hasBuilding(rule.replaces)) {
+		return false;
+	}
+	if (rule.requiredGems != null && (village.gems ?? 0) < rule.requiredGems) {
 		return false;
 	}
 	return true;

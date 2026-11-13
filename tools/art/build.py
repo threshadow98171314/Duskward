@@ -11,6 +11,7 @@ import pathlib
 import buildings
 import dude
 import icons
+import monsters
 import resources
 import scenery
 import village
@@ -124,6 +125,8 @@ def build_icons():
 
 def build_monsters():
     sheet = read_png(LEGACY / "monsters.png")
+    monsters.paint_sheet(sheet)
+    monsters.draw_new(sheet)
     for y in range(DUDE_OFFSET, DUDE_END):
         sheet[y] = [(0, 0, 0, 0)] * len(sheet[y])
     paste(sheet, dude.sheet(), 0, DUDE_OFFSET)

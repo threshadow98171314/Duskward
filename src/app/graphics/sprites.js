@@ -26,6 +26,9 @@ var spriteinfo = {
 	warlock: ['monsters', 4368],
 	waterelemental: ['monsters', 4627],
 	zombie: ['monsters', 4900],
+	shade: ['monsters', 5124],
+	lampmoth: ['monsters', 5430],
+	duskcrow: ['monsters', 5528],
 
 	// Icons
 	bucklericon: ['icons', 0],

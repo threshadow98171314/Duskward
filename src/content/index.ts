@@ -3,7 +3,7 @@
 import { BUILDINGS } from './buildings.ts';
 import { ITEMS, LOOT_POOLS, LOOT_RARITY } from './items.ts';
 import { SKILLS, SPELLS, STATE_EFFECTS } from './magic.ts';
-import { BOARD_SPELLS, DRAGON_ATTACKS, MONSTER_IDS, MONSTERS } from './monsters.ts';
+import { BOARD_SPELLS, CALLS, DRAGON_ATTACKS, MONSTER_IDS, MONSTERS } from './monsters.ts';
 import { RESOURCES } from './resources.ts';
 import { type Content, validateContent } from './validate.ts';
 
@@ -18,6 +18,7 @@ export const CONTENT: Content = {
 	stateEffects: STATE_EFFECTS,
 	monsters: MONSTER_IDS,
 	monsterDefs: MONSTERS,
+	calls: CALLS,
 	boardSpells: BOARD_SPELLS,
 	dragonAttacks: DRAGON_ATTACKS,
 };

@@ -4,6 +4,7 @@
 
 import type { BuildingDef, Effect, ItemDef, LootRarity, ResourceDef, SkillDef, SpellDef, StateEffectDef, Use } from './types.ts';
 import type { MonsterDef } from '../core/field.ts';
+import type { Call } from '../core/night.ts';
 
 export interface Content {
 	resources: Record<string, ResourceDef>;
@@ -17,6 +18,7 @@ export interface Content {
 	// Every monster that can be called up: those on the field, and the dragon
 	monsters: readonly string[];
 	monsterDefs: Record<string, MonsterDef>;
+	calls: Call[];
 	// What spells can do to the board
 	boardSpells: readonly string[];
 	dragonAttacks: readonly string[];
@@ -53,6 +55,9 @@ export function validateContent(content: Content): string[] {
 				problem(where, 'unknown night effect ' + effect);
 			}
 		});
+		if (resource.attracts !== undefined && !monsters.has(resource.attracts)) {
+			problem(where, 'draws unknown monster ' + resource.attracts);
+		}
 		if (resource.dragonEffect !== undefined && !content.dragonAttacks.includes(resource.dragonEffect)) {
 			problem(where, 'unknown dragon attack ' + resource.dragonEffect);
 		}
@@ -136,6 +141,15 @@ export function validateContent(content: Content): string[] {
 		}
 		if (monster.loot !== undefined && content.items[monster.loot] === undefined) {
 			problem(where, 'drops unknown item ' + monster.loot);
+		}
+	}
+	for (const call of content.calls) {
+		const where = 'call for ' + call.monster;
+		if (!monsters.has(call.monster)) {
+			problem(where, 'unknown monster');
+		}
+		if (call.when === 'chain' ? !(call.waves >= 2) : !(call.fromDay >= 1 && call.flock >= 1 && call.growEvery >= 1 && call.most >= call.flock)) {
+			problem(where, 'numbers out of range');
 		}
 	}
 

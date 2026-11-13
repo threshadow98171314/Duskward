@@ -280,6 +280,7 @@ var GameAudio = {
 		E.bind('dragonExplode', GameAudio.play.bind(this, 'DragonExplode'));
 		E.bind('callDragon', startBossMusic.bind(this));
 		E.bind('lichSpell', GameAudio.play.bind(this, 'LichSpell'));
+		E.bind('shadowSpell', GameAudio.play.bind(this, 'LichSpell'));
 		
 		GameAudio.setMusicVolume(Options.get('musicVolume'));
 		GameAudio.setEffectsVolume(Options.get('effectsVolume'));

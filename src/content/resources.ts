@@ -127,6 +127,8 @@ export const RESOURCES = {
 		nightEffect: {
 			'default': 'dawn'
 		},
+		// Lighting lanterns at night draws lampmoths
+		attracts: 'lampmoth',
 		multipliers: {},
 		effectDest: {
 			day: [32, -20],

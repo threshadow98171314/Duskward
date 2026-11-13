@@ -14,10 +14,22 @@ exports[`simulated fights > play out like this for each monster 1`] = `
     "seconds": 7.3,
     "won": true,
   },
+  "a flock of three crows": {
+    "damageTaken": 0,
+    "healthLeft": 60,
+    "seconds": 3.9,
+    "won": true,
+  },
   "a gnawer": {
     "damageTaken": 0,
     "healthLeft": 40,
     "seconds": 2.5,
+    "won": true,
+  },
+  "a lampmoth": {
+    "damageTaken": 0,
+    "healthLeft": 60,
+    "seconds": 2.7,
     "won": true,
   },
   "a marsh lurker": {
@@ -42,6 +54,12 @@ exports[`simulated fights > play out like this for each monster 1`] = `
     "damageTaken": 0,
     "healthLeft": 60,
     "seconds": 3.3,
+    "won": true,
+  },
+  "a shade": {
+    "damageTaken": 0,
+    "healthLeft": 50,
+    "seconds": 5.7,
     "won": true,
   },
   "a shadowbat": {

@@ -3,7 +3,7 @@ import Content from '../src/app/gamecontent.js';
 import { absorb, dragonMultiplier, heroDamage, maxShield, maxSword, monsterMultiplier, monsterStat, strength, swordDamage }
 	from '../src/core/combat.ts';
 import { advanceClock, createClock, extendDay, startPhase } from '../src/core/day.ts';
-import { bounty, harvest, type HarvestSituation, type ResourceRule } from '../src/core/harvest.ts';
+import { attracted, bounty, harvest, type HarvestSituation, type ResourceRule } from '../src/core/harvest.ts';
 import { canBuild, gainXp, MAX_LEVEL, maxHealth, xpToLevel } from '../src/core/progress.ts';
 
 const lengths = { dayMoves: 20, nightMoves: 15 };
@@ -116,6 +116,19 @@ describe('harvest', () => {
 		expect(harvest({ wood: 3 }, situation({ night: true, dusk: true, inTransition: true }), resources)).toEqual([
 			{ type: 'store', resource: 'wood', amount: 3 },
 		]);
+	});
+});
+
+describe('lanterns at night', () => {
+	it('draw lampmoths, besides bringing the dawn closer', () => {
+		const resources = (className: string) => Content.getResourceType(className) as ResourceRule;
+		const at = (night: boolean, extra: Partial<HarvestSituation> = {}): HarvestSituation =>
+			({ night, dusk: false, inTransition: false, dragon: false, hasBuilding: () => false, multiplier: 1, ...extra });
+		expect(attracted('lantern', at(true), resources)).toBe('lampmoth');
+		expect(attracted('lantern', at(false), resources)).toBeNull();
+		expect(attracted('lantern', at(true, { inTransition: true }), resources)).toBeNull();
+		expect(attracted('lantern', at(true, { dragon: true }), resources)).toBeNull();
+		expect(attracted('grain', at(true), resources)).toBeNull();
 	});
 });
 

@@ -1,5 +1,6 @@
-// The monsters that come at night. Gathering tiles calls them up (see the
-// nightEffect of each resource), and the dragon is called with its horn.
+// The monsters that come at night. Gathering tiles calls most of them up (see
+// the nightEffect of each resource), lanterns draw lampmoths, the calls below
+// bring the rest, and the dragon is called with its horn.
 //
 // Every monster walks towards the keeper until it can reach, then attacks. What
 // else it does is made of parts: hitting up close, shooting from afar, casting
@@ -7,6 +8,7 @@
 // pixels per second; sizes are the sprite's, in pixels.
 
 import type { MonsterDef } from '../core/field.ts';
+import type { Call } from '../core/night.ts';
 
 export const MONSTERS = {
 	zombie: {
@@ -80,7 +82,34 @@ export const MONSTERS = {
 			{ type: 'teleport', first: 52, every: 80 },
 		],
 	},
+	shade: {
+		sprite: 'shade', width: 20, height: 34,
+		health: 6, damage: 1, xp: 12, speed: 30,
+		parts: [
+			{ type: 'melee', hits: [1] },
+			// Binds a tile on the board in shadow
+			{ type: 'cast', spell: 'shadowBind', first: 8, every: 30 },
+		],
+	},
+	lampmoth: {
+		sprite: 'lampmoth', width: 18, height: 14, flying: true, prey: 'ward',
+		health: 2, damage: 1, xp: 5, speed: 70,
+		parts: [{ type: 'melee', hits: [1, 3] }],
+	},
+	duskcrow: {
+		sprite: 'duskcrow', width: 24, height: 16, flying: true,
+		health: 3, damage: 2, xp: 8, speed: 110,
+		parts: [{ type: 'melee', hits: [1] }],
+	},
 } satisfies Record<string, MonsterDef>;
+
+// Monsters that come for reasons other than the tiles gathered
+export const CALLS: Call[] = [
+	// Long chains at night cast long shadows
+	{ monster: 'shade', when: 'chain', waves: 3 },
+	// From the third night, crows gather at nightfall: two, then one more every four days, up to five
+	{ monster: 'duskcrow', when: 'nightfall', fromDay: 3, flock: 2, growEvery: 4, most: 5 },
+];
 
 // The dragon is still its own entity (src/app/entity/monster/dragon.js) until it moves onto the field
 export const MONSTER_IDS = [...Object.keys(MONSTERS), 'dragon'];

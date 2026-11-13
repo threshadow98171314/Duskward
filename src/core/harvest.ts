@@ -12,6 +12,8 @@ export interface ResourceRule {
 	dragonEffect?: string;
 	// Store multipliers, by building
 	multipliers?: Record<string, number>;
+	// A monster that gathering it at night draws in, besides its night effect
+	attracts?: string;
 }
 
 export interface HarvestSituation {
@@ -100,6 +102,18 @@ export function bounty(gathered: Record<string, number>): Bounty | null {
 		}
 	}
 	return { kinds: kinds.length, percent: Math.round(rate * 100), extra };
+}
+
+// A monster drawn in by what was gathered at night, as lanterns draw lampmoths
+export function attracted(
+	className: string,
+	situation: HarvestSituation,
+	rule: (className: string) => ResourceRule,
+): string | null {
+	if (!situation.night || situation.inTransition || situation.dragon) {
+		return null;
+	}
+	return rule(className).attracts ?? null;
 }
 
 // Everything a wave gathered, for a situation that stays the same throughout

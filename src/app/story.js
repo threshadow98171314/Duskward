@@ -80,6 +80,10 @@ export default {
 		E.bind('powerCreated', function() {
 			tell('firstPower', EVENT_DELAY);
 		});
+		// The first time each kind of monster turns up, Sera says what it is
+		E.bind('monsterSpawned', function(kind) {
+			tell('monster_' + kind, EVENT_DELAY);
+		});
 		E.bind('bounty', function() {
 			tell('firstBounty', EVENT_DELAY);
 		});

@@ -8,7 +8,7 @@ import {
 const WIDTH = 480;
 
 interface Log {
-	hurts: { time: number; damage: number; by: string }[];
+	hurts: { time: number; damage: number; by: string; prey?: string }[];
 	blows: number[];
 	events: { time: number; event: FieldEvent }[];
 }
@@ -24,7 +24,7 @@ function setup(options: { night?: boolean; keeperX?: number; tasks?: Task[]; ali
 			log.blows.push(field.time);
 			return { damage: 1, sharp: false };
 		},
-		hurtKeeper: (damage, by) => log.hurts.push({ time: field.time, damage, by }),
+		hurtKeeper: (damage, by, prey) => log.hurts.push({ time: field.time, damage, by, prey }),
 		nextTask: () => tasks.shift() ?? null,
 	};
 	const run = (ms: number) => {
@@ -100,6 +100,15 @@ describe('monsters', () => {
 		field.keeper.x -= 6;
 		run(1000);
 		expect(log.hurts.length).toBe(hurts);
+	});
+
+	it('go for the ward first, if that is their prey', () => {
+		const { field, log, run } = setup();
+		field.keeperFrozen = true;
+		const moth = spawn(field, 'lampmoth', def('lampmoth'), 'right');
+		moth.x = field.keeper.x + 20;
+		run(400);
+		expect(log.hurts[0]).toMatchObject({ by: 'lampmoth', prey: 'ward' });
 	});
 
 	it('cast spells and teleport on their own schedule', () => {

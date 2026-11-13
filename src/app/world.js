@@ -19,12 +19,13 @@ import GameBoard from './gameboard.js';
 import Options from './gameoptions.js';
 import { built } from './effects.js';
 import FieldView from './fieldview.js';
-import { MONSTERS } from '../content/monsters.ts';
+import { CALLS, MONSTERS } from '../content/monsters.ts';
+import { chainCalls, nightfallCalls } from '../core/night.ts';
 import * as Field from '../core/field.ts';
 import * as Day from '../core/day.ts';
-import { bounty, duskWard, harvestResource } from '../core/harvest.ts';
+import { attracted, bounty, duskWard, harvestResource } from '../core/harvest.ts';
 import { canBuild as canBuildIn } from '../core/progress.ts';
-import { dragonMultiplier, monsterMultiplier } from '../core/combat.ts';
+import { dragonMultiplier, monsterMultiplier, WARD_BITE } from '../core/combat.ts';
 
 var hasteTick = false;
 var dude = null;
@@ -46,6 +47,8 @@ var recorded = null;
 var streak = 0;
 // What the current move has gathered by day, towards a bounty
 var moveGathered = {};
+// The side of the board the last tiles were cleared on, where monsters come from
+var lastSide = 'left';
 var casualNight = false;
 
 var _debugMultiplier = 1;
@@ -106,6 +109,7 @@ var World = {
 		EventManager.bind('prioritizeBuilding', prioritizeBuilding);
 		EventManager.bind('callDragon', callDragon);
 		EventManager.bind('dropChest', dropChest);
+		EventManager.bind('chainCombo', callForChain);
 		EventManager.bind('keySequenceComplete', multiplier.bind(this, 5));
 		EventManager.bind('fillEquipment', function() {
 			fillDefense();
@@ -367,6 +371,26 @@ function spawnMonster(monsterType, tiles, side) {
 		multiplier: monsterMultiplier(GameState.prestige)
 	});
 	FieldView.addMonster(monster);
+	EventManager.trigger('monsterSpawned', [monsterType]);
+}
+
+// A long chain at night calls up a shade
+function callForChain(waves) {
+	if(field == null || !clock.night || inTransition) {
+		return;
+	}
+	chainCalls(CALLS, waves).forEach(function(monster) {
+		spawnMonster(monster, waves, lastSide);
+	});
+}
+
+// Crows gather as night falls
+function callAtNightfall() {
+	nightfallCalls(CALLS, GameState.dayNumber).forEach(function(arrival) {
+		for(var i = 0; i < arrival.count; i++) {
+			spawnMonster(arrival.monster, 3, i % 2 == 0 ? 'right' : 'left');
+		}
+	});
 }
 
 function dropChest(x, forceLoot) {
@@ -513,6 +537,7 @@ function harvestSituation() {
 }
 
 function handleTileClear(resourcesGained, side) {
+	lastSide = side;
 	// Everything cleared at dusk strengthens the ward for the coming night
 	var ward = duskWard(resourcesGained, harvestSituation());
 	if(ward !== null) {
@@ -533,6 +558,11 @@ function handleTileClear(resourcesGained, side) {
 		var effect = harvestResource(typeName, resourcesGained[typeName], situation, Content.getResourceType.bind(Content));
 		if(effect != null) {
 			applyHarvest(effect, side);
+		}
+		// Lighting lanterns at night also draws lampmoths
+		var drawn = attracted(typeName, harvestSituation(), Content.getResourceType.bind(Content));
+		if(drawn != null && resourcesGained[typeName] > 0) {
+			spawnMonster(drawn, resourcesGained[typeName], side);
 		}
 	}
 }
@@ -624,7 +654,13 @@ var fieldHost = {
 		var sharp = dude.hasSword();
 		return { damage: dude.getDamage(), sharp: sharp };
 	},
-	hurtKeeper: function(damage, by) {
+	hurtKeeper: function(damage, by, prey) {
+		if(prey == 'ward' && GameState.ward > 0) {
+			// Lampmoths eat into the ward before they bite the keeper
+			GameState.ward = Math.max(0, GameState.ward - damage * WARD_BITE);
+			EventManager.trigger('wardChanged', [GameState.ward, GameState.maxWard()]);
+			return;
+		}
 		dude.takeDamage(damage, { options: { monsterClass: by } });
 	},
 	nextTask: function() {
@@ -643,7 +679,7 @@ function handleFieldEvents(events) {
 			break;
 		case 'spell':
 			GameBoard.addEffectRandomly(event.spell);
-			EventManager.trigger('lichSpell');
+			EventManager.trigger(event.spell == 'explosive' ? 'lichSpell' : 'shadowSpell');
 			break;
 		case 'monsterGone':
 			monsterGone(event.monster);
@@ -848,6 +884,7 @@ function phaseTransition() {
 		}
 	} else {
 		casualNight = Options.get('casualMode', false);
+		callAtNightfall();
 	}
 }
 

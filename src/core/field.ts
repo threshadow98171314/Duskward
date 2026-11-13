@@ -53,6 +53,10 @@ export interface MonsterDef {
 	speed: number;
 	// Hits with a blade rather than a club (it sounds different)
 	blade?: boolean;
+	// Flies above the ground (it is drawn higher)
+	flying?: boolean;
+	// What its blows go for first: lampmoths eat the ward
+	prey?: 'ward';
 	parts: Part[];
 	// Chance of a chest per tile that called the monster up; always drops loot if set
 	dropChance?: number;
@@ -141,7 +145,7 @@ export interface FieldHost {
 	keeperAlive(): boolean;
 	// The keeper's next blow; it may use up a charge of the sword
 	keeperBlow(): { damage: number; sharp: boolean };
-	hurtKeeper(damage: number, by: string): void;
+	hurtKeeper(damage: number, by: string, prey?: 'ward'): void;
 	// By day, what the keeper should work on next, if anything
 	nextTask(): Task | null;
 }
@@ -688,7 +692,7 @@ function actMonster(field: Field, monster: Actor, host: FieldHost, events: Field
 	switch (activity.type) {
 		case 'strike':
 			if (activity.hits.includes(monster.frame)) {
-				host.hurtKeeper(monster.damage, monster.kind);
+				host.hurtKeeper(monster.damage, monster.kind, def.prey);
 				events.push({ type: 'cue', name: def.blade ? 'sharpHit' : 'bluntHit' });
 			}
 			if (monster.frame === FRAMES - 1) {

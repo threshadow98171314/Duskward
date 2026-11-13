@@ -70,6 +70,9 @@ const MEETINGS: [string, string[], Keeper][] = [
 	['a cultist', ['warlock'], { level: 10, stoneLevel: 6, woodLevel: 6 }],
 	['a shadowbat', ['imp'], { level: 10, stoneLevel: 6, woodLevel: 6 }],
 	['the hierophant', ['lich'], { level: 12, stoneLevel: 8, woodLevel: 8 }],
+	['a shade', ['shade'], { level: 3, stoneLevel: 1, woodLevel: 1 }],
+	['a lampmoth', ['lampmoth'], { level: 4, stoneLevel: 2, woodLevel: 2 }],
+	['a flock of three crows', ['duskcrow', 'duskcrow', 'duskcrow'], { level: 4, stoneLevel: 2, woodLevel: 2 }],
 ];
 
 describe('simulated fights', () => {

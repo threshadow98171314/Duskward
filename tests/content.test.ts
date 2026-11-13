@@ -3,6 +3,8 @@ import ActionFactory from '../src/app/action/actionfactory.js';
 import MonsterFactory from '../src/app/entity/monster/monsterfactory.js';
 import Content from '../src/app/gamecontent.js';
 import Sprites from '../src/app/graphics/sprites.js';
+import en from '../src/app/locale/en.js';
+import zhTW from '../src/app/locale/zh-TW.js';
 import { CONTENT, checkContent } from '../src/content/index.ts';
 import type { Content as GameContent } from '../src/content/validate.ts';
 import { validateContent } from '../src/content/validate.ts';
@@ -55,6 +57,23 @@ describe('game content', () => {
 		content.buildings.Altar.requires = 'temple';
 		expect(() => checkContent(content)).toThrow('building Altar: requires unknown building temple');
 		expect(() => checkContent(content)).toThrow('loot pool rare: unknown item crown');
+	});
+
+	it('catches calls and draws for monsters that do not exist', () => {
+		expect(broken((c) => { c.resources.Lantern.attracts = 'firefly'; })).toContain('resource Lantern: draws unknown monster firefly');
+		expect(broken((c) => { c.calls.push({ monster: 'owl', when: 'chain', waves: 4 }); })).toContain('call for owl: unknown monster');
+	});
+
+	it('names every monster and has Sera say a word about it', () => {
+		for (const [language, text] of Object.entries({ 'zh-TW': zhTW, en })) {
+			const names = (text as { MONSTER_NAMES: Record<string, string> }).MONSTER_NAMES;
+			const journal = (text as { JOURNAL: Record<string, string> }).JOURNAL;
+			for (const monster of CONTENT.monsters) {
+				expect(names[monster], language + ' name of ' + monster).toBeTypeOf('string');
+				expect(journal[monster === 'dragon' ? 'dragon' : 'monster_' + monster], language + ' journal on ' + monster)
+					.toBeTypeOf('string');
+			}
+		}
 	});
 
 	it('catches monsters that cannot fight', () => {

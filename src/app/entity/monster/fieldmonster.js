@@ -16,6 +16,13 @@ var FieldMonster = function(actor) {
 FieldMonster.prototype = new Monster({});
 FieldMonster.constructor = FieldMonster;
 
+FieldMonster.prototype.el = function() {
+	if(this._el == null) {
+		Monster.prototype.el.call(this).toggleClass('flying', !!this.actor.def.flying);
+	}
+	return this._el;
+};
+
 FieldMonster.prototype.getMaxHealth = function() {
 	return this.actor ? this.actor.maxHp : 1;
 };

@@ -14,6 +14,8 @@ export interface ResourceDef {
 	nightEffect: Record<string, string>;
 	// What it makes the dragon do while the dragon is out
 	dragonEffect?: string;
+	// A monster that gathering it at night draws in, besides its night effect
+	attracts?: string;
 	// Store multipliers, by building
 	multipliers: Record<string, number>;
 	effectDest: { day: EffectDestination; night: EffectDestination };

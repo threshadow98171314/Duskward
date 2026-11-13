@@ -62,6 +62,9 @@ export function absorb(damage: number, defences: Defences): Defences & { warded:
 	return { health, ward, shield, frozen: defences.frozen, warded, blocked };
 }
 
+// Lampmoths eat into the ward at twice the strength of their blows
+export const WARD_BITE = 2;
+
 export function monsterMultiplier(prestige: number): number {
 	return prestige * PRESTIGE_MULTIPLIER + 1;
 }

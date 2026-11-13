@@ -207,8 +207,8 @@ Duskward 的中文名是「暮守」。這份文件記錄它的世界觀、玩�
 - 素材用 `tools/art/` 裡的 Python 腳本產生，只用標準函式庫：
   - `canvas.py`：像素繪圖工具和調色盤，以 1 倍大小繪製，輸出時放大 2 倍。
   - `resources.py`（資源方塊）、`tiles.py`（燈火方塊）、`village.py`（原作建築）、`buildings.py`（新建築）、`dude.py`（主角）、`icons.py`（介面圖示）、`scenery.py`（遠山與星空）：各類素材的繪製程式。
-  - `build.py`：組裝精靈圖並輸出到 `www/img/`，執行方式是 `python tools/art/build.py`。
-  - `legacy/`：原作的精靈圖。還沒重繪的部分會從這裡複製。
+  - `build.py`：組裝精靈圖並輸出到 `public/img/`，執行方式是 `python tools/art/build.py`。
+  - `legacy/`：原作的精靈圖。還沒重繪的部分會從這裡複製；`legacy/parts/` 和 `legacy/pdn/` 是原作的分件圖和 Paint.NET 原始檔。
 - 產生的精靈圖沿用原作的排列方式：同樣的格子尺寸、動畫格數和圖檔偏移。這樣程式和 CSS 幾乎不用改，可以一張一張替換。
 
 ### 素材規格

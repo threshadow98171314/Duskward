@@ -18,7 +18,7 @@ import Engine from './engine.js';
 import GameBoard from './gameboard.js';
 import Options from './gameoptions.js';
 import * as Day from '../core/day.ts';
-import { duskWard, harvestResource } from '../core/harvest.ts';
+import { bounty, duskWard, harvestResource } from '../core/harvest.ts';
 import { canBuild as canBuildIn } from '../core/progress.ts';
 import { dragonMultiplier, monsterMultiplier } from '../core/combat.ts';
 
@@ -36,6 +36,8 @@ var star = null;
 var prioritizedBuilding = null;
 var recorded = null;
 var streak = 0;
+// What the current move has gathered by day, towards a bounty
+var moveGathered = {};
 var casualNight = false;
 
 var _debugMultiplier = 1;
@@ -65,6 +67,7 @@ var World = {
 		theDragon = null;
 		var deferredCallbacks = [];
 		streak = 0;
+		moveGathered = {};
 		var casualNight = false;
 		
 		EventManager.bind('difficultyChanged', difficultyToggle);
@@ -470,10 +473,28 @@ function handleRemoveEntity(entity) {
 }
 
 function handleTilesSwapped() {
+	harvestBounty();
 	if(!clock.night) {
 		advanceTime();
 		makeDudeHungry();
 	}
+}
+
+// A move that gathered many kinds by day earns extra of each, once it has settled
+function harvestBounty() {
+	var earned = bounty(moveGathered);
+	moveGathered = {};
+	var situation = harvestSituation();
+	if(earned == null || (situation.night && !situation.inTransition)) {
+		return;
+	}
+	for(var typeName in earned.extra) {
+		var effect = harvestResource(typeName, earned.extra[typeName], harvestSituation(), Content.getResourceType.bind(Content));
+		if(effect != null) {
+			applyHarvest(effect);
+		}
+	}
+	EventManager.trigger('bounty', [earned.kinds, earned.percent]);
 }
 
 function handleNoMoreMoves() {
@@ -510,8 +531,13 @@ function handleTileClear(resourcesGained, side) {
 	// One kind at a time: lighting lanterns can bring the dawn partway through
 	for(var typeName in resourcesGained) {
 		var situation = harvestSituation();
-		if(recorded != null && !(situation.night && !situation.inTransition)) {
+		var daytime = !(situation.night && !situation.inTransition);
+		if(recorded != null && daytime) {
 			recorded += resourcesGained[typeName];
+		}
+		// Resources gathered by day count towards the move's bounty; gems do not
+		if(daytime && typeName != 'mana') {
+			moveGathered[typeName] = (moveGathered[typeName] || 0) + resourcesGained[typeName];
 		}
 		var effect = harvestResource(typeName, resourcesGained[typeName], situation, Content.getResourceType.bind(Content));
 		if(effect != null) {

@@ -809,12 +809,8 @@ body.paused:before {
 	-moz-transform: translate3d(0,0,0);
 	-ms-transform: translate3d(0,0,0);
 	-o-transform: translate3d(0,0,0);
-	transition: transform 200ms linear, opacity 200ms linear;
-	-webkit-transition: -webkit-transform 200ms linear, opacity 200ms linear;;
-	-moz-transition: -moz-transform 200ms linear, opacity 200ms linear;
-	-ms-transition: -ms-transform 200ms linear, opacity 200ms linear;
-	-o-transition:
-	 -o-transform 200ms linear, opacity 200ms linear;
+	/* graphics/gameboard.js shortens --tile-time to speed up long chains */
+	transition: transform var(--tile-time, 200ms) linear, opacity var(--tile-time, 200ms) linear;
 }
 
 .tile.pooled {

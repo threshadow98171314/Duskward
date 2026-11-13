@@ -248,6 +248,10 @@ var Engine = {
 		});
 		
 		Graphics.attachHandler("GameBoard", "mousedown touchstart", '.tile', function(e) {
+			if(!canMove()) {
+				// Tapping the board while a chain plays out fast-forwards it
+				GameBoard.hurry();
+			}
 			if(!dragging) {
 				// Handle wacky touch event objects
 				if(e.originalEvent.changedTouches) {

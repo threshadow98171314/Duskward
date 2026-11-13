@@ -5,6 +5,7 @@ import Graphics from './graphics/graphics.js';
 
 var JOURNAL_DELAY = 3500; // Let the "Day N" notice clear first
 var EVENT_DELAY = 1500;
+var LONG_CHAIN = 6; // Long enough that a chain is worth fast-forwarding
 
 var newGame = false;
 
@@ -78,6 +79,14 @@ export default {
 		});
 		E.bind('powerCreated', function() {
 			tell('firstPower', EVENT_DELAY);
+		});
+		E.bind('bounty', function() {
+			tell('firstBounty', EVENT_DELAY);
+		});
+		E.bind('chainCombo', function(chain) {
+			if(chain >= LONG_CHAIN) {
+				tell('longChain');
+			}
 		});
 		E.bind('gaugeChanged', function(current, max) {
 			if(current >= max) {

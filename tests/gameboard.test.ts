@@ -2,14 +2,14 @@
 // into the events and draw requests the rest of the game listens for, in the order the
 // original module triggered them. Before it moved onto the core, this same test drove
 // the original module and matched it move for move on these games.
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 import Engine from '../src/app/engine.js';
 import EventManager from '../src/app/eventmanager.js';
 import GameBoard from '../src/app/gameboard.js';
 import Content from '../src/app/gamecontent.js';
 import GameState from '../src/app/gamestate.js';
 import {
-	addEffect, type Board, createBoard, type EffectType, expireEffects, isBound, resolveWave, swapTiles,
+	addEffect, type Board, createBoard, type EffectType, expireEffects, isBound, resolveWave, swapTiles, validMoves,
 } from '../src/core/board.ts';
 import { createRandom } from '../src/core/random.ts';
 
@@ -145,4 +145,52 @@ it('reports every move the way the original board module did', () => {
 	expect(moves).toBeGreaterThan(1000);
 	expect(waves).toBeGreaterThan(300);
 	expect(bursts).toBeGreaterThan(30);
+});
+
+it('fast-forwards the rest of a chain once hurried, until the move is over', () => {
+	let checked = 0;
+	for (let game = 0; game < 30 && checked < 3; game++) {
+		EventManager.init();
+		GameState.create();
+		GameBoard.init({ random: createRandom(game + 1) });
+		let callback: (() => void) | null = null;
+		(Engine as unknown as { setGraphicsCallback: (cb: () => void) => void }).setGraphicsCallback = (cb) => { callback = cb; };
+		const step = () => { const cb: (() => void) | null = callback; callback = null; cb?.(); return cb !== null; };
+		const waves: { chain: number; hurried: boolean }[] = [];
+		EventManager.bind('draw', (kind: string, data: unknown) => {
+			if (kind === 'board.match') waves.push(data as { chain: number; hurried: boolean });
+		});
+		EventManager.trigger('refreshBoard');
+		while (step());
+		// The module prints its board for debugging; read a move off it
+		const swapSomething = () => {
+			const rows: string[] = [];
+			const log = vi.spyOn(console, 'log').mockImplementation((line: string) => { rows.push(line); });
+			(window as unknown as { tiles: () => void }).tiles();
+			log.mockRestore();
+			const board: Board = createBoard(8, 8);
+			rows.forEach((line, r) => [...line].forEach((tile, c) => { board.tiles[r * 8 + c] = tile; }));
+			const [a, b] = validMoves(board, 1)[0];
+			GameBoard.switchTiles({ row: a.row, col: a.column }, { row: b.row, col: b.column });
+		};
+
+		swapSomething();
+		// Settle the first wave, then hurry the rest
+		while (waves.length === 0 && step());
+		GameBoard.hurry();
+		while (step());
+		if (waves.length < 2) {
+			continue;
+		}
+		expect(waves.map((wave) => wave.chain)).toEqual(waves.map((_, i) => i + 1));
+		expect(waves.map((wave) => wave.hurried)).toEqual(waves.map((_, i) => i > 0));
+
+		// The next move plays at its own pace again
+		waves.length = 0;
+		swapSomething();
+		while (step());
+		expect(waves[0]).toMatchObject({ chain: 1, hurried: false });
+		checked++;
+	}
+	expect(checked).toBe(3);
 });

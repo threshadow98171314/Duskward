@@ -6,6 +6,7 @@ import Graphics from './graphics.js';
 var BURST_TIME = 700;
 
 var _ward = null;
+var _chainPopup = null;
 
 function G() {
 	return Graphics;
@@ -48,10 +49,24 @@ function duskLift() {
 }
 
 function chainCombo(chain) {
-	var popup = G().make('chainPopup').text(G().getText('CHAIN_N', chain)).appendTo('.gameBoard');
+	// One popup at a time, so fast chains do not pile them up
+	if(_chainPopup != null) {
+		_chainPopup.remove();
+	}
+	var popup = _chainPopup = G().make('chainPopup').text(G().getText('CHAIN_N', chain)).appendTo('.gameBoard');
 	setTimeout(function() {
 		popup.remove();
+		if(_chainPopup == popup) {
+			_chainPopup = null;
+		}
 	}, 1200);
+}
+
+function bounty(kinds, percent) {
+	var popup = G().make('bountyPopup').text(G().getText('BOUNTY_N', kinds, percent)).appendTo('.gameBoard');
+	setTimeout(function() {
+		popup.remove();
+	}, 2000);
 }
 
 // Flashes over board cells; tiles are laid out on a uniform grid inside the tile container
@@ -75,11 +90,13 @@ function sunBurst() {
 export default {
 	init: function() {
 		_ward = null;
+		_chainPopup = null;
 		$('body').removeClass('dusk');
 		E.bind('wardChanged', updateWard);
 		E.bind('duskFall', duskFall);
 		E.bind('duskLift', duskLift);
 		E.bind('chainCombo', chainCombo);
+		E.bind('bounty', bounty);
 		E.bind('lanternBurst', lanternBurst);
 		E.bind('sunBurst', sunBurst);
 	}

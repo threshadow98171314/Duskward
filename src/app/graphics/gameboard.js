@@ -14,6 +14,23 @@ var TILE_WIDTH = 0, TILE_HEIGHT = 0;
 var BOARD_PAD = 2;
 var FILL_DELAY = 100;
 
+// Long chains speed up as they go, and tapping the board hurries the rest along
+function paceOf(opts) {
+	if(opts.hurried || opts.chain >= 13) {
+		return 0.25;
+	} else if(opts.chain >= 7) {
+		return 0.5;
+	} else if(opts.chain >= 4) {
+		return 0.75;
+	}
+	return 1;
+}
+
+// Tiles slide at the pace of the current wave (see --tile-time in main.css)
+function setPace(pace) {
+	tileContainer[0].style.setProperty('--tile-time', Math.round(200 * pace) + 'ms');
+}
+
 function el() {
 	if (_el == null) {
 		clearBoard();
@@ -55,6 +72,7 @@ function createBoard(rows, cols) {
 }
 
 function drawSwapTiles(opts) {
+	setPace(1);
 	var t1 = tiles[opts.pos1.row][opts.pos1.col];
 	var t2 = tiles[opts.pos2.row][opts.pos2.col];
 	tiles[opts.pos1.row][opts.pos1.col] = t2;
@@ -70,6 +88,7 @@ function drawSwapTiles(opts) {
 }
 
 function drawBoardClear() {
+	setPace(1);
 	for(var row in tiles) {
 		for(var col in tiles[row]) {
 			removeTile(row, col);
@@ -80,6 +99,7 @@ function drawBoardClear() {
 }
 
 function drawFillBoard(tileString) {
+	setPace(1);
 	var t = tileString.split('');
 	var col = 0, row = 0;
 	var mTime = (GameBoard.options.rows + GameBoard.options.columns) * FILL_DELAY;
@@ -157,6 +177,8 @@ function drawMatchEffect(pos, type, isNight, side) {
 }
 
 function drawMatch(opts) {
+	var pace = paceOf(opts);
+	setPace(pace);
 	var tilesToUpdate = [];
 	// Remove matched tiles
 	if(opts.removed) {
@@ -191,12 +213,12 @@ function drawMatch(opts) {
 			setTile(t.options.row, t.options.column, t);
 			updatePositionInBoard(t);
 		}
-	}, 200);
+	}, 200 * pace);
 	
 	setTimeout(function() {
 		E.trigger('tileDrop');
-	}, 300);
-	return 400;
+	}, 300 * pace);
+	return 400 * pace;
 }
 
 function updatePositionInBoard(entity, row, column) {

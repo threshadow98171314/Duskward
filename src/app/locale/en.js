@@ -39,6 +39,7 @@ export default {
 	SERA: 'Sera the Lampkeeper',
 	DUSK: 'Dusk',
 	CHAIN_N: 'Chain ×{0}',
+	BOUNTY_N: 'Bounty! {0} kinds +{1}%',
 	SKILLS: 'Dusk Skills Used',
 	SKILL_DAWNLIGHT: 'Dawnlight',
 	SKILL_WARDCRAFT: 'Wardcraft',
@@ -79,6 +80,8 @@ export default {
 		lighthouse: 'The watchtower is lit! Lanterns will start appearing on the board. By day they\'re building material; light them at night and dawn comes sooner.',
 		altar: 'The Altar of Dawn stands. Chains and big matches fill your Afterglow gauge, and once it\'s full you can unleash a dusk skill.',
 		firstPower: 'See that glowing tile? Clearing four at once leaves a lantern tile, and five leaves a sun tile. Try clearing those too.',
-		skillReady: 'Your Afterglow gauge is full! Tap a skill on the right to use it.'
+		skillReady: 'Your Afterglow gauge is full! Tap a skill on the right to use it.',
+		firstBounty: 'A bounty! Gather four or more kinds of resource in a single move and you get extra of each. The more kinds, the more extra. It only works by day.',
+		longChain: 'When a chain just keeps going, tap the board to fast-forward the rest.'
 	}
 };

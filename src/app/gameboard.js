@@ -17,6 +17,8 @@ var swapSide = null;
 var lastSwitch = null;
 var moved = false;
 var checkQueued = false;
+// The player asked to fast-forward the chain being settled
+var hurried = false;
 
 var GameBoard = {
 	SEP: 'X',
@@ -32,6 +34,7 @@ var GameBoard = {
 		board = Board.createBoard(this.options.rows, this.options.columns);
 		lastSwitch = null;
 		checkQueued = false;
+		hurried = false;
 
 		EventManager.bind("refreshBoard", refreshBoard);
 		EventManager.bind("createTileEffect", createEffect);
@@ -92,6 +95,13 @@ var GameBoard = {
 
 	canMove: function() {
 		return true;
+	},
+
+	// Plays the rest of the chain being settled at full speed
+	hurry: function() {
+		if(board.chain > 0) {
+			hurried = true;
+		}
 	},
 
 	shouldDrawResourceEffect: function(resourceType) {
@@ -199,7 +209,9 @@ function checkMatches() {
 				return { row: added.row, col: added.column, char: added.tile };
 			}),
 			isNight: Engine.isNight(),
-			side: swapSide
+			side: swapSide,
+			chain: wave.chain,
+			hurried: hurried
 		}]);
 		EventManager.trigger('tilesCleared', [resourcesGained, swapSide, moved]);
 		if(wave.chain > 1) {
@@ -209,6 +221,7 @@ function checkMatches() {
 			EventManager.trigger('gaugeGain', [wave.gauge]);
 		}
 	} else {
+		hurried = false;
 		EventManager.trigger('tilesSwapped', [lastSwitch == null]);
 		State.setIfHigher('CHAIN', wave.chain);
 		if(lastSwitch) {

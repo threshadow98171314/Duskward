@@ -44,7 +44,7 @@ describe('save slots', () => {
 	it('writes the version when saving', () => {
 		localStorage.setItem('slot2', JSON.stringify(unversioned));
 		GameState.load(2);
-		expect(GameState.level).toBe(3);
+		expect(GameState.maxHealth()).toBe(GameState.maxHealth(3));
 		GameState.save();
 		expect(stored(2)).toMatchObject({ version: SAVE_VERSION, level: 3, dayNumber: 4 });
 	});

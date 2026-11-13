@@ -18,6 +18,8 @@ import GameBoard from './gameboard.js';
 import Options from './gameoptions.js';
 import { built } from './effects.js';
 import FieldView from './fieldview.js';
+import EclipseView from './eclipseview.js';
+import StoryGraphics from './graphics/story.js';
 import { CALLS, MONSTERS } from '../content/monsters.ts';
 import { BOSSES } from '../content/bosses.ts';
 import { chainCalls, nightfallCalls } from '../core/night.ts';
@@ -39,6 +41,8 @@ var clock = Day.createClock();
 var theDragon = null;
 // Fires burning on the ground, by the field's id
 var fires = {};
+// The Eclipse's health as last drawn
+var eclipseHp = null;
 var stuff = [];
 // The ice the dragon's breath leaves around the keeper
 var iceBlock = null;
@@ -108,6 +112,7 @@ var World = {
 		EventManager.bind('resourceStoreChanged', handleResourceStoreChanged);
 		EventManager.bind('prioritizeBuilding', prioritizeBuilding);
 		EventManager.bind('callDragon', callDragon);
+		EventManager.bind('callEclipse', callEclipse);
 		EventManager.bind('dropChest', dropChest);
 		EventManager.bind('chainCombo', callForChain);
 		EventManager.bind('keySequenceComplete', multiplier.bind(this, 5));
@@ -284,12 +289,16 @@ var World = {
 	},
 	
 	gameOver: function() {
-		GameState.count('DRAGONS', 1);
 		GameState.save();
 		Graphics.notifySave();
 		EventManager.trigger('gameOver', [GameState.counts]);
 	},
 	
+	// Whether a boss of this kind is out on the field
+	bossOut: function(kind) {
+		return field != null && field.boss != null && field.boss.kind == kind;
+	},
+
 	getDebugMultiplier: function() {
 		return _debugMultiplier;
 	},
@@ -512,7 +521,8 @@ function harvestSituation() {
 		night: clock.night,
 		dusk: clock.dusk,
 		inTransition: inTransition,
-		dragon: field != null && field.boss != null && field.boss.kind == 'dragon',
+		// Still counts while it dies: the blow that fells it does not also draw moths
+		boss: field != null && field.boss != null ? field.boss.kind : null,
 		hasBuilding: function(className, current) {
 			return GameState.hasBuilding(Content.getBuildingType(className), current);
 		},
@@ -553,8 +563,14 @@ function handleTileClear(resourcesGained, side) {
 
 function applyHarvest(effect, side) {
 	switch(effect.type) {
-	case 'dragon':
-		doDragonAttack(effect.attack);
+	case 'provoke':
+		Field.provoke(field, effect.strike);
+		break;
+	case 'wound':
+		var wounds = [];
+		Field.hurtBoss(field, effect.amount, wounds);
+		handleFieldEvents(wounds);
+		EclipseView.pierce();
 		break;
 	case 'spawn':
 		spawnMonster(effect.monster, effect.tiles, side);
@@ -594,6 +610,10 @@ function makeStuffHappen() {
 		FieldView.draw(field);
 		if(theDragon != null && field.boss != null && theDragon.hp() !== field.boss.hp) {
 			theDragon.hp(field.boss.hp);
+		}
+		if(field.boss != null && field.boss.kind == 'eclipse' && field.boss.state != 'landing' && field.boss.hp !== eclipseHp) {
+			eclipseHp = field.boss.hp;
+			Graphics.setBossHealth(field.boss.hp, field.boss.maxHp);
 		}
 		GameState.setIfHigher('ATONCE', Field.living(field).length + (field.boss != null ? 1 : 0));
 	}
@@ -682,10 +702,23 @@ function handleFieldEvents(events) {
 			keeperDied();
 			break;
 		case 'bossStrike':
-			theDragon && theDragon.strike(event.strike, field.keeper.x);
+			if(event.boss.kind == 'eclipse') {
+				EclipseView.strike(event.strike);
+			} else if(theDragon) {
+				theDragon.strike(event.strike, field.keeper.x);
+			}
 			break;
 		case 'strikeLands':
-			theDragon && theDragon.land(event.strike, field.keeper.x, event.hit);
+			if(event.boss.kind == 'eclipse') {
+				EclipseView.land(event.strike, field.keeper.x);
+			} else if(theDragon) {
+				theDragon.land(event.strike, field.keeper.x, event.hit);
+			}
+			break;
+		case 'summon':
+			for(var i = 0; i < event.count; i++) {
+				spawnMonster(event.monster, 3, i % 2 == 0 ? 'left' : 'right');
+			}
 			break;
 		case 'freezeKeeper':
 			EventManager.trigger('newStateEffect', [Content.StateEffects.frozen]);
@@ -702,7 +735,11 @@ function handleFieldEvents(events) {
 			putOutFire(event.fire.id);
 			break;
 		case 'bossDying':
-			theDragon && theDragon.dying();
+			if(event.boss.kind == 'eclipse') {
+				EclipseView.dying();
+			} else if(theDragon) {
+				theDragon.dying();
+			}
 			break;
 		case 'bossGone':
 			bossGone(event.boss);
@@ -751,6 +788,10 @@ function putOutFire(id) {
 
 // The dragon finishes coming apart (it removes its own body) and leaves the heart of the dawn behind
 function bossGone(boss) {
+	if(boss.kind == 'eclipse') {
+		eclipseFalls(boss);
+		return;
+	}
 	if(clock.night) {
 		dude.gainXp(boss.def.xp * _debugMultiplier);
 		advanceTime();
@@ -780,8 +821,47 @@ function dismissDragon(now) {
 	}
 }
 
+// The keeper keeps the Dawn Heart for another try if the Eclipse is not beaten
+function returnDawnHeart() {
+	if(field != null && field.boss != null && field.boss.kind == 'eclipse' && field.boss.state != 'dying') {
+		GameState.items.dawnHeart = 1;
+		EventManager.trigger('lootFound', ['dawnHeart', 1]);
+	}
+}
+
+// Raised at night, the Dawn Heart calls the Eclipse down into the middle of the sky
+function callEclipse() {
+	if(!clock.night || inTransition || field.boss != null) {
+		// Not now: the keeper still has it
+		GameState.items.dawnHeart = 1;
+		EventManager.trigger('lootFound', ['dawnHeart', 1]);
+		EventManager.trigger('dawnHeartWaits');
+		return;
+	}
+	eclipseHp = null;
+	Field.callBoss(field, 'eclipse', BOSSES.eclipse, Graphics.worldWidth() / 2, dragonMultiplier(GameState.prestige));
+	EclipseView.appear();
+	EventManager.trigger('eclipseArrives');
+	// Lantern light is the one thing that hurts it: the board makes sure there is some
+	EventManager.trigger('refreshBoard');
+}
+
+// The Eclipse breaks apart and the sun comes back
+function eclipseFalls(boss) {
+	GameState.count('KILLED', 1);
+	GameState.count('ECLIPSES', 1);
+	dude.gainXp(boss.def.xp * _debugMultiplier);
+	Graphics.setBossHealth(0, 0);
+	EventManager.trigger('eclipseFalls');
+	StoryGraphics.showEnding(Graphics.getText('STORY_ENDING'), function() {
+		EclipseView.remove();
+		World.gameOver();
+	});
+}
+
 function keeperDied() {
 	// Dude is dead. Long live the dude.
+	returnDawnHeart();
 	inTransition = true;
 	GameState.count('DEATHS', 1);
 	GameState.savePersistents();
@@ -826,6 +906,10 @@ function launchCelestial() {
 function advanceTime(steps) {
 	if(effects['freezeTime'] != null) {
 		// Time does not advance when frozen
+		return;
+	}
+	if(clock.night && field != null && field.boss != null && field.boss.def.holdsNight && field.boss.state != 'dying') {
+		// The Eclipse holds back the dawn
 		return;
 	}
 	if(celestial != null) {
@@ -890,8 +974,10 @@ function phaseTransition() {
 	}
 	handleFieldEvents(Field.setNight(field, clock.night));
 	if(!clock.night) {
+		returnDawnHeart();
 		FieldView.clear();
 		dismissDragon(true);
+		EclipseView.remove();
 	}
 	announceDusk(duskChanged);
 	dude.shield = 0;
@@ -979,9 +1065,6 @@ function callDragon() {
 	Graphics.landDragon(theDragon);
 }
 
-function doDragonAttack(attackName) {
-	Field.provoke(field, attackName);
-}
 
 register('world', World);
 export default World;

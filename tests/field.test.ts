@@ -256,6 +256,20 @@ describe('bosses', () => {
 		expect(field.boss).toBeNull();
 	});
 
+	it('can hang out of reach, calling up spawn and binding tiles', () => {
+		const { field, log, run, events } = setup({ keeperX: 240 });
+		callBoss(field, 'eclipse', BOSSES.eclipse as BossDef, 240);
+		provoke(field, 'shadowRain');
+		provoke(field, 'eclipse');
+		provoke(field, 'eclipseLight');
+		run(3000 + 4000);
+		// Nobody to fight on the ground, so the keeper waits
+		expect(field.keeper.activity.type).toBe('idle');
+		expect(events('summon')[0].event).toMatchObject({ monster: 'eclipsespawn', count: 2 });
+		expect(events('spell').length).toBe(3);
+		expect(log.hurts.find((hurt) => hurt.prey === 'ward')).toMatchObject({ damage: 5, by: 'eclipse' });
+	});
+
 	it('do not last into the day', () => {
 		const { field } = setup();
 		callBoss(field, 'dragon', dragon, 430);

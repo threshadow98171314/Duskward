@@ -12,8 +12,10 @@ export interface ResourceDef {
 	// Checked in order, so 'default' comes last. Effects: 'spawn:<monster>',
 	// 'shield', 'sword' or 'dawn'.
 	nightEffect: Record<string, string>;
-	// What it makes the dragon do while the dragon is out
-	dragonEffect?: string;
+	// While a boss is out, the attack gathering it provokes, by boss
+	provokes?: Record<string, string>;
+	// While a boss is out, the damage each tile of it deals the boss, by boss
+	wounds?: Record<string, number>;
 	// A monster that gathering it at night draws in, besides its night effect
 	attracts?: string;
 	// Store multipliers, by building

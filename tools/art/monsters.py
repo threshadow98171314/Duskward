@@ -143,8 +143,9 @@ NEW = {
     "shade": (5124, 20, 34, 9),
     "lampmoth": (5430, 18, 14, 7),
     "duskcrow": (5528, 24, 16, 7),
+    "eclipsespawn": (5640, 16, 16, 7),
 }
-SHEET_HEIGHT = 5640
+SHEET_HEIGHT = 5752
 
 PAINT.update({
     # Shade: a scrap of the long night with two pale eyes
@@ -157,6 +158,8 @@ PAINT.update({
     "duskcrow": dict(rim=(246, 150, 62), top=(70, 54, 88), bottom=(34, 26, 46), outline=(10, 6, 14),
                      accent=(255, 210, 92)),
 })
+PAINT["eclipsespawn"] = dict(rim=(255, 210, 92), top=(56, 32, 74), bottom=(22, 12, 32), outline=(8, 4, 12),
+                             accent=(255, 120, 80))
 PAINT["imp"] = dict(rim=(214, 182, 238), top=(92, 70, 120), bottom=(40, 28, 56), outline=(10, 6, 16))
 
 
@@ -321,7 +324,28 @@ def _duskcrow(row, frame):
     return m
 
 
-DRAW = {"shade": _shade, "lampmoth": _lampmoth, "duskcrow": _duskcrow}
+def _eclipsespawn(row, frame):
+    # A drop of the Eclipse that hops along the ground, two coals for eyes
+    m = Mask(16, 16)
+    kind = ("hop", "hop", "hop", "attack", "attack", "die", "die")[row]
+    hop = (0, -2, -3, -1)[frame] if kind == "hop" else 0
+    dx = (0, 2, 1, 0)[frame] if kind == "attack" else 0
+    squash = 0.6 if hop == 0 and kind == "hop" else 0
+    m.ellipse(8 + dx, 11 + hop, 5.5 + squash, 4.2 - squash)
+    m.ellipse(8 + dx, 7 + hop, 3.2, 2.6)
+    m.set(9 + dx, 8 + hop, MARK)
+    m.set(11 + dx, 8 + hop, MARK)
+    if kind == "attack" and frame in (1, 2):
+        # A mouth opens on the lunge
+        m.set(11 + dx, 11, None)
+        m.set(12 + dx, 11, None)
+    if kind == "die":
+        m.dissolve((0.0, 0.3, 0.55, 0.8)[frame])
+        m.sink((0, 1, 2, 3)[frame])
+    return m
+
+
+DRAW = {"shade": _shade, "lampmoth": _lampmoth, "duskcrow": _duskcrow, "eclipsespawn": _eclipsespawn}
 
 
 def draw_new(sheet):

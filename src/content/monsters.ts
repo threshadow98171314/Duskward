@@ -101,6 +101,12 @@ export const MONSTERS = {
 		health: 3, damage: 2, xp: 8, speed: 110,
 		parts: [{ type: 'melee', hits: [1] }],
 	},
+	// Called down by the Eclipse
+	eclipsespawn: {
+		sprite: 'eclipsespawn', width: 16, height: 16,
+		health: 3, damage: 2, xp: 6, speed: 60,
+		parts: [{ type: 'melee', hits: [1] }],
+	},
 } satisfies Record<string, MonsterDef>;
 
 // Monsters that come for reasons other than the tiles gathered
@@ -111,8 +117,6 @@ export const CALLS: Call[] = [
 	{ monster: 'duskcrow', when: 'nightfall', fromDay: 3, flock: 2, growEvery: 4, most: 5 },
 ];
 
-// Every monster, bosses included (see bosses.ts)
-export const MONSTER_IDS = [...Object.keys(MONSTERS), 'dragon'];
 
 // What monsters' spells can do to the board (effects in src/core/board.ts)
 export const BOARD_SPELLS = ['explosive', 'shadowBind'] as const;

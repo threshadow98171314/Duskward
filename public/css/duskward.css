@@ -329,6 +329,96 @@ body.night {
 	100% { opacity: 0; transform: translateY(-40px) scale(1); }
 }
 
+/** The Eclipse, in the middle of the sky **/
+
+.eclipse {
+	position: absolute;
+	z-index: 1;
+	top: 6px;
+	width: 64px;
+	height: 64px;
+	border-radius: 50%;
+	background: radial-gradient(circle, #07040d 0 56%, #2a1438 62%, rgba(255, 210, 92, 0.95) 67%, rgba(242, 154, 58, 0.4) 72%, rgba(242, 154, 58, 0) 78%);
+	box-shadow: 0 0 18px 6px rgba(242, 154, 58, 0.45);
+	transition: opacity 1500ms linear, transform 600ms ease-out, filter 300ms linear;
+	animation: eclipsePulse 3s ease-in-out infinite;
+	pointer-events: none;
+}
+
+.eclipse.hidden {
+	opacity: 0;
+	transform: scale(0.3);
+}
+
+.eclipse.gazing,
+.eclipse.flare {
+	filter: brightness(1.6);
+}
+
+.eclipse.darken {
+	filter: brightness(0.5) saturate(0.4);
+}
+
+.eclipse.struck {
+	filter: brightness(2.2);
+	transform: scale(0.92);
+}
+
+.eclipse.breaking {
+	transition: opacity 3500ms ease-in, transform 3500ms ease-in, filter 3500ms linear;
+	opacity: 0;
+	transform: scale(2.4);
+	filter: brightness(3);
+}
+
+@keyframes eclipsePulse {
+	0%, 100% { box-shadow: 0 0 18px 6px rgba(242, 154, 58, 0.45); }
+	50% { box-shadow: 0 0 28px 10px rgba(242, 154, 58, 0.7); }
+}
+
+.eclipseBeam,
+.pierceBeam {
+	position: absolute;
+	z-index: 1;
+	height: 3px;
+	transform-origin: 0 50%;
+	pointer-events: none;
+}
+
+.eclipseBeam {
+	background: linear-gradient(to right, #2a1438, #7c5696);
+	box-shadow: 0 0 6px 2px rgba(184, 148, 204, 0.8);
+}
+
+.pierceBeam {
+	height: 4px;
+	background: linear-gradient(to right, #ffe9a0, rgba(255, 233, 160, 0.2));
+	box-shadow: 0 0 8px 3px rgba(255, 210, 92, 0.8);
+}
+
+.shadowDrop {
+	position: absolute;
+	z-index: 1;
+	top: 66px;
+	width: 4px;
+	height: 8px;
+	border-radius: 2px;
+	background: #3a2350;
+	box-shadow: 0 0 3px #b894cc;
+	animation: shadowFall 700ms ease-in forwards;
+	pointer-events: none;
+}
+
+@keyframes shadowFall {
+	to { transform: translateY(40px); opacity: 0.2; }
+}
+
+/* The ending opens on a dawn rather than a dusk */
+.storyIntro.storyEnding {
+	background: linear-gradient(to bottom, #3d2547 0%, #c8607a 40%, #f29a3a 75%, #ffe9a0 100%);
+	color: #3a2350;
+}
+
 /** The Dawn Heart, left by the Fallen Dawnwyrm **/
 
 .loot.dawnHeart,
@@ -363,6 +453,15 @@ body.night {
 
 .duskcrow .healthBar {
 	margin-left: -4px;
+}
+
+.eclipsespawn {
+	height: 16px;
+	width: 16px;
+}
+
+.eclipsespawn .healthBar {
+	margin-left: -8px;
 }
 
 /* Lampmoths and crows fly above the ground */

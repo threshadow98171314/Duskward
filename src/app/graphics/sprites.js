@@ -29,6 +29,7 @@ var spriteinfo = {
 	shade: ['monsters', 5124],
 	lampmoth: ['monsters', 5430],
 	duskcrow: ['monsters', 5528],
+	eclipsespawn: ['monsters', 5640],
 
 	// Icons
 	bucklericon: ['icons', 0],

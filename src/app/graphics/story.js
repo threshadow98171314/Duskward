@@ -41,10 +41,10 @@ function fadeOut(el, done) {
 	}, FADE_TIME);
 }
 
-function drawIntro(pages, done) {
+function drawIntro(pages, done, className) {
 	var page = 0;
 	var text = G().make('storyText').text(pages[0]);
-	var overlay = G().make('storyIntro hidden')
+	var overlay = G().make('storyIntro hidden ' + (className || ''))
 		.append(text)
 		.append(G().make('storyHint').text(G().getText('TAP_TO_CONTINUE')))
 		.appendTo('#gameContainer');
@@ -93,6 +93,16 @@ export default {
 
 	showIntro: function(pages) {
 		enqueue(drawIntro.bind(null, pages));
+	},
+
+	// The ending: the same pages as the opening, at the break of a real dawn
+	showEnding: function(pages, done) {
+		enqueue(function(next) {
+			drawIntro(pages, function() {
+				next();
+				done && done();
+			}, 'storyEnding');
+		});
 	},
 
 	showJournal: function(speaker, text) {

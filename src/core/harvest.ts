@@ -8,8 +8,10 @@ export interface ResourceRule {
 	className: string;
 	// What the resource does at night, by the building that changes it; 'default' applies otherwise
 	nightEffect?: Record<string, string>;
-	// What it makes the dragon do while the dragon is out
-	dragonEffect?: string;
+	// While a boss is out, the attack gathering it provokes, by boss
+	provokes?: Record<string, string>;
+	// While a boss is out, the damage each tile of it deals the boss, by boss
+	wounds?: Record<string, number>;
 	// Store multipliers, by building
 	multipliers?: Record<string, number>;
 	// A monster that gathering it at night draws in, besides its night effect
@@ -21,7 +23,8 @@ export interface HarvestSituation {
 	dusk: boolean;
 	// While day turns to night or back, gathered tiles count as daytime gains
 	inTransition: boolean;
-	dragon: boolean;
+	// The boss that is out, if any
+	boss: string | null;
 	// Whether a building stands; with current, only if it has not been replaced by an upgrade
 	hasBuilding(className: string, current?: boolean): boolean;
 	// The debug multiplier for daytime gains
@@ -31,7 +34,8 @@ export interface HarvestSituation {
 export type HarvestEffect =
 	| { type: 'ward'; amount: number }
 	| { type: 'spawn'; monster: string; tiles: number }
-	| { type: 'dragon'; attack: string }
+	| { type: 'provoke'; strike: string }
+	| { type: 'wound'; amount: number }
 	| { type: 'shield' }
 	| { type: 'sword' }
 	| { type: 'dawn' }
@@ -110,7 +114,7 @@ export function attracted(
 	situation: HarvestSituation,
 	rule: (className: string) => ResourceRule,
 ): string | null {
-	if (!situation.night || situation.inTransition || situation.dragon) {
+	if (!situation.night || situation.inTransition || situation.boss !== null) {
 		return null;
 	}
 	return rule(className).attracts ?? null;
@@ -137,8 +141,11 @@ export function harvest(
 }
 
 function nightEffect(resource: ResourceRule, situation: HarvestSituation): string | null {
-	if (situation.dragon && resource.dragonEffect) {
-		return 'dragon:' + resource.dragonEffect;
+	if (situation.boss !== null && resource.wounds?.[situation.boss] !== undefined) {
+		return 'wound:' + resource.wounds[situation.boss];
+	}
+	if (situation.boss !== null && resource.provokes?.[situation.boss] !== undefined) {
+		return 'provoke:' + resource.provokes[situation.boss];
 	}
 	for (const [building, effect] of Object.entries(resource.nightEffect ?? {})) {
 		if (building === 'default' || situation.hasBuilding(building)) {
@@ -153,8 +160,10 @@ function toNightEffect(effect: string, tiles: number): HarvestEffect {
 	switch (kind) {
 		case 'spawn':
 			return { type: 'spawn', monster: name, tiles };
-		case 'dragon':
-			return { type: 'dragon', attack: name };
+		case 'provoke':
+			return { type: 'provoke', strike: name };
+		case 'wound':
+			return { type: 'wound', amount: Number(name) * tiles };
 		case 'shield':
 		case 'sword':
 		case 'dawn':

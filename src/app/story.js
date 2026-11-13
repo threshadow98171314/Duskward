@@ -70,6 +70,12 @@ export default {
 				tell('dawnHeart', EVENT_DELAY);
 			}
 		});
+		E.bind('eclipseArrives', function() {
+			tell('eclipse');
+		});
+		E.bind('dawnHeartWaits', function() {
+			tell('dawnHeartWaits');
+		});
 		E.bind('dragonDefeated', function() {
 			tell('dragonDefeated', EVENT_DELAY);
 		});

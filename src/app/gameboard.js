@@ -126,6 +126,10 @@ function tileMap() {
 	if(State.hasBuilding(Content.BuildingType.Lighthouse)) {
 		map.f = 1;
 	}
+	// Lantern light is the one thing that hurts the Eclipse
+	if(getModule('world').bossOut('eclipse')) {
+		map.f = 2;
+	}
 
 	return map;
 }

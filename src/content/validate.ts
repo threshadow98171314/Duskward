@@ -58,8 +58,15 @@ export function validateContent(content: Content): string[] {
 		if (resource.attracts !== undefined && !monsters.has(resource.attracts)) {
 			problem(where, 'draws unknown monster ' + resource.attracts);
 		}
-		if (resource.dragonEffect !== undefined && content.bosses.dragon?.strikes[resource.dragonEffect] === undefined) {
-			problem(where, 'unknown dragon attack ' + resource.dragonEffect);
+		for (const [boss, strike] of Object.entries(resource.provokes ?? {})) {
+			if (content.bosses[boss]?.strikes[strike] === undefined) {
+				problem(where, `provokes unknown attack ${strike} of ${boss}`);
+			}
+		}
+		for (const [boss, amount] of Object.entries(resource.wounds ?? {})) {
+			if (content.bosses[boss] === undefined || !(amount > 0)) {
+				problem(where, 'wounds unknown boss ' + boss);
+			}
 		}
 		for (const [building, multiplier] of Object.entries(resource.multipliers)) {
 			if (!buildingNames.has(building)) {
@@ -153,6 +160,9 @@ export function validateContent(content: Content): string[] {
 		for (const [strikeName, strike] of Object.entries(boss.strikes)) {
 			if (!(strike.lands >= 0 && strike.ends >= strike.lands)) {
 				problem(where, strikeName + ' should land before it ends');
+			}
+			if (strike.summon !== undefined && !monsters.has(strike.summon.monster)) {
+				problem(where, strikeName + ' summons unknown monster ' + strike.summon.monster);
 			}
 		}
 		if (boss.loot !== undefined && content.items[boss.loot] === undefined) {

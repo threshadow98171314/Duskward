@@ -142,6 +142,12 @@ export interface StrikeDef {
 	burn?: { width: number; damage: number; every: number; lasts: number };
 	// Blows out every fire on the field
 	clearsFire?: boolean;
+	// What the blow goes for first
+	prey?: 'ward';
+	// Calls up monsters
+	summon?: { monster: string; count: number };
+	// Binds this many tiles on the board in shadow
+	bind?: number;
 }
 
 export interface BossDef {
@@ -162,6 +168,10 @@ export interface BossDef {
 	strikes: Record<string, StrikeDef>;
 	// Left behind when it falls
 	loot?: string;
+	// Hangs in the sky, out of the keeper's reach
+	aloft?: boolean;
+	// While it is out, the night does not move on
+	holdsNight?: boolean;
 }
 
 export interface Boss {
@@ -228,7 +238,8 @@ export type FieldEvent =
 	| { type: 'freezeKeeper' }
 	| { type: 'thaw' }
 	| { type: 'fireLit'; fire: Fire }
-	| { type: 'fireOut'; fire: Fire };
+	| { type: 'fireOut'; fire: Fire }
+	| { type: 'summon'; monster: string; count: number };
 
 interface Errand {
 	task: Task;
@@ -471,7 +482,7 @@ function gap(a: Actor, b: { x: number; width: number }): number {
 function foes(field: Field): { id: number; x: number; width: number }[] {
 	return [
 		...living(field).map((monster) => ({ id: monster.id, x: monster.x, width: monster.width })),
-		...(field.boss !== null && (field.boss.state === 'ready' || field.boss.state === 'striking')
+		...(field.boss !== null && !field.boss.def.aloft && (field.boss.state === 'ready' || field.boss.state === 'striking')
 			? [{ id: field.boss.id, x: field.boss.x, width: field.boss.def.width }] : []),
 	];
 }
@@ -923,7 +934,13 @@ function landStrike(field: Field, boss: Boss, strike: StrikeDef, host: FieldHost
 	}
 	const damage = strike.scaled ? boss.damage : strike.damage;
 	if (damage !== undefined) {
-		host.hurtKeeper(damage, boss.kind);
+		host.hurtKeeper(damage, boss.kind, strike.prey);
+	}
+	if (strike.summon !== undefined) {
+		events.push({ type: 'summon', monster: strike.summon.monster, count: strike.summon.count });
+	}
+	for (let i = 0; i < (strike.bind ?? 0); i++) {
+		events.push({ type: 'spell', spell: 'shadowBind', by: boss.id });
 	}
 	if (strike.freeze) {
 		events.push({ type: 'freezeKeeper' });

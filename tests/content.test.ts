@@ -68,7 +68,7 @@ describe('game content', () => {
 			const journal = (text as { JOURNAL: Record<string, string> }).JOURNAL;
 			for (const monster of CONTENT.monsters) {
 				expect(names[monster], language + ' name of ' + monster).toBeTypeOf('string');
-				expect(journal[monster === 'dragon' ? 'dragon' : 'monster_' + monster], language + ' journal on ' + monster)
+				expect(journal[monster in CONTENT.bosses ? monster : 'monster_' + monster], language + ' journal on ' + monster)
 					.toBeTypeOf('string');
 			}
 		}
@@ -83,11 +83,13 @@ describe('game content', () => {
 
 	it('only names monsters the game has', () => {
 		expect([...Object.keys(CONTENT.monsterDefs), ...Object.keys(CONTENT.bosses)].sort()).toEqual([...CONTENT.monsters].sort());
-		expect(Object.keys(monsters)).toEqual(Object.keys(CONTENT.bosses));
+		// Of the bosses, only the dragon is drawn by an entity of its own
+		expect(Object.keys(monsters)).toEqual(['dragon']);
 	});
 
 	it('catches tiles that provoke attacks the dragon does not have', () => {
-		expect(broken((c) => { c.resources.Grain.dragonEffect = 'tailSwipe'; })).toContain('resource Grain: unknown dragon attack tailSwipe');
+		expect(broken((c) => { c.resources.Grain.provokes = { dragon: 'tailSwipe' }; }))
+			.toContain('resource Grain: provokes unknown attack tailSwipe of dragon');
 		expect(broken((c) => { c.bosses.dragon.far = 'roar'; })).toContain('boss dragon: falls back on unknown strike roar');
 	});
 

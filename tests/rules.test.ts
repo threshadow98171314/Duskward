@@ -51,7 +51,7 @@ describe('harvest', () => {
 		night: false,
 		dusk: false,
 		inTransition: false,
-		dragon: false,
+		boss: null,
 		hasBuilding: (name) => buildings.includes(name),
 		multiplier: 1,
 		...overrides,
@@ -101,9 +101,15 @@ describe('harvest', () => {
 		expect(harvest({ lantern: 3 }, situation({ night: true }), resources)).toEqual([{ type: 'dawn' }]);
 	});
 
-	it('turns gathered tiles into dragon attacks while the dragon is out', () => {
-		expect(harvest({ grain: 3, wood: 3 }, situation({ night: true, dragon: true }), resources)).toEqual([
-			{ type: 'dragon', attack: 'wingBuffet' },
+	it('turns gathered tiles into boss attacks while a boss is out', () => {
+		expect(harvest({ lantern: 2 }, situation({ night: true, boss: 'eclipse' }), resources)).toEqual([
+			{ type: 'wound', amount: 50 },
+		]);
+		expect(harvest({ grain: 3 }, situation({ night: true, boss: 'eclipse' }), resources)).toEqual([
+			{ type: 'provoke', strike: 'shadowRain' },
+		]);
+		expect(harvest({ grain: 3, wood: 3 }, situation({ night: true, boss: 'dragon' }), resources)).toEqual([
+			{ type: 'provoke', strike: 'wingBuffet' },
 			{ type: 'shield' },
 		]);
 	});
@@ -123,11 +129,11 @@ describe('lanterns at night', () => {
 	it('draw lampmoths, besides bringing the dawn closer', () => {
 		const resources = (className: string) => Content.getResourceType(className) as ResourceRule;
 		const at = (night: boolean, extra: Partial<HarvestSituation> = {}): HarvestSituation =>
-			({ night, dusk: false, inTransition: false, dragon: false, hasBuilding: () => false, multiplier: 1, ...extra });
+			({ night, dusk: false, inTransition: false, boss: null, hasBuilding: () => false, multiplier: 1, ...extra });
 		expect(attracted('lantern', at(true), resources)).toBe('lampmoth');
 		expect(attracted('lantern', at(false), resources)).toBeNull();
 		expect(attracted('lantern', at(true, { inTransition: true }), resources)).toBeNull();
-		expect(attracted('lantern', at(true, { dragon: true }), resources)).toBeNull();
+		expect(attracted('lantern', at(true, { boss: 'dragon' }), resources)).toBeNull();
 		expect(attracted('grain', at(true), resources)).toBeNull();
 	});
 });

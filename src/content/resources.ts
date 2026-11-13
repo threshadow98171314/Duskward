@@ -8,7 +8,7 @@ export const RESOURCES = {
 	Grain: {
 		char: 'g',
 		className: 'grain',
-		dragonEffect: 'wingBuffet',
+		provokes: { dragon: 'wingBuffet', eclipse: 'shadowRain' },
 		nightEffect: {
 			'castle': 'spawn:demon',
 			'fort': 'spawn:earthElemental',
@@ -70,7 +70,7 @@ export const RESOURCES = {
 	Clay: {
 		char: 'c',
 		className: 'clay',
-		dragonEffect: 'iceBeam',
+		provokes: { dragon: 'iceBeam', eclipse: 'eclipseLight' },
 		nightEffect: {
 			'bricklayer4': 'spawn:imp',
 			'bricklayer3': 'spawn:waterElemental',
@@ -91,7 +91,7 @@ export const RESOURCES = {
 	Cloth: {
 		char: 'l',
 		className: 'cloth',
-		dragonEffect: 'fireBlast',
+		provokes: { dragon: 'fireBlast', eclipse: 'eclipse' },
 		nightEffect: {
 			'weaver4': 'spawn:warlock',
 			'weaver3': 'spawn:fireElemental',
@@ -129,6 +129,8 @@ export const RESOURCES = {
 		},
 		// Lighting lanterns at night draws lampmoths
 		attracts: 'lampmoth',
+		// Lantern light pierces the Eclipse
+		wounds: { eclipse: 25 },
 		multipliers: {},
 		effectDest: {
 			day: [32, -20],

@@ -19,6 +19,7 @@ export default {
 	LOOT: 'Loot Looted',
 	CAST: 'Spells Cast',
 	DRAGONS: 'Dragons Slain',
+	ECLIPSES: 'Eclipses Defeated',
 	CASUALNIGHTS: 'Casual Nights',
 	PRESTIGE: 'New Game+ Runs',
 	DIFFICULTY: 'Difficulty',
@@ -58,13 +59,22 @@ export default {
 		dragon: 'Fallen Dawnwyrm',
 		shade: 'Shade',
 		lampmoth: 'Lampmoth',
-		duskcrow: 'Dusk Crow'
+		duskcrow: 'Dusk Crow',
+		eclipsespawn: 'Eclipse Spawn',
+		eclipse: 'The Eclipse'
 	},
 	SKILLS: 'Dusk Skills Used',
 	SKILL_DAWNLIGHT: 'Dawnlight',
 	SKILL_WARDCRAFT: 'Wardcraft',
 	SKILL_TIMELAMP: 'Time Lamp',
 
+	STORY_ENDING: [
+		'The moment the Eclipse shattered, all the light it had swallowed came pouring out.',
+		'The Dawn Heart became a streak of gold and flew back into the sky, chasing the sun.',
+		'After that night, the sun rose over Afterglow Vale again, and stayed a little longer each day.',
+		'One by one, the lamps of the village were lit. Sera says a keeper\'s work is never done: the long night has drawn back, but it never truly leaves.',
+		'Thank you for keeping Afterglow Vale.'
+	],
 	STORY_INTRO: [
 		'Long ago, the sun never set on Afterglow Vale.',
 		'Then one day the sky split open. A darkness called the Eclipse crawled out of the rift and began to devour the sun, one bite at a time.',
@@ -98,6 +108,8 @@ export default {
 		dragon: 'Is that... the Dawnwyrm? Its eyes have gone black. Child, it\'s not what it used to be!',
 		dragonDefeated: 'The Dawnwyrm has fallen. It left behind a Dawn Heart, still warm: the light it carried from all those years of drawing the sun.',
 		dawnHeart: 'The Dawn Heart... even at night, it is warm in your hands. Raise it after dark, and its light may draw the Eclipse down from the sky.',
+		dawnHeartWaits: 'The Dawn Heart only answers at night. Try again after dark.',
+		eclipse: 'It has come down... the Eclipse. Child, no sword can reach it; only lantern light can pierce it. Light every lantern you can! While it is here, the dawn will not come.',
 		firstDusk: 'Dusk is here. Before night falls, every tile you clear becomes part of your ward, and it will take the first blows for you tonight.',
 		lighthouse: 'The watchtower is lit! Lanterns will start appearing on the board. By day they\'re building material; light them at night and dawn comes sooner.',
 		altar: 'The Altar of Dawn stands. Chains and big matches fill your Afterglow gauge, and once it\'s full you can unleash a dusk skill.',
@@ -120,6 +132,7 @@ export default {
 		monster_lich: 'The Night Hierophant, high priest of the cult. He buries powder kegs in the board and turns up on your other side without warning.',
 		monster_shade: 'Shades! They bind tiles where they stand. The longer your chains run, the more shadows come.',
 		monster_lampmoth: 'Lampmoths are drawn by the lantern light, and they eat the ward first. Think twice before lighting lanterns at night.',
-		monster_duskcrow: 'Dusk Crows come in flocks as soon as the sun is down. They are frail, but frightfully quick.'
+		monster_duskcrow: 'Dusk Crows come in flocks as soon as the sun is down. They are frail, but frightfully quick.',
+		monster_eclipsespawn: 'The Eclipse is shedding its shadow. Those are Eclipse Spawn: do not let them surround you.'
 	}
 };

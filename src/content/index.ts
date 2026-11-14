@@ -3,6 +3,7 @@
 import { BUILDINGS } from './buildings.ts';
 import { ITEMS, LOOT_POOLS, LOOT_RARITY } from './items.ts';
 import { SKILLS, SPELLS, STATE_EFFECTS } from './magic.ts';
+import { BLESSINGS } from './blessings.ts';
 import { BOSSES } from './bosses.ts';
 import { BOARD_SPELLS, CALLS, MONSTERS } from './monsters.ts';
 import { RESOURCES } from './resources.ts';
@@ -23,6 +24,7 @@ export const CONTENT: Content = {
 	calls: CALLS,
 	boardSpells: BOARD_SPELLS,
 	bosses: BOSSES,
+	blessings: BLESSINGS,
 };
 
 // Stops the game with every problem listed, rather than failing somewhere later

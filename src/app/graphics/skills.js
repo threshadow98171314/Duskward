@@ -3,6 +3,7 @@ import E from '../eventmanager.js';
 import State from '../gamestate.js';
 import Content from '../gamecontent.js';
 import Graphics from './graphics.js';
+import Blessings from '../blessings.js';
 
 var _el = null;
 
@@ -32,15 +33,16 @@ function updateGauge(current, max) {
 	_el.toggleClass('ready', current >= max);
 }
 
-// Shows a button for every skill the Altar of Dawn has unlocked
-function refresh() {
+// Shows a button for every skill the Altar of Dawn has unlocked; at night, only
+// for the ones the keeper took into it
+function refresh(night) {
 	var level = State.skillLevel();
 	if(level < 1) {
 		return;
 	}
 	var list = el().find('.skillList').empty();
 	for(var skillName in Content.Skills) {
-		if(Content.Skills[skillName].level <= level) {
+		if(Content.Skills[skillName].level <= level && Blessings.canCast(skillName, night)) {
 			G().make('skill litBorder ' + skillName)
 				.data('skillName', skillName)
 				.text(G().getText('SKILL_' + skillName.toUpperCase()))

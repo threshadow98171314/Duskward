@@ -6,6 +6,7 @@ import Content from './gamecontent.js';
 import { parseSave, serializeSave } from '../platform/save.ts';
 import * as Combat from '../core/combat.ts';
 import * as Progress from '../core/progress.ts';
+import { randomSeed } from '../core/random.ts';
 
 var loadedSlot = 0;
 var GameState = {
@@ -22,6 +23,8 @@ var GameState = {
 		this.prestige = 0;
 		this.prioritizedBuilding = null;
 		this.storySeen = {};
+		this.seed = randomSeed();
+		this.loadout = null;
 		this.ward = 0;
 		this.gauge = 0;
 		this.health = this.maxHealth();
@@ -77,6 +80,8 @@ var GameState = {
 				this.health = savedState.health || this.maxHealth();
 				this.prioritizedBuilding = savedState.prioritizedBuilding;
 				this.storySeen = savedState.storySeen || {};
+				this.seed = savedState.seed || randomSeed();
+				this.loadout = savedState.loadout || null;
 				this.ward = 0;
 				this.gauge = savedState.gauge || 0;
 			} else {
@@ -105,6 +110,8 @@ var GameState = {
 				health: this.health,
 				prioritizedBuilding: this.prioritizedBuilding,
 				storySeen: this.storySeen,
+				seed: this.seed,
+				loadout: this.loadout,
 				gauge: this.gauge
 			};
 			for(var b in this.buildings) {

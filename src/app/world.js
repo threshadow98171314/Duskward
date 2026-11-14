@@ -19,6 +19,7 @@ import Options from './gameoptions.js';
 import { built } from './effects.js';
 import FieldView from './fieldview.js';
 import EclipseView from './eclipseview.js';
+import Blessings from './blessings.js';
 import StoryGraphics from './graphics/story.js';
 import { CALLS, MONSTERS } from '../content/monsters.ts';
 import { BOSSES } from '../content/bosses.ts';
@@ -371,9 +372,12 @@ function addMana(num) {
 }
 
 function spawnMonster(monsterType, tiles, side) {
+	var night = Blessings.modifiers();
 	var monster = Field.spawn(field, monsterType, MONSTERS[monsterType], side, {
 		tiles: tiles,
-		multiplier: monsterMultiplier(GameState.prestige)
+		multiplier: monsterMultiplier(GameState.prestige),
+		healthScale: night.monsterHealth,
+		damageBonus: night.monsterDamage
 	});
 	FieldView.addMonster(monster);
 	EventManager.trigger('monsterSpawned', [monsterType]);
@@ -381,7 +385,7 @@ function spawnMonster(monsterType, tiles, side) {
 
 // A long chain at night calls up a shade
 function callForChain(waves) {
-	if(field == null || !clock.night || inTransition) {
+	if(field == null || !clock.night || inTransition || Blessings.modifiers().calm) {
 		return;
 	}
 	chainCalls(CALLS, waves).forEach(function(monster) {
@@ -391,6 +395,9 @@ function callForChain(waves) {
 
 // Crows gather as night falls
 function callAtNightfall() {
+	if(Blessings.modifiers().calm) {
+		return;
+	}
 	nightfallCalls(CALLS, GameState.dayNumber).forEach(function(arrival) {
 		for(var i = 0; i < arrival.count; i++) {
 			spawnMonster(arrival.monster, 3, i % 2 == 0 ? 'right' : 'left');
@@ -555,7 +562,7 @@ function handleTileClear(resourcesGained, side) {
 		}
 		// Lighting lanterns at night also draws lampmoths
 		var drawn = attracted(typeName, harvestSituation(), Content.getResourceType.bind(Content));
-		if(drawn != null && resourcesGained[typeName] > 0) {
+		if(drawn != null && resourcesGained[typeName] > 0 && !Blessings.modifiers().calm) {
 			spawnMonster(drawn, resourcesGained[typeName], side);
 		}
 	}
@@ -573,7 +580,9 @@ function applyHarvest(effect, side) {
 		EclipseView.pierce();
 		break;
 	case 'spawn':
-		spawnMonster(effect.monster, effect.tiles, side);
+		for(var copy = 0; copy < Blessings.modifiers().spawns; copy++) {
+			spawnMonster(effect.monster, effect.tiles, side);
+		}
 		break;
 	case 'shield':
 		fillDefense();
@@ -751,7 +760,7 @@ function handleFieldEvents(events) {
 function monsterGone(monster) {
 	var view = FieldView.monster(monster.id);
 	if(clock.night && !monster.wiped) {
-		dude.gainXp(monster.xp * _debugMultiplier);
+		dude.gainXp(Math.max(1, Math.round(monster.xp * _debugMultiplier * Blessings.modifiers().xp)));
 		advanceTime();
 	}
 	if(view) {
@@ -793,7 +802,7 @@ function bossGone(boss) {
 		return;
 	}
 	if(clock.night) {
-		dude.gainXp(boss.def.xp * _debugMultiplier);
+		dude.gainXp(Math.round(boss.def.xp * _debugMultiplier * Blessings.modifiers().xp));
 		advanceTime();
 	}
 	GameState.count('KILLED', 1);
@@ -913,7 +922,7 @@ function advanceTime(steps) {
 		return;
 	}
 	if(celestial != null) {
-		var result = Day.advanceClock(clock, World.options, steps == null ? 1 : steps);
+		var result = Day.advanceClock(clock, clockLengths(), steps == null ? 1 : steps);
 		if(result.over) {
 			EventManager.trigger('phaseChange', [!clock.night]);
 		} else {
@@ -923,8 +932,42 @@ function advanceTime(steps) {
 	}
 }
 
+// The day and night, with tonight's blessing (or its price) on the length of the night
+function clockLengths() {
+	return {
+		dayMoves: World.options.dayMoves,
+		nightMoves: Math.max(5, World.options.nightMoves + Blessings.modifiers().nightMoves)
+	};
+}
+
+// Tonight's blessing fills what it promised as night falls
+function blessNightfall() {
+	Blessings.modifiers().fill.forEach(function(what) {
+		switch(what) {
+		case 'health':
+			healDude(GameState.maxHealth());
+			break;
+		case 'shield':
+			fillDefense();
+			break;
+		case 'sword':
+			fillAttack();
+			break;
+		case 'ward':
+			gainWard(GameState.maxWard());
+			break;
+		case 'gauge':
+			if(GameState.skillLevel() > 0) {
+				GameState.gauge = GameState.maxGauge();
+				EventManager.trigger('gaugeChanged', [GameState.gauge, GameState.maxGauge()]);
+			}
+			break;
+		}
+	});
+}
+
 function moveCelestial() {
-	celestial.p(Math.floor(Graphics.worldWidth() / Day.phaseLength(clock, World.options)) * clock.position);
+	celestial.p(Math.floor(Graphics.worldWidth() / Day.phaseLength(clock, clockLengths())) * clock.position);
 	Graphics.moveCelestial(celestial);
 }
 
@@ -965,7 +1008,7 @@ function phaseTransition() {
 	Graphics.phaseTransition(celestial, function() {
 		inTransition = false;
 	});
-	var duskChanged = Day.startPhase(clock, World.options, !clock.night);
+	var duskChanged = Day.startPhase(clock, clockLengths(), !clock.night);
 	if(!clock.night) {
 		// Open all chests
 		field.chests.forEach(function(chest) {
@@ -1003,6 +1046,7 @@ function phaseTransition() {
 		}
 	} else {
 		casualNight = Options.get('casualMode', false);
+		blessNightfall();
 		callAtNightfall();
 	}
 }

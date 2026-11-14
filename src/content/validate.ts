@@ -3,6 +3,7 @@
 // it loads, so a mistake in a data file stops it right away with a clear message.
 
 import type { BuildingDef, Effect, ItemDef, LootRarity, ResourceDef, SkillDef, SpellDef, StateEffectDef, Use } from './types.ts';
+import type { BlessingDef } from '../core/blessings.ts';
 import type { BossDef, MonsterDef } from '../core/field.ts';
 import type { Call } from '../core/night.ts';
 
@@ -22,6 +23,7 @@ export interface Content {
 	// What spells can do to the board
 	boardSpells: readonly string[];
 	bosses: Record<string, BossDef>;
+	blessings: Record<string, BlessingDef>;
 }
 
 // Returns every problem found; an empty list means the content is sound
@@ -167,6 +169,24 @@ export function validateContent(content: Content): string[] {
 		}
 		if (boss.loot !== undefined && content.items[boss.loot] === undefined) {
 			problem(where, 'drops unknown item ' + boss.loot);
+		}
+	}
+	const fills = ['health', 'shield', 'sword', 'ward', 'gauge'];
+	for (const [name, blessing] of Object.entries(content.blessings)) {
+		const where = 'blessing ' + name;
+		if (blessing.gift.length === 0) {
+			problem(where, 'gives nothing');
+		}
+		for (const boon of [...blessing.gift, ...blessing.price]) {
+			if (boon.type === 'fill' && !fills.includes(boon.what)) {
+				problem(where, 'fills unknown ' + boon.what);
+			} else if (boon.type === 'nightMoves' && !Number.isInteger(boon.moves)) {
+				problem(where, 'changes the night by part of a move');
+			} else if ((boon.type === 'monsterHealth' || boon.type === 'spawns' || boon.type === 'xp') && !(boon.scale > 0)) {
+				problem(where, boon.type + ' should scale by more than zero');
+			} else if (boon.type === 'spawns' && !Number.isInteger(boon.scale)) {
+				problem(where, 'spawns should scale by whole monsters');
+			}
 		}
 	}
 	for (const call of content.calls) {

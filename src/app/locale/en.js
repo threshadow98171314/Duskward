@@ -41,6 +41,38 @@ export default {
 	DUSK: 'Dusk',
 	CHAIN_N: 'Chain ×{0}',
 	BOUNTY_N: 'Bounty! {0} kinds +{1}%',
+	// The dusk choice
+	DUSK_CHOICE: 'Night is coming. What shall I pray for tonight? I will tell you the price first.',
+	SKILL_LOADOUT: 'Dusk skills to take into the night (pick two)',
+	NO_BLESSING: 'No blessing tonight',
+	NO_PRICE: 'No price',
+	TONIGHT: 'Tonight: {0}',
+	BLESSING_NAMES: {
+		lanternWard: 'Lantern Ward',
+		seraPrayer: 'Sera\'s Prayer',
+		steadyShield: 'Steady Shield',
+		keenEdge: 'Keen Edge',
+		afterglowSpring: 'Afterglow Spring',
+		stillNight: 'Still Night',
+		valor: 'Valor',
+		morningStar: 'Morning Star',
+		fullArms: 'Full Arms'
+	},
+	BOON_FILL: {
+		health: 'Full health as night falls',
+		shield: 'Full shield as night falls',
+		sword: 'Full sword as night falls',
+		ward: 'Full ward as night falls',
+		gauge: 'Full Afterglow gauge as night falls'
+	},
+	BOON_NIGHT_LONGER: 'The night lasts {0} more moves',
+	BOON_NIGHT_SHORTER: 'The night lasts {0} fewer moves',
+	BOON_MONSTER_HEALTH: 'Monsters have {0}% more health',
+	BOON_MONSTER_DAMAGE: 'Monsters hit {0} harder',
+	BOON_SPAWNS: 'Monsters come {0} times over',
+	BOON_XP_UP: 'Experience ×{0}',
+	BOON_XP_DOWN: 'Experience down to {0}%',
+	BOON_CALM: 'No shades, lampmoths or dusk crows',
 	// Monster names, by monster
 	MONSTER_NAMES: {
 		zombie: 'Shambler',

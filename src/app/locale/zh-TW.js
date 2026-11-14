@@ -41,6 +41,38 @@ export default {
 	DUSK: '黃昏',
 	CHAIN_N: '連鎖 ×{0}',
 	BOUNTY_N: '豐收！{0} 種資源 +{1}%',
+	// The dusk choice
+	DUSK_CHOICE: '天快黑了。今晚想要我為你祈求什麼？代價我會先說清楚。',
+	SKILL_LOADOUT: '今晚帶上的暮光技（選兩個）',
+	NO_BLESSING: '今晚不需要祝福',
+	NO_PRICE: '不需要代價',
+	TONIGHT: '今晚：{0}',
+	BLESSING_NAMES: {
+		lanternWard: '護身燈火',
+		seraPrayer: '瑟菈的禱告',
+		steadyShield: '堅盾',
+		keenEdge: '利刃',
+		afterglowSpring: '暮光湧泉',
+		stillNight: '靜夜',
+		valor: '勇氣',
+		morningStar: '晨星',
+		fullArms: '全副武裝'
+	},
+	BOON_FILL: {
+		health: '入夜時生命回滿',
+		shield: '入夜時盾牌補滿',
+		sword: '入夜時劍補滿',
+		ward: '入夜時結界補滿',
+		gauge: '入夜時暮光槽補滿'
+	},
+	BOON_NIGHT_LONGER: '夜晚多 {0} 步',
+	BOON_NIGHT_SHORTER: '夜晚少 {0} 步',
+	BOON_MONSTER_HEALTH: '怪物生命 +{0}%',
+	BOON_MONSTER_DAMAGE: '怪物每擊多 {0} 點傷害',
+	BOON_SPAWNS: '怪物數量 ×{0}',
+	BOON_XP_UP: '經驗 ×{0}',
+	BOON_XP_DOWN: '經驗只剩 {0}%',
+	BOON_CALM: '影魅、燈蛾和暮鴉不會出現',
 	// Monster names, by monster
 	MONSTER_NAMES: {
 		zombie: '蹣跚影',

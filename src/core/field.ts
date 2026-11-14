@@ -305,13 +305,13 @@ export function climbIn(field: Field): void {
 
 // A monster arrives from just past one edge of the world
 export function spawn(field: Field, kind: string, def: MonsterDef, side: Facing,
-	options: { multiplier?: number; tiles?: number } = {}): Actor {
+	options: { multiplier?: number; tiles?: number; healthScale?: number; damageBonus?: number } = {}): Actor {
 	const multiplier = options.multiplier ?? 1;
 	const x = side === 'left' ? -def.width : field.width + def.width;
 	const monster = actor(field.nextId++, kind, x, def.hitbox ?? def.width, def.speed);
 	monster.def = def;
-	monster.hp = monster.maxHp = monsterStat(def.health, multiplier, field.casual);
-	monster.damage = monsterStat(def.damage, multiplier, field.casual);
+	monster.hp = monster.maxHp = Math.max(1, Math.round(monsterStat(def.health, multiplier, field.casual) * (options.healthScale ?? 1)));
+	monster.damage = monsterStat(def.damage, multiplier, field.casual) + (options.damageBonus ?? 0);
 	monster.xp = def.xp;
 	monster.tiles = options.tiles ?? 3;
 	monster.facing = side === 'left' ? 'right' : 'left';

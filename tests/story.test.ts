@@ -82,7 +82,7 @@ describe('the consequences of choices', () => {
 	it('shrink the ward for good once it is given to the cult', () => {
 		GameState.create();
 		const ward = GameState.maxWard();
-		GameState.storyFlags.envoy = 'accepted';
+		(GameState as unknown as { storyFlags: Record<string, string> }).storyFlags.envoy = 'accepted';
 		expect(GameState.maxWard()).toBe(Math.max(0, ward - 5));
 	});
 

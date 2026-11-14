@@ -23,6 +23,8 @@ var GameState = {
 		this.prestige = 0;
 		this.prioritizedBuilding = null;
 		this.storySeen = {};
+		this.storyFlags = {};
+		this.storyLog = [];
 		this.seed = randomSeed();
 		this.loadout = null;
 		this.lastFallDay = 0;
@@ -81,6 +83,8 @@ var GameState = {
 				this.health = savedState.health || this.maxHealth();
 				this.prioritizedBuilding = savedState.prioritizedBuilding;
 				this.storySeen = savedState.storySeen || {};
+				this.storyFlags = savedState.storyFlags || {};
+				this.storyLog = savedState.storyLog || [];
 				this.seed = savedState.seed || randomSeed();
 				this.loadout = savedState.loadout || null;
 				this.lastFallDay = savedState.lastFallDay || 0;
@@ -112,6 +116,8 @@ var GameState = {
 				health: this.health,
 				prioritizedBuilding: this.prioritizedBuilding,
 				storySeen: this.storySeen,
+				storyFlags: this.storyFlags,
+				storyLog: this.storyLog,
 				seed: this.seed,
 				loadout: this.loadout,
 				gauge: this.gauge
@@ -163,6 +169,8 @@ var GameState = {
 				savedState.counts = this.counts;
 				savedState.health = this.health;
 				savedState.storySeen = this.storySeen;
+				savedState.storyFlags = this.storyFlags;
+				savedState.storyLog = this.storyLog;
 				savedState.lastFallDay = this.lastFallDay;
 				localStorage["slot" + loadedSlot] = serializeSave(savedState);
 			}

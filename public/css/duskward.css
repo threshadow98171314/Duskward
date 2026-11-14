@@ -148,6 +148,45 @@ body.night {
 	transition: opacity 500ms linear;
 }
 
+/* Dialogue: a portrait beside the speaker's name and words */
+.journal.dialogue {
+	display: flex;
+	gap: 10px;
+	align-items: flex-start;
+}
+
+.portrait {
+	flex: none;
+	width: 48px;
+	height: 48px;
+	border: 2px solid #e2a65a;
+	border-radius: 4px;
+	background: #1d1631 url(../img/portraits.png) no-repeat;
+}
+
+.dialogueBody {
+	flex: 1;
+	min-width: 0;
+}
+
+.dialogueChoices {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 8px;
+}
+
+.dialogueChoice {
+	padding: 4px 12px;
+	border-radius: 4px;
+	background: rgba(242, 154, 58, 0.25);
+	cursor: pointer;
+}
+
+.dialogueChoice:hover {
+	background: rgba(242, 154, 58, 0.45);
+}
+
 .journalSpeaker {
 	font-size: 13px;
 	color: #f0b866;
@@ -327,6 +366,124 @@ body.night {
 	0% { opacity: 0; transform: translateY(20px) scale(0.8); }
 	20% { opacity: 1; transform: translateY(0) scale(1.1); }
 	100% { opacity: 0; transform: translateY(-40px) scale(1); }
+}
+
+/** The keeper's records: journal and bestiary **/
+
+.recordsMenu li {
+	padding: 6px 14px;
+	margin: 0 4px;
+	cursor: pointer;
+}
+
+.records {
+	position: absolute;
+	z-index: 25;
+	top: 50%;
+	left: 50%;
+	width: 92%;
+	max-width: 460px;
+	transform: translate(-50%, -50%);
+	padding: 14px 16px;
+	border: 2px solid #e2a65a;
+	border-radius: 8px;
+	background: rgba(29, 22, 49, 0.97);
+	color: #fbe9c8;
+	box-shadow: 0 0 24px rgba(0, 0, 0, 0.6);
+	transition: opacity 500ms linear;
+	cursor: default;
+}
+
+.records.hidden {
+	opacity: 0;
+}
+
+.recordsTitle {
+	color: #ffd27a;
+	font-size: 1.2em;
+	font-weight: bold;
+	margin-bottom: 10px;
+}
+
+.recordsList {
+	max-height: 340px;
+	overflow-y: auto;
+	padding-right: 4px;
+}
+
+.recordsEntry {
+	padding: 8px 0;
+	border-bottom: 1px solid rgba(226, 166, 90, 0.25);
+}
+
+.recordsDay {
+	color: #b894cc;
+	font-size: 0.85em;
+	margin-bottom: 4px;
+}
+
+.recordsLine {
+	font-size: 0.9em;
+	line-height: 1.5;
+}
+
+.recordsLine b {
+	color: #f0b866;
+	font-weight: normal;
+}
+
+.recordsMonster {
+	display: flex;
+	gap: 10px;
+	align-items: center;
+}
+
+.recordsMonster.unknown {
+	opacity: 0.45;
+}
+
+.recordsPicture {
+	flex: none;
+	width: 56px;
+	height: 56px;
+	overflow: hidden;
+	border-radius: 4px;
+	background: #1a1433;
+}
+
+.recordsSprite {
+	background: url(../img/monsters.png) no-repeat;
+	transform-origin: top left;
+}
+
+.recordsPicture.boss.dragon {
+	background: #1a1433 url(../img/dragonsprite.png) no-repeat -12px -1640px;
+}
+
+.recordsPicture.boss.eclipse {
+	background: radial-gradient(circle, #07040d 0 34%, #2a1438 40%, rgba(255, 210, 92, 0.95) 44%, rgba(242, 154, 58, 0) 54%), #1a1433;
+}
+
+.recordsName {
+	color: #ffe9a0;
+	font-weight: bold;
+}
+
+.recordsStats {
+	color: #b894cc;
+	font-size: 0.8em;
+	margin: 2px 0 4px;
+}
+
+.recordsEmpty {
+	opacity: 0.7;
+}
+
+.recordsClose {
+	margin-top: 10px;
+	padding: 4px 12px;
+	text-align: center;
+	cursor: pointer;
 }
 
 /** The dusk choice **/

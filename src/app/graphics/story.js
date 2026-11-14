@@ -1,5 +1,9 @@
 import $ from '../../vendor/jquery.js';
+import E from '../eventmanager.js';
 import Graphics from './graphics.js';
+import { CHARACTERS } from '../../content/story.ts';
+
+var PORTRAIT_SIZE = 48;
 
 var FADE_TIME = 500;
 var JOURNAL_BASE_TIME = 6000;
@@ -64,6 +68,71 @@ function drawIntro(pages, done, className) {
 	fadeIn(overlay);
 }
 
+// The words of a story line, from the story's texts or the older journal
+function words(id) {
+	return (G().getText('STORY') || {})[id] || G().getText('JOURNAL')[id] || id;
+}
+
+function drawLines(lines, onChoice, done) {
+	var line = lines.shift();
+	if(!line) {
+		done();
+		return;
+	}
+	drawLine(line, function(choice) {
+		if(choice) {
+			onChoice(choice);
+			lines = (choice.reply || []).concat(lines);
+		}
+		drawLines(lines, onChoice, done);
+	});
+}
+
+// One line of dialogue. A line with a choice holds the game until it is answered.
+function drawLine(line, done) {
+	var text = words(line.say);
+	var portrait = G().make('portrait')
+		.css('background-position', -(CHARACTERS[line.who].portrait * PORTRAIT_SIZE) + 'px 0');
+	var body = G().make('dialogueBody')
+		.append(G().make('journalSpeaker').text(G().getText('CHARACTER_NAMES')[line.who]))
+		.append(G().make('journalText').text(text));
+	var box = G().make('journal dialogue hidden').append(portrait).append(body).appendTo('#gameContainer');
+
+	if(line.choices) {
+		E.trigger('hold');
+		var answers = G().make('dialogueChoices').appendTo(body);
+		line.choices.forEach(function(choice) {
+			G().make('dialogueChoice litBorder').text(words(choice.say)).data('choice', choice).appendTo(answers);
+		});
+		box.on('click touchstart', '.dialogueChoice', function() {
+			var choice = $(this).data('choice');
+			E.trigger('unpause');
+			fadeOut(box, function() {
+				done(choice);
+			});
+			return false;
+		});
+		box.on('click touchstart', function() {
+			return false;
+		});
+	} else {
+		var perChar = G().getLocale() == 'zh-TW' ? 150 : 50;
+		var timer = null;
+		var close = function() {
+			clearTimeout(timer);
+			fadeOut(box, function() {
+				done(null);
+			});
+		};
+		timer = setTimeout(close, JOURNAL_BASE_TIME + text.length * perChar);
+		box.on('click touchstart', function() {
+			close();
+			return false;
+		});
+	}
+	fadeIn(box);
+}
+
 function drawJournal(speaker, text, done) {
 	var perChar = G().getLocale() == 'zh-TW' ? 150 : 50;
 	var box = G().make('journal hidden')
@@ -107,5 +176,12 @@ export default {
 
 	showJournal: function(speaker, text) {
 		enqueue(drawJournal.bind(null, speaker, text));
+	},
+
+	// Plays a chapter's lines; onChoice(choice) when the keeper answers one
+	tell: function(lines, onChoice) {
+		enqueue(function(next) {
+			drawLines(lines.slice(), onChoice, next);
+		});
 	}
 };

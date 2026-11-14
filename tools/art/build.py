@@ -12,6 +12,7 @@ import buildings
 import dude
 import icons
 import monsters
+import portraits
 import resources
 import scenery
 import village
@@ -143,6 +144,7 @@ def build_dragon():
 def main():
     sheets = (
         ("dragonsprite.png", build_dragon),
+        ("portraits.png", portraits.sheet),
         ("tiles.png", build_tiles),
         ("buildings.png", build_buildings),
         ("monsters.png", build_monsters),

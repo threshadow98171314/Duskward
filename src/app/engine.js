@@ -13,6 +13,7 @@ import Visibility from './visibility.js';
 import KeySequencer from './keysequencer.js';
 import Difficulty from './graphics/difficulty.js';
 import Language from './graphics/language.js';
+import Records from './graphics/records.js';
 import Story from './story.js';
 import Dusk from './graphics/dusk.js';
 import Skills from './skills.js';
@@ -218,6 +219,7 @@ var Engine = {
 		
 		modules.push(Difficulty);
 		modules.push(Language);
+		modules.push(Records);
 		modules.push(Story);
 		modules.push(Dusk);
 		modules.push(Skills);

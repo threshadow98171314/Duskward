@@ -38,9 +38,34 @@ export default {
 	NO_MUSIC: 'Play without music?',
 	TAP_TO_CONTINUE: 'Tap to continue',
 	SERA: 'Sera the Lampkeeper',
+	CHARACTER_NAMES: {
+		sera: 'Sera the Lampkeeper',
+		keeper: 'The Keeper',
+		traveler: 'Traveler',
+		envoy: 'Cult Envoy'
+	},
+	// Lines of the story's chapters (see src/content/story.ts)
+	STORY: {
+		traveler1: 'Child, someone is waiting at the edge of the village. He says he fled from the other side of the mountains.',
+		traveler2: 'Please, let me stay here. I can work a forge, and I can help keep watch. Over the mountains... there is no light left.',
+		traveler3: 'One more person is one more mouth to feed. But also one more pair of hands. What do you say?',
+		travelerStay: 'Stay with us.',
+		travelerLeave: 'We can barely feed ourselves.',
+		travelerThanks: 'Thank you, keeper. You will not regret it.',
+		travelerGone: '...He is gone. I hope the shadows on the mountain road let him pass.'
+	},
 	DUSK: 'Dusk',
 	CHAIN_N: 'Chain ×{0}',
 	BOUNTY_N: 'Bounty! {0} kinds +{1}%',
+	// The keeper's records, in the menu
+	RECORDS: 'Records',
+	JOURNAL_TITLE: 'Journal',
+	JOURNAL_EMPTY: 'Nothing written yet.',
+	JOURNAL_EARLIER: 'Earlier',
+	BESTIARY_TITLE: 'Bestiary',
+	BESTIARY_STATS: 'Health {0} · hits for {1}',
+	BESTIARY_BOSS: 'Health {0}',
+	CLOSE: 'Close',
 	// The dusk choice
 	OMEN: 'Tonight\'s omen: {0}',
 	OMEN_NAMES: {

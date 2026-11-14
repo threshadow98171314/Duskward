@@ -38,9 +38,34 @@ export default {
 	NO_MUSIC: '不載入音樂直接玩？',
 	TAP_TO_CONTINUE: '點一下繼續',
 	SERA: '燈守瑟菈',
+	CHARACTER_NAMES: {
+		sera: '燈守瑟菈',
+		keeper: '守暮人',
+		traveler: '旅人',
+		envoy: '蝕教使者'
+	},
+	// Lines of the story's chapters (see src/content/story.ts)
+	STORY: {
+		traveler1: '孩子，村口來了一個人。他說他是從山的另一邊逃過來的。',
+		traveler2: '拜託，讓我在這裡住下吧。我會打鐵，也能幫忙守夜。山那邊……已經沒有光了。',
+		traveler3: '多一個人，就多一張嘴。但也多一雙手。你怎麼想？',
+		travelerStay: '留下來吧。',
+		travelerLeave: '我們連自己都快養不活了。',
+		travelerThanks: '謝謝你，守暮人。我不會讓你後悔的。',
+		travelerGone: '……他走了。希望山路上的影子放過他。'
+	},
 	DUSK: '黃昏',
 	CHAIN_N: '連鎖 ×{0}',
 	BOUNTY_N: '豐收！{0} 種資源 +{1}%',
+	// The keeper's records, in the menu
+	RECORDS: '記錄',
+	JOURNAL_TITLE: '守暮日誌',
+	JOURNAL_EMPTY: '還沒有任何紀錄。',
+	JOURNAL_EARLIER: '更早以前',
+	BESTIARY_TITLE: '怪物圖鑑',
+	BESTIARY_STATS: '生命 {0}・每擊 {1}',
+	BESTIARY_BOSS: '生命 {0}',
+	CLOSE: '關閉',
 	// The dusk choice
 	OMEN: '今晚的預兆：{0}',
 	OMEN_NAMES: {

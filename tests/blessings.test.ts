@@ -11,13 +11,13 @@ const pool = BLESSINGS as Record<string, BlessingDef>;
 describe('blessings', () => {
 	it('sum up the gift and the price of a night', () => {
 		expect(nightModifiers(pool.fullArms)).toEqual({
-			fill: ['shield', 'sword', 'ward'], nightMoves: 0, monsterHealth: 1.25, monsterDamage: 0, spawns: 2, xp: 1, calm: false,
+			fill: ['shield', 'sword', 'ward'], nightMoves: 3, monsterHealth: 1, monsterDamage: 0, spawns: 1, xp: 1, calm: false,
 			loot: 1, arrivals: [], chainCall: null,
 		});
 		// An omen adds to the blessing
 		expect(nightModifiers(pool.valor, (OMENS as Record<string, OmenDef>).moonless.effects))
-			.toMatchObject({ xp: 3, monsterHealth: 1.5, monsterDamage: 1, nightMoves: 3 });
-		expect(nightModifiers(pool.morningStar)).toMatchObject({ nightMoves: -5, spawns: 2 });
+			.toMatchObject({ xp: 3, monsterHealth: 1.2, monsterDamage: 0, nightMoves: 3 });
+		expect(nightModifiers(pool.stillNight)).toMatchObject({ calm: true, nightMoves: -5, xp: 0.5 });
 		expect(nightModifiers(null)).toMatchObject({ fill: [], nightMoves: 0, monsterHealth: 1, spawns: 1, xp: 1, calm: false });
 	});
 

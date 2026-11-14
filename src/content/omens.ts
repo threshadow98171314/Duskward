@@ -12,7 +12,7 @@ export const OMENS = {
 	quiet: { weight: 4, effects: [] },
 	mist: {
 		weight: 2, fromDay: 2,
-		effects: [{ type: 'monsterHealth', scale: 1.2 }, { type: 'xp', scale: 1.5 }],
+		effects: [{ type: 'monsterHealth', scale: 1.1 }, { type: 'xp', scale: 1.3 }],
 	},
 	fallingStars: {
 		weight: 1.5, fromDay: 2,
@@ -20,7 +20,7 @@ export const OMENS = {
 	},
 	crowNight: {
 		weight: 2, fromDay: 3, hard: true,
-		effects: [{ type: 'arrivals', monster: 'duskcrow', count: 3 }],
+		effects: [{ type: 'arrivals', monster: 'duskcrow', count: 2 }],
 	},
 	shadowTide: {
 		weight: 1.5, fromDay: 4, hard: true,
@@ -28,6 +28,6 @@ export const OMENS = {
 	},
 	moonless: {
 		weight: 1, fromDay: 8, hard: true,
-		effects: [{ type: 'nightMoves', moves: 3 }, { type: 'monsterDamage', add: 1 }, { type: 'xp', scale: 1.5 }],
+		effects: [{ type: 'nightMoves', moves: 3 }, { type: 'xp', scale: 1.5 }],
 	},
 } satisfies Record<string, OmenDef>;

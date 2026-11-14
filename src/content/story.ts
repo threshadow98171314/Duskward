@@ -73,12 +73,12 @@ export const CHAPTERS: Record<string, Chapter> = {
 				choices: [
 					{
 						say: 'envoyRefuse', set: { envoy: 'refused' },
-						tonight: [{ type: 'arrivals', monster: 'warlock', count: 2 }],
+						tonight: [{ type: 'arrivals', monster: 'warlock', count: 1 }],
 						reply: [{ who: 'envoy', say: 'envoyAngry' }],
 					},
 					{
 						say: 'envoyAccept', set: { envoy: 'accepted' },
-						tonight: [{ type: 'calm' }, { type: 'monsterHealth', scale: 0.75 }],
+						tonight: [{ type: 'calm' }, { type: 'nightMoves', moves: -5 }],
 						reply: [{ who: 'envoy', say: 'envoyPleased' }, { who: 'sera', say: 'envoyWarning' }],
 					},
 				],
@@ -187,5 +187,5 @@ export const CONSEQUENCES: Consequence[] = [
 	// The traveler keeps the village's blades sharp
 	{ flag: 'traveler', is: 'stayed', effects: [{ type: 'nightfallSword', share: 0.5 }] },
 	// The ward given to the cult is gone for good, and feeds the Eclipse
-	{ flag: 'envoy', is: 'accepted', effects: [{ type: 'wardMax', add: -5 }, { type: 'bossHealth', boss: 'eclipse', scale: 1.25 }] },
+	{ flag: 'envoy', is: 'accepted', effects: [{ type: 'wardMax', add: -10 }, { type: 'bossHealth', boss: 'eclipse', scale: 1.25 }] },
 ];

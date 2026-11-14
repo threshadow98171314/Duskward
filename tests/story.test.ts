@@ -116,7 +116,7 @@ describe('the consequences of choices', () => {
 		GameState.create();
 		const ward = GameState.maxWard();
 		(GameState as unknown as { storyFlags: Record<string, string> }).storyFlags.envoy = 'accepted';
-		expect(GameState.maxWard()).toBe(Math.max(0, ward - 5));
+		expect(GameState.maxWard()).toBe(Math.max(0, ward - 10));
 	});
 
 	it('name every building the plan can offer, in both languages', () => {

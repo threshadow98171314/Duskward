@@ -107,6 +107,119 @@ exports[`simulated fights > play out like this for each monster 1`] = `
 }
 `;
 
+exports[`simulated nights > cost this much with each blessing, omen and bargain 1`] = `
+{
+  "afterglowSpring": {
+    "night 16": "253% / 278 xp",
+    "night 2": "165% / 80 xp",
+    "night 25": "340% / 410 xp",
+    "night 8": "202% / 204 xp",
+  },
+  "cult accepted, after": {
+    "night 16": "232% / 239 xp",
+    "night 2": "153% / 71 xp",
+    "night 25": "297% / 350 xp",
+    "night 8": "195% / 179 xp",
+  },
+  "cult accepted, tonight": {
+    "night 16": "179% / 221 xp",
+    "night 2": "36% / 31 xp",
+    "night 25": "277% / 360 xp",
+    "night 8": "66% / 130 xp",
+  },
+  "cult refused, tonight": {
+    "night 16": "318% / 264 xp",
+    "night 2": "446% / 109 xp",
+    "night 25": "320% / 365 xp",
+    "night 8": "463% / 208 xp",
+  },
+  "fullArms": {
+    "night 16": "205% / 296 xp",
+    "night 2": "163% / 82 xp",
+    "night 25": "305% / 432 xp",
+    "night 8": "153% / 216 xp",
+  },
+  "keenEdge": {
+    "night 16": "253% / 253 xp",
+    "night 2": "125% / 74 xp",
+    "night 25": "327% / 369 xp",
+    "night 8": "143% / 191 xp",
+  },
+  "lanternWard": {
+    "night 16": "187% / 221 xp",
+    "night 2": "124% / 67 xp",
+    "night 25": "236% / 320 xp",
+    "night 8": "169% / 166 xp",
+  },
+  "morningStar": {
+    "night 16": "134% / 139 xp",
+    "night 2": "113% / 49 xp",
+    "night 25": "153% / 194 xp",
+    "night 8": "177% / 115 xp",
+  },
+  "omen crowNight": {
+    "night 16": "217% / 214 xp",
+    "night 2": "180% / 78 xp",
+    "night 25": "250% / 305 xp",
+    "night 8": "285% / 169 xp",
+  },
+  "omen fallingStars": {
+    "night 16": "216% / 240 xp",
+    "night 2": "136% / 71 xp",
+    "night 25": "289% / 350 xp",
+    "night 8": "178% / 179 xp",
+  },
+  "omen mist": {
+    "night 16": "251% / 309 xp",
+    "night 2": "147% / 94 xp",
+    "night 25": "351% / 455 xp",
+    "night 8": "207% / 233 xp",
+  },
+  "omen moonless": {
+    "night 16": "273% / 453 xp",
+    "night 2": "179% / 126 xp",
+    "night 25": "370% / 670 xp",
+    "night 8": "223% / 326 xp",
+  },
+  "omen shadowTide": {
+    "night 16": "215% / 224 xp",
+    "night 2": "209% / 100 xp",
+    "night 25": "237% / 310 xp",
+    "night 8": "295% / 176 xp",
+  },
+  "plain": {
+    "night 16": "216% / 240 xp",
+    "night 2": "136% / 71 xp",
+    "night 25": "289% / 350 xp",
+    "night 8": "178% / 179 xp",
+  },
+  "seraPrayer": {
+    "night 16": "236% / 260 xp",
+    "night 2": "151% / 76 xp",
+    "night 25": "314% / 382 xp",
+    "night 8": "188% / 191 xp",
+  },
+  "steadyShield": {
+    "night 16": "234% / 257 xp",
+    "night 2": "142% / 75 xp",
+    "night 25": "304% / 372 xp",
+    "night 8": "203% / 192 xp",
+  },
+  "stillNight": {
+    "night 16": "179% / 112 xp",
+    "night 2": "36% / 15 xp",
+    "night 25": "277% / 183 xp",
+    "night 8": "66% / 67 xp",
+  },
+  "valor": {
+    "night 16": "294% / 476 xp",
+    "night 2": "203% / 146 xp",
+    "night 25": "410% / 697 xp",
+    "night 8": "318% / 358 xp",
+  },
+}
+`;
+
 exports[`simulated play > plays out like this at each stage of the village 1`] = `
 {
   "3 kinds": {

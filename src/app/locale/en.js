@@ -130,7 +130,7 @@ export default {
 		fallingStars: 'Falling stars! Monsters will leave chests far more often tonight.',
 		crowNight: 'I can hear wings... a great flock of dusk crows is coming tonight.',
 		shadowTide: 'The shadows are stirring. Even shorter chains will call shades tonight.',
-		moonless: 'No moon tonight. The night will be longer and the monsters fiercer, but whoever lasts it will grow stronger.'
+		moonless: 'No moon tonight. The night will be longer, but whoever lasts it will grow stronger.'
 	},
 	BOON_LOOT: 'Chests drop {0} times as often',
 	BOON_ARRIVALS: '{0} {1} arrive as night falls',

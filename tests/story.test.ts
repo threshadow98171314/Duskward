@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import en from '../src/app/locale/en.js';
 import zhTW from '../src/app/locale/zh-TW.js';
-import { CHAPTERS, CHARACTERS } from '../src/content/story.ts';
-import { type Chapter, chaptersFor, choose, type Line, type StoryState } from '../src/core/story.ts';
+import Content from '../src/app/gamecontent.js';
+import GameState from '../src/app/gamestate.js';
+import Story from '../src/app/story.js';
+import { CHAPTERS, CHARACTERS, CONSEQUENCES } from '../src/content/story.ts';
+import { type Chapter, chaptersFor, choose, consequences, type Line, type StoryState } from '../src/core/story.ts';
 
 const state = (extra: Partial<StoryState> = {}): StoryState =>
 	({ day: 1, level: 1, counts: {}, flags: {}, told: {}, ...extra });
@@ -37,6 +40,13 @@ describe('the story engine', () => {
 describe('the story as written', () => {
 	const lines = (all: Line[]): Line[] => all.flatMap((line) => [line, ...(line.choices ?? []).flatMap((c) => lines(c.reply ?? []))]);
 
+	it('only starts on events the story listens to', () => {
+		const events = new Set(Story.events());
+		for (const [id, chapter] of Object.entries(CHAPTERS)) {
+			expect(events, id + ' starts on ' + chapter.on).toContain(chapter.on);
+		}
+	});
+
 	it('keeps the old journal entries under the same names, so old saves remember them', () => {
 		for (const id of ['day1', 'day40', 'firstNight', 'firstDeath', 'monster_zombie', 'monster_eclipsespawn', 'eclipse']) {
 			expect(CHAPTERS, id).toHaveProperty([id]);
@@ -56,6 +66,31 @@ describe('the story as written', () => {
 			}
 			for (const who of Object.keys(CHARACTERS)) {
 				expect(text.CHARACTER_NAMES[who], who).toBeTypeOf('string');
+			}
+		}
+	});
+});
+
+describe('the consequences of choices', () => {
+	it('follow from the flags the choices set', () => {
+		expect(consequences(CONSEQUENCES, {})).toEqual([]);
+		expect(consequences(CONSEQUENCES, { traveler: 'stayed' })).toEqual([{ type: 'nightfallSword', share: 0.5 }]);
+		expect(consequences(CONSEQUENCES, { traveler: 'left', envoy: 'accepted' }).map((effect) => effect.type))
+			.toEqual(['wardMax', 'bossHealth']);
+	});
+
+	it('shrink the ward for good once it is given to the cult', () => {
+		GameState.create();
+		const ward = GameState.maxWard();
+		GameState.storyFlags.envoy = 'accepted';
+		expect(GameState.maxWard()).toBe(Math.max(0, ward - 5));
+	});
+
+	it('name every building the plan can offer, in both languages', () => {
+		for (const text of [zhTW, en] as { BUILDING_NAMES: Record<string, string> }[]) {
+			for (const building of Object.values(Content.BuildingType) as { className: string }[]) {
+				const base = building.className.replace(/\d+$/, '');
+				expect(text.BUILDING_NAMES[base], building.className).toBeTypeOf('string');
 			}
 		}
 	});

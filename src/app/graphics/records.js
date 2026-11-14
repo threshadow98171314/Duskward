@@ -31,7 +31,7 @@ function open(title, content) {
 		setTimeout(function() {
 			panel.remove();
 		}, FADE_TIME);
-		E.trigger('unpause');
+		E.trigger('letGo');
 		return false;
 	});
 	// Scrolling the list is fine; nothing behind it reacts

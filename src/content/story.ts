@@ -3,7 +3,7 @@
 // locale files (STORY, or the older JOURNAL entries), and so are the characters'
 // names (CHARACTER_NAMES).
 
-import type { Chapter } from '../core/story.ts';
+import type { Chapter, Consequence } from '../core/story.ts';
 
 // Who can speak, and which picture on the portrait sheet is theirs
 export const CHARACTERS = {
@@ -45,6 +45,47 @@ export const CHAPTERS: Record<string, Chapter> = {
 		],
 	},
 
+	// The traveler, a few days on
+	travelerSmith: {
+		on: 'dayBreak',
+		if: [{ argAtLeast: 8 }, { flag: 'traveler', is: 'stayed' }],
+		delay: 9000,
+		lines: [
+			{ who: 'traveler', say: 'travelerSmith1' },
+			{ who: 'sera', say: 'travelerSmith2' },
+		],
+	},
+	travelerCloak: {
+		on: 'dayBreak',
+		if: [{ argAtLeast: 9 }, { flag: 'traveler', is: 'left' }],
+		delay: 9000,
+		lines: [{ who: 'sera', say: 'travelerCloak1' }],
+	},
+
+	// The cult offers a bargain once the keeper has chosen a blessing for the night
+	envoy: {
+		on: 'blessingChosen',
+		if: [{ atLeastDay: 10 }],
+		lines: [
+			{ who: 'envoy', say: 'envoy1' },
+			{
+				who: 'envoy', say: 'envoy2',
+				choices: [
+					{
+						say: 'envoyRefuse', set: { envoy: 'refused' },
+						tonight: [{ type: 'arrivals', monster: 'warlock', count: 2 }],
+						reply: [{ who: 'envoy', say: 'envoyAngry' }],
+					},
+					{
+						say: 'envoyAccept', set: { envoy: 'accepted' },
+						tonight: [{ type: 'calm' }, { type: 'monsterHealth', scale: 0.75 }],
+						reply: [{ who: 'envoy', say: 'envoyPleased' }, { who: 'sera', say: 'envoyWarning' }],
+					},
+				],
+			},
+		],
+	},
+
 	firstNight: journal('phaseChange', 'firstNight', { if: [{ arg: true }] }),
 	firstDeath: journal('gameLoaded', 'firstDeath', { if: [{ count: 'DEATHS', atLeast: 1 }] }),
 	level4: journal('levelUp', 'level4', { if: [{ arg: 4 }] }),
@@ -68,3 +109,11 @@ export const CHAPTERS: Record<string, Chapter> = {
 	// The first time each kind of monster turns up, Sera says what it is
 	...Object.fromEntries(MONSTERS.map((kind) => ['monster_' + kind, journal('monsterSpawned', 'monster_' + kind, { if: [{ arg: kind }] })])),
 };
+
+// What the keeper's choices go on doing
+export const CONSEQUENCES: Consequence[] = [
+	// The traveler keeps the village's blades sharp
+	{ flag: 'traveler', is: 'stayed', effects: [{ type: 'nightfallSword', share: 0.5 }] },
+	// The ward given to the cult is gone for good, and feeds the Eclipse
+	{ flag: 'envoy', is: 'accepted', effects: [{ type: 'wardMax', add: -5 }, { type: 'bossHealth', boss: 'eclipse', scale: 1.25 }] },
+];

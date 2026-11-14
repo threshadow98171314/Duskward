@@ -4,6 +4,7 @@ import StoryGraphics from './graphics/story.js';
 import Graphics from './graphics/graphics.js';
 import { CHAPTERS } from '../content/story.ts';
 import { chaptersFor, choose } from '../core/story.ts';
+import Blessings from './blessings.js';
 
 // The story at work: game events start the chapters written in
 // src/content/story.ts (see src/core/story.ts for how), which play as dialogue.
@@ -38,6 +39,9 @@ function happen(event, arg) {
 		setTimeout(function() {
 			StoryGraphics.tell(chapter.lines, function(choice) {
 				choose(storyState(), choice);
+				if(choice.tonight) {
+					Blessings.addTonight(choice.tonight);
+				}
 				E.trigger('storyChoice', [id, choice.set || {}]);
 			});
 		}, chapter.delay || 0);
@@ -68,7 +72,8 @@ var EVENTS = {
 	callDragon: null,
 	dragonDefeated: null,
 	eclipseArrives: null,
-	dawnHeartWaits: null
+	dawnHeartWaits: null,
+	blessingChosen: function(blessing) { return blessing; }
 };
 
 export default {
@@ -88,6 +93,11 @@ export default {
 				happen('gaugeFull');
 			}
 		});
+	},
+
+	// Every event a chapter can start on
+	events: function() {
+		return Object.keys(EVENTS).concat(['gameLoaded', 'gaugeFull']);
 	},
 
 	// What the keeper chose, e.g. whether the traveler stayed

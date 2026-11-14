@@ -617,6 +617,15 @@ body.night {
 	color: #f0a0a0;
 }
 
+/* The building plan can offer more cards than fit in a row */
+.buildPlan .choiceCards {
+	flex-wrap: wrap;
+}
+
+.buildPlan .choiceCard {
+	flex: 1 1 28%;
+}
+
 .choiceSkip {
 	margin-top: 10px;
 	text-align: center;

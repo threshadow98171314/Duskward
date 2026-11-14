@@ -1,7 +1,10 @@
 // The story: chapters told when something happens in the game, if their
 // conditions hold. A chapter is a few lines, each said by someone, and a line can
 // end in a choice. Choices set flags, which later chapters (and the rest of the
-// game) can read. Each chapter is told once per game.
+// game, through consequences) can read, and can change the coming night. Each
+// chapter is told once per game.
+
+import type { Boon } from './blessings.ts';
 
 export type Flag = string | boolean;
 
@@ -20,6 +23,8 @@ export interface Choice {
 	// The keeper's answer, a text id
 	say: string;
 	set?: Record<string, Flag>;
+	// What the answer changes about the coming night
+	tonight?: Boon[];
 	// What is said in reply to this answer
 	reply?: Line[];
 }
@@ -75,4 +80,23 @@ export function chaptersFor(chapters: Record<string, Chapter>, event: string, ar
 // Applies a choice to the flags
 export function choose(state: StoryState, choice: Choice): void {
 	Object.assign(state.flags, choice.set ?? {});
+}
+
+// What a choice goes on doing for the rest of the game
+export type Effect =
+	// The sword starts each night this full
+	| { type: 'nightfallSword'; share: number }
+	| { type: 'wardMax'; add: number }
+	| { type: 'bossHealth'; boss: string; scale: number };
+
+export interface Consequence {
+	flag: string;
+	is: Flag;
+	effects: Effect[];
+}
+
+// The lasting effects of the choices made so far
+export function consequences(list: Consequence[], flags: Record<string, Flag>): Effect[] {
+	return list.filter((consequence) => (flags[consequence.flag] ?? false) === consequence.is)
+		.flatMap((consequence) => consequence.effects);
 }

@@ -18,6 +18,7 @@ import Story from './story.js';
 import Dusk from './graphics/dusk.js';
 import Skills from './skills.js';
 import Blessings from './blessings.js';
+import Plan from './plan.js';
 import { register } from './modules.js';
 
 var DRAG_THRESHOLD = 30; // in pixels
@@ -29,6 +30,8 @@ var graphicsCallback = null;
 var loaded = false;
 var silent = true;
 var started = false;
+// Choices on screen that the game waits for
+var holds = 0;
 
 function initializeModules(modules, callback) {
 	// init all modules passed to me
@@ -166,6 +169,7 @@ var Engine = {
 	options: {},
 	init: function(opts) {
 		$.extend(this.options, opts);
+		holds = 0;
 
 		if(!isModernBrowser()) {
 			window.location = 'browserWarning.html';
@@ -224,6 +228,7 @@ var Engine = {
 		modules.push(Dusk);
 		modules.push(Skills);
 		modules.push(Blessings);
+		modules.push(Plan);
 		
 		// Start the game
 		GameOptions.load();
@@ -246,11 +251,21 @@ var Engine = {
 		EventManager.bind('deleteSlot', GameState.deleteSlot);
 		EventManager.bind('importSlot', importSlot);
 		EventManager.bind('pause', setPaused.bind(this, true));
-		// A choice holds the game until it is made (and unpauses it); a click elsewhere does not let it go
+		// Every open choice holds the game; it moves again once all of them are let go
 		EventManager.bind('hold', function() {
+			holds++;
 			Engine.paused = true;
 		});
+		EventManager.bind('letGo', function() {
+			holds = Math.max(0, holds - 1);
+			if(holds == 0) {
+				EventManager.trigger('unpause');
+			}
+		});
 		EventManager.bind('unpause', function() {
+			if(holds > 0) {
+				return;
+			}
 			setPaused(false);
 			EventManager.trigger('afterUnpaused');
 		});

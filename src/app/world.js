@@ -29,6 +29,8 @@ import * as Day from '../core/day.ts';
 import { attracted, bounty, duskWard, harvestResource } from '../core/harvest.ts';
 import { canBuild as canBuildIn } from '../core/progress.ts';
 import { dragonMultiplier, monsterMultiplier, WARD_BITE } from '../core/combat.ts';
+import { CONSEQUENCES } from '../content/story.ts';
+import { consequences } from '../core/story.ts';
 
 var hasteTick = false;
 var dude = null;
@@ -858,7 +860,10 @@ function callEclipse() {
 		return;
 	}
 	eclipseHp = null;
-	Field.callBoss(field, 'eclipse', BOSSES.eclipse, Graphics.worldWidth() / 2, dragonMultiplier(GameState.prestige));
+	var healthScale = storyEffects('bossHealth').reduce(function(scale, effect) {
+		return effect.boss == 'eclipse' ? scale * effect.scale : scale;
+	}, 1);
+	Field.callBoss(field, 'eclipse', BOSSES.eclipse, Graphics.worldWidth() / 2, dragonMultiplier(GameState.prestige), healthScale);
 	EclipseView.appear();
 	EventManager.trigger('eclipseArrives');
 	// Lantern light is the one thing that hurts it: the board makes sure there is some
@@ -952,8 +957,19 @@ function clockLengths() {
 	};
 }
 
-// Tonight's blessing fills what it promised as night falls
+// The lasting effects of the keeper's choices in the story
+function storyEffects(type) {
+	return consequences(CONSEQUENCES, GameState.storyFlags || {}).filter(function(effect) {
+		return effect.type == type;
+	});
+}
+
+// Tonight's blessing fills what it promised as night falls, and the traveler's blades come sharp
 function blessNightfall() {
+	storyEffects('nightfallSword').forEach(function(effect) {
+		dude.sword = Math.max(dude.sword, Math.ceil(GameState.maxSword() * effect.share));
+		Graphics.updateSword(dude.sword, GameState.maxSword());
+	});
 	Blessings.modifiers().fill.forEach(function(what) {
 		switch(what) {
 		case 'health':

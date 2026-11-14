@@ -18,6 +18,8 @@ var SKILLS_TAKEN = 2;
 // The blessing and the omen for the coming night, and the day they were chosen on
 var tonight = null;
 var omen = null;
+// What the story's choices added to the night
+var extra = [];
 var chosenOn = null;
 
 function unlockedSkills() {
@@ -64,7 +66,7 @@ function offer() {
 			State.loadout = loadout;
 		}
 		// Lets go of the hold, and of an automatic pause that came while choosing
-		E.trigger('unpause');
+		E.trigger('letGo');
 		E.trigger('blessingChosen', [id]);
 	}, BLESSINGS);
 }
@@ -73,19 +75,26 @@ export default {
 	init: function() {
 		tonight = null;
 		omen = null;
+		extra = [];
 		chosenOn = null;
 		BlessingGraphics.init();
 		E.bind('duskFall', offer);
 		E.bind('dayBreak', function() {
 			tonight = null;
 			omen = null;
+			extra = [];
 			BlessingGraphics.clear();
 		});
 	},
 
 	// What tonight's blessing and omen change; nothing, if there are none
 	modifiers: function() {
-		return nightModifiers(tonight ? BLESSINGS[tonight] : null, omen ? OMENS[omen].effects : []);
+		return nightModifiers(tonight ? BLESSINGS[tonight] : null, omen ? OMENS[omen].effects : [], extra);
+	},
+
+	// A choice in the story changes the coming night too
+	addTonight: function(boons) {
+		extra = extra.concat(boons);
 	},
 
 	// Whether a dusk skill can be cast now: at night, only the ones taken into it

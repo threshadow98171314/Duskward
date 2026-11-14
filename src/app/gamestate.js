@@ -7,6 +7,8 @@ import { parseSave, serializeSave } from '../platform/save.ts';
 import * as Combat from '../core/combat.ts';
 import * as Progress from '../core/progress.ts';
 import { randomSeed } from '../core/random.ts';
+import { CONSEQUENCES } from '../content/story.ts';
+import { consequences } from '../core/story.ts';
 
 var loadedSlot = 0;
 var GameState = {
@@ -25,6 +27,7 @@ var GameState = {
 		this.storySeen = {};
 		this.storyFlags = {};
 		this.storyLog = [];
+		this.plannedSeen = [];
 		this.seed = randomSeed();
 		this.loadout = null;
 		this.lastFallDay = 0;
@@ -85,6 +88,7 @@ var GameState = {
 				this.storySeen = savedState.storySeen || {};
 				this.storyFlags = savedState.storyFlags || {};
 				this.storyLog = savedState.storyLog || [];
+				this.plannedSeen = savedState.plannedSeen || [];
 				this.seed = savedState.seed || randomSeed();
 				this.loadout = savedState.loadout || null;
 				this.lastFallDay = savedState.lastFallDay || 0;
@@ -118,6 +122,7 @@ var GameState = {
 				storySeen: this.storySeen,
 				storyFlags: this.storyFlags,
 				storyLog: this.storyLog,
+				plannedSeen: this.plannedSeen,
 				seed: this.seed,
 				loadout: this.loadout,
 				gauge: this.gauge
@@ -267,7 +272,11 @@ var GameState = {
 	},
 
 	maxWard: function() {
-		return 5 + 5 * this.buildingLevel('lighthouse');
+		// Part of the ward may have been given to the cult
+		var lost = consequences(CONSEQUENCES, this.storyFlags || {}).reduce(function(sum, effect) {
+			return effect.type == 'wardMax' ? sum + effect.add : sum;
+		}, 0);
+		return Math.max(0, 5 + 5 * this.buildingLevel('lighthouse') + lost);
 	},
 
 	skillLevel: function() {

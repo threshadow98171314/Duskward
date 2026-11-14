@@ -843,14 +843,15 @@ export function carrying(field: Field): boolean {
 }
 
 // A boss arrives: it takes a while to land before it can fight or be fought
-export function callBoss(field: Field, kind: string, def: BossDef, x: number, multiplier = 1): Boss {
+export function callBoss(field: Field, kind: string, def: BossDef, x: number, multiplier = 1, healthScale = 1): Boss {
+	const health = Math.round(monsterStat(def.health, multiplier, field.casual) * healthScale);
 	field.boss = {
 		id: field.nextId++,
 		kind,
 		def,
 		x,
-		hp: monsterStat(def.health, multiplier, field.casual),
-		maxHp: monsterStat(def.health, multiplier, field.casual),
+		hp: health,
+		maxHp: health,
 		damage: monsterStat(def.damage, multiplier, field.casual),
 		state: 'landing',
 		since: field.time,

@@ -106,7 +106,7 @@ function drawLine(line, done) {
 		});
 		box.on('click touchstart', '.dialogueChoice', function() {
 			var choice = $(this).data('choice');
-			E.trigger('unpause');
+			E.trigger('letGo');
 			fadeOut(box, function() {
 				done(choice);
 			});

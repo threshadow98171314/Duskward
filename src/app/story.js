@@ -8,7 +8,8 @@ import Blessings from './blessings.js';
 
 // The story at work: game events start the chapters written in
 // src/content/story.ts (see src/core/story.ts for how), which play as dialogue.
-// Each chapter is told once per game; choices are kept as story flags.
+// Each chapter is told once per game, unless it is marked to be told again;
+// choices are kept as story flags.
 
 var newGame = false;
 
@@ -73,6 +74,7 @@ var EVENTS = {
 	dragonDefeated: null,
 	eclipseArrives: null,
 	dawnHeartWaits: null,
+	eclipseFalls: null,
 	blessingChosen: function(blessing) { return blessing; }
 };
 

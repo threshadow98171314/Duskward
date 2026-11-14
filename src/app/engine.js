@@ -19,6 +19,7 @@ import Dusk from './graphics/dusk.js';
 import Skills from './skills.js';
 import Blessings from './blessings.js';
 import Plan from './plan.js';
+import LongNight from './longnight.js';
 import { register } from './modules.js';
 
 var DRAG_THRESHOLD = 30; // in pixels
@@ -229,6 +230,7 @@ var Engine = {
 		modules.push(Skills);
 		modules.push(Blessings);
 		modules.push(Plan);
+		modules.push(LongNight);
 		
 		// Start the game
 		GameOptions.load();

@@ -116,6 +116,7 @@ var World = {
 		EventManager.bind('prioritizeBuilding', prioritizeBuilding);
 		EventManager.bind('callDragon', callDragon);
 		EventManager.bind('callEclipse', callEclipse);
+		EventManager.bind('storyChoice', heartDecided);
 		EventManager.bind('dropChest', dropChest);
 		EventManager.bind('chainCombo', callForChain);
 		EventManager.bind('keySequenceComplete', multiplier.bind(this, 5));
@@ -870,14 +871,25 @@ function callEclipse() {
 	EventManager.trigger('refreshBoard');
 }
 
-// The Eclipse breaks apart and the sun comes back
+// The Eclipse breaks apart. The keeper decides what becomes of the Dawn Heart
+// (see the heartChoice chapters), and the ending follows from that.
 function eclipseFalls(boss) {
 	GameState.count('KILLED', 1);
 	GameState.count('ECLIPSES', 1);
 	dude.gainXp(boss.def.xp * _debugMultiplier);
 	Graphics.setBossHealth(0, 0);
 	EventManager.trigger('eclipseFalls');
-	StoryGraphics.showEnding(Graphics.getText('STORY_ENDING'), function() {
+}
+
+// The Dawn Heart's fate is chosen: the sun is whole again, unless the cult has it
+function heartDecided(chapter, set) {
+	if(set.ending == null) {
+		return;
+	}
+	if(set.ending != 'cult') {
+		GameState.sunWholeOn = GameState.dayNumber;
+	}
+	StoryGraphics.showEnding(Graphics.getText('STORY_ENDINGS')[set.ending], function() {
 		EclipseView.remove();
 		World.gameOver();
 	});

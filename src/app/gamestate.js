@@ -28,6 +28,7 @@ var GameState = {
 		this.storyFlags = {};
 		this.storyLog = [];
 		this.plannedSeen = [];
+		this.sunWholeOn = 1;
 		this.seed = randomSeed();
 		this.loadout = null;
 		this.lastFallDay = 0;
@@ -89,6 +90,7 @@ var GameState = {
 				this.storyFlags = savedState.storyFlags || {};
 				this.storyLog = savedState.storyLog || [];
 				this.plannedSeen = savedState.plannedSeen || [];
+				this.sunWholeOn = savedState.sunWholeOn || 1;
 				this.seed = savedState.seed || randomSeed();
 				this.loadout = savedState.loadout || null;
 				this.lastFallDay = savedState.lastFallDay || 0;
@@ -123,6 +125,7 @@ var GameState = {
 				storyFlags: this.storyFlags,
 				storyLog: this.storyLog,
 				plannedSeen: this.plannedSeen,
+				sunWholeOn: this.sunWholeOn,
 				seed: this.seed,
 				loadout: this.loadout,
 				gauge: this.gauge

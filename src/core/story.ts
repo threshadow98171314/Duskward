@@ -17,7 +17,8 @@ export type Condition =
 	// A count kept by the game, such as DEATHS
 	| { count: string; atLeast: number }
 	// A choice made earlier; a flag never set counts as false
-	| { flag: string; is: Flag };
+	| { flag: string; is: Flag }
+	| { flag: string; not: Flag };
 
 export interface Choice {
 	// The keeper's answer, a text id
@@ -44,6 +45,8 @@ export interface Chapter {
 	lines: Line[];
 	// Waits this long after the event (ms), e.g. to let a notice clear first
 	delay?: number;
+	// Told every time, not only the first (e.g. the ending, again in New Game+)
+	again?: boolean;
 }
 
 export interface StoryState {
@@ -65,6 +68,8 @@ function holds(condition: Condition, arg: unknown, state: StoryState): boolean {
 		return state.level >= condition.atLeastLevel;
 	} else if ('count' in condition) {
 		return (state.counts[condition.count] ?? 0) >= condition.atLeast;
+	} else if ('not' in condition) {
+		return (state.flags[condition.flag] ?? false) !== condition.not;
 	}
 	return (state.flags[condition.flag] ?? false) === condition.is;
 }
@@ -73,7 +78,8 @@ function holds(condition: Condition, arg: unknown, state: StoryState): boolean {
 export function chaptersFor(chapters: Record<string, Chapter>, event: string, arg: unknown, state: StoryState): string[] {
 	return Object.keys(chapters).filter((id) => {
 		const chapter = chapters[id];
-		return chapter.on === event && !state.told[id] && (chapter.if ?? []).every((condition) => holds(condition, arg, state));
+		return chapter.on === event && (chapter.again || !state.told[id]) &&
+			(chapter.if ?? []).every((condition) => holds(condition, arg, state));
 	});
 }
 

@@ -57,3 +57,13 @@ function updateDusk(clock: Clock, lengths: ClockLengths): boolean {
 	clock.dusk = dusk;
 	return true;
 }
+
+// The Eclipse eats a little more of the sun every day until the keeper takes it
+// back: how much of it is gone after so many days, from 0 (whole) up to
+// SUN_BITE_MOST, since a thin crescent always holds out
+export const SUN_BITE_PER_DAY = 0.02;
+export const SUN_BITE_MOST = 0.8;
+
+export function sunBite(days: number): number {
+	return Math.min(SUN_BITE_MOST, Math.max(0, days) * SUN_BITE_PER_DAY);
+}

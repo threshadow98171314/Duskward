@@ -86,6 +86,78 @@ export const CHAPTERS: Record<string, Chapter> = {
 		],
 	},
 
+	// The Eclipse has fallen: what becomes of the Dawn Heart decides the ending.
+	// Whoever the keeper took in, or turned away, comes to mind first.
+	heartTraveler: {
+		on: 'eclipseFalls',
+		if: [{ flag: 'traveler', is: 'stayed' }],
+		again: true,
+		delay: 1000,
+		lines: [{ who: 'traveler', say: 'heartTraveler' }],
+	},
+	heartCloak: {
+		on: 'eclipseFalls',
+		if: [{ flag: 'traveler', is: 'left' }],
+		again: true,
+		delay: 1000,
+		lines: [{ who: 'sera', say: 'heartCloak' }],
+	},
+	heartChoice: {
+		on: 'eclipseFalls',
+		if: [{ flag: 'envoy', not: 'accepted' }],
+		again: true,
+		delay: 1000,
+		lines: [
+			{ who: 'sera', say: 'heart1' },
+			{
+				who: 'sera', say: 'heart2',
+				choices: [
+					{ say: 'heartSky', set: { ending: 'sky' } },
+					{ say: 'heartValley', set: { ending: 'valley' } },
+				],
+			},
+		],
+	},
+	// Whoever made a bargain with the cult is reminded of it
+	heartChoiceCult: {
+		on: 'eclipseFalls',
+		if: [{ flag: 'envoy', is: 'accepted' }],
+		again: true,
+		delay: 1000,
+		lines: [
+			{ who: 'sera', say: 'heart1' },
+			{ who: 'envoy', say: 'envoyClaims' },
+			{
+				who: 'sera', say: 'heart2',
+				choices: [
+					{ say: 'heartSky', set: { ending: 'sky' } },
+					{ say: 'heartValley', set: { ending: 'valley' } },
+					{ say: 'heartCult', set: { ending: 'cult' } },
+				],
+			},
+		],
+	},
+
+	// The next time round (New Game+), Sera remembers how it ended
+	afterSky: {
+		on: 'gameLoaded',
+		if: [{ flag: 'ending', is: 'sky' }, { count: 'PRESTIGE', atLeast: 1 }],
+		delay: 2000,
+		lines: [{ who: 'sera', say: 'afterSky' }],
+	},
+	afterValley: {
+		on: 'gameLoaded',
+		if: [{ flag: 'ending', is: 'valley' }, { count: 'PRESTIGE', atLeast: 1 }],
+		delay: 2000,
+		lines: [{ who: 'sera', say: 'afterValley' }],
+	},
+	afterCult: {
+		on: 'gameLoaded',
+		if: [{ flag: 'ending', is: 'cult' }, { count: 'PRESTIGE', atLeast: 1 }],
+		delay: 2000,
+		lines: [{ who: 'sera', say: 'afterCult' }],
+	},
+
 	firstNight: journal('phaseChange', 'firstNight', { if: [{ arg: true }] }),
 	firstDeath: journal('gameLoaded', 'firstDeath', { if: [{ count: 'DEATHS', atLeast: 1 }] }),
 	level4: journal('levelUp', 'level4', { if: [{ arg: 4 }] }),

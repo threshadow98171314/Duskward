@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import Content from '../src/app/gamecontent.js';
 import { absorb, dragonMultiplier, heroDamage, maxShield, maxSword, monsterMultiplier, monsterStat, strength, swordDamage }
 	from '../src/core/combat.ts';
-import { advanceClock, createClock, extendDay, startPhase } from '../src/core/day.ts';
+import { advanceClock, createClock, extendDay, startPhase, sunBite } from '../src/core/day.ts';
 import { attracted, bounty, harvest, type HarvestSituation, type ResourceRule } from '../src/core/harvest.ts';
 import { canBuild, gainXp, MAX_LEVEL, maxHealth, xpToLevel } from '../src/core/progress.ts';
 
@@ -42,6 +42,13 @@ describe('the clock', () => {
 		advanceClock(clock, lengths, 4);
 		expect(extendDay(clock, lengths, 3)).toBe(false);
 		expect(clock.position).toBe(4);
+	});
+
+	it('lets the Eclipse eat a little more of the sun every day, but never all of it', () => {
+		expect(sunBite(0)).toBe(0);
+		expect(sunBite(10)).toBeCloseTo(0.2);
+		expect(sunBite(1000)).toBe(0.8);
+		expect(sunBite(-3)).toBe(0);
 	});
 });
 

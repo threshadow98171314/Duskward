@@ -62,7 +62,18 @@ export default {
 		envoyAccept: '...Take it.',
 		envoyAngry: 'Then tonight you will learn the fury of the long night.',
 		envoyPleased: 'A wise choice. Sleep well tonight.',
-		envoyWarning: 'Child... the ward will be weaker from now on, and the Eclipse stronger for it. I hope you know what you are doing.'
+		envoyWarning: 'Child... the ward will be weaker from now on, and the Eclipse stronger for it. I hope you know what you are doing.',
+		heartTraveler: 'On the other side of the mountains, people are still waiting in the dark for the dawn. Whatever you decide, keeper, I am with you.',
+		heartCloak: 'I keep thinking of the traveler we turned away. Are there still people over the mountains, waiting for the dawn?',
+		heart1: 'The Eclipse is broken, and all the light it swallowed has poured into the Dawn Heart. It is in your hands now.',
+		heart2: 'Send it back to the sky, and the light returns to the whole world. Keep it in the valley, and Afterglow Vale has a sun of its own, but beyond the mountains the night will never end. The choice is yours.',
+		heartSky: 'Send it back to the sky.',
+		heartValley: 'Keep it in the valley.',
+		heartCult: 'Give it to the cult.',
+		envoyClaims: 'Do not forget our bargain, keeper. Give the Dawn Heart to the cult, and the long night will let your village sleep forever.',
+		afterSky: 'The sun shines on the whole world again, and yet I hear monsters beyond the mountains... The long night is back. Child, let us keep watch once more.',
+		afterValley: 'Our sun still shines over the valley, but the dark beyond the mountains is closing in. This time... could we share the light with everyone?',
+		afterCult: 'The sun has never been whole since that day. The cult\'s fires are out, but the long night stayed. Child, stand up once more.'
 	},
 	DUSK: 'Dusk',
 	CHAIN_N: 'Chain ×{0}',
@@ -182,13 +193,30 @@ export default {
 	SKILL_WARDCRAFT: 'Wardcraft',
 	SKILL_TIMELAMP: 'Time Lamp',
 
-	STORY_ENDING: [
-		'The moment the Eclipse shattered, all the light it had swallowed came pouring out.',
-		'The Dawn Heart became a streak of gold and flew back into the sky, chasing the sun.',
-		'After that night, the sun rose over Afterglow Vale again, and stayed a little longer each day.',
-		'One by one, the lamps of the village were lit. Sera says a keeper\'s work is never done: the long night has drawn back, but it never truly leaves.',
-		'Thank you for keeping Afterglow Vale.'
-	],
+	// The endings, by what became of the Dawn Heart (see the heartChoice chapters)
+	STORY_ENDINGS: {
+		sky: [
+			'The keeper raised the Dawn Heart high. It became a streak of gold and flew back into the sky, chasing the sun.',
+			'After that night, the sun rose over more than Afterglow Vale. Beyond the mountains and beyond the sea, the long night drew back little by little.',
+			'The Duskstone at the heart of the valley slowly dimmed. Afterglow Vale was no longer special: its days and nights became as long as anywhere else in the world.',
+			'One by one, the lamps of the village were lit. Sera says a keeper\'s work is never done: the long night has drawn back, but it never truly leaves.',
+			'Thank you for keeping Afterglow Vale, and for giving the light back to the world.'
+		],
+		valley: [
+			'The keeper buried the Dawn Heart in the Duskstone at the heart of the valley. The stone lit up like a small sun.',
+			'From then on, the days in Afterglow Vale never grew shorter. The fields turned gold, the lamps burned bright, and children grew up in the sunlight.',
+			'But beyond the mountains, the long night never drew back. Now and then someone crosses the pass and says the other side is still waiting for the dawn.',
+			'Sera often stands at the edge of the village, looking up the dark mountain road. She says nothing, but every night she hangs a lamp at the end of the road.',
+			'Afterglow Vale was kept safe. Whether that counts as winning, no one can say.'
+		],
+		cult: [
+			'The keeper gave the Dawn Heart to the cult\'s envoy. He held it carefully, like a heart that was still beating.',
+			'That night, the cult lit black fires on the mountaintops. Little by little, the light of the Dawn Heart was swallowed by the flames.',
+			'Morning came, but only a thin sliver of the sun was left. The cult says the long night is the true day.',
+			'The village is safe. No monster ever comes again. But from that day on, Sera never lit another lamp.',
+			'Afterglow Vale has fallen asleep. Perhaps one day, another keeper will wake.'
+		]
+	},
 	STORY_INTRO: [
 		'Long ago, the sun never set on Afterglow Vale.',
 		'Then one day the sky split open. A darkness called the Eclipse crawled out of the rift and began to devour the sun, one bite at a time.',

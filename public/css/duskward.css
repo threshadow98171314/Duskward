@@ -985,3 +985,56 @@ body.night {
 .stone9 .sword {
 	background-position: -240px -981px;
 }
+
+/** The long night: the bitten sun and the village's lights **/
+
+/* The Eclipse's bite out of the sun, a little more each day (--bite, from 0 to 1). It
+   is only drawn by day: it goes once the sun has sunk, and comes back once the moon has. */
+.celestial:after {
+	content: '';
+	position: absolute;
+	left: 4px;
+	top: 4px;
+	width: 22px;
+	height: 22px;
+	border-radius: 50%;
+	background: radial-gradient(circle at calc(100% + 11px - var(--bite, 0) * 22px) 50%, #07040d 0 9px, #2a1438 9.5px 10.5px, rgba(42, 20, 56, 0) 11px);
+	transition: opacity 0ms linear 600ms;
+}
+
+.night .celestial:after {
+	opacity: 0;
+}
+
+/* By night the buildings fade into the dark, but each one standing keeps a light burning */
+.villageLights {
+	position: absolute;
+	left: 0;
+	bottom: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 1;
+	pointer-events: none;
+	opacity: 0;
+	transition: opacity 1400ms linear;
+}
+
+.night .villageLights {
+	opacity: 1;
+}
+
+.villageLight {
+	position: absolute;
+	bottom: 12px;
+	width: 4px;
+	height: 4px;
+	margin-left: -2px;
+	background: #ffd27a;
+	box-shadow: 0 0 6px 3px rgba(255, 170, 70, 0.5);
+	animation: villageLight 2.8s ease-in-out infinite alternate;
+}
+
+@keyframes villageLight {
+	from { opacity: 1; }
+	to { opacity: 0.55; }
+}

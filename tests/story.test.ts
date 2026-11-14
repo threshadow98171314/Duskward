@@ -29,6 +29,15 @@ describe('the story engine', () => {
 		expect(chaptersFor(chapters, 'dayBreak', 3, state({ told: { dawn: true } }))).toEqual([]);
 	});
 
+	it('can ask for anything but one choice, and tell a chapter every time it comes up', () => {
+		const ending: Record<string, Chapter> = {
+			heart: { on: 'eclipseFalls', if: [{ flag: 'envoy', not: 'accepted' }], again: true, lines: [] },
+		};
+		expect(chaptersFor(ending, 'eclipseFalls', undefined, state())).toEqual(['heart']);
+		expect(chaptersFor(ending, 'eclipseFalls', undefined, state({ told: { heart: true } }))).toEqual(['heart']);
+		expect(chaptersFor(ending, 'eclipseFalls', undefined, state({ flags: { envoy: 'accepted' } }))).toEqual([]);
+	});
+
 	it('remembers choices as flags for later chapters', () => {
 		const s = state();
 		expect(chaptersFor(chapters, 'dayBreak', 1, s)).toEqual([]);
@@ -44,6 +53,30 @@ describe('the story as written', () => {
 		const events = new Set(Story.events());
 		for (const [id, chapter] of Object.entries(CHAPTERS)) {
 			expect(events, id + ' starts on ' + chapter.on).toContain(chapter.on);
+		}
+	});
+
+	const endings = (chapters: string[]): unknown[] => chapters
+		.flatMap((id) => lines(CHAPTERS[id].lines))
+		.flatMap((line) => line.choices ?? [])
+		.map((choice) => choice.set?.ending)
+		.filter((ending) => ending !== undefined);
+
+	it('asks what becomes of the Dawn Heart every time the Eclipse falls, offering the cult only to whoever bargained', () => {
+		const offered = (flags: Record<string, string>): unknown[] => endings(chaptersFor(CHAPTERS, 'eclipseFalls', undefined,
+			state({ flags, told: { heartChoice: true, heartChoiceCult: true } })));
+		expect(offered({})).toEqual(['sky', 'valley']);
+		expect(offered({ envoy: 'refused' })).toEqual(['sky', 'valley']);
+		expect(offered({ envoy: 'accepted' })).toEqual(['sky', 'valley', 'cult']);
+	});
+
+	it('has pages in both languages for every ending a choice can lead to', () => {
+		const all = [...new Set(endings(Object.keys(CHAPTERS)))] as string[];
+		expect(all.sort()).toEqual(['cult', 'sky', 'valley']);
+		for (const text of [zhTW, en] as { STORY_ENDINGS: Record<string, string[]> }[]) {
+			for (const ending of all) {
+				expect(text.STORY_ENDINGS[ending]?.length, ending).toBeGreaterThan(0);
+			}
 		}
 	});
 

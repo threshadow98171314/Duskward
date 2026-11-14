@@ -25,6 +25,7 @@ var GameState = {
 		this.storySeen = {};
 		this.seed = randomSeed();
 		this.loadout = null;
+		this.lastFallDay = 0;
 		this.ward = 0;
 		this.gauge = 0;
 		this.health = this.maxHealth();
@@ -82,6 +83,7 @@ var GameState = {
 				this.storySeen = savedState.storySeen || {};
 				this.seed = savedState.seed || randomSeed();
 				this.loadout = savedState.loadout || null;
+				this.lastFallDay = savedState.lastFallDay || 0;
 				this.ward = 0;
 				this.gauge = savedState.gauge || 0;
 			} else {
@@ -161,6 +163,7 @@ var GameState = {
 				savedState.counts = this.counts;
 				savedState.health = this.health;
 				savedState.storySeen = this.storySeen;
+				savedState.lastFallDay = this.lastFallDay;
 				localStorage["slot" + loadedSlot] = serializeSave(savedState);
 			}
 		}

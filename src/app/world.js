@@ -388,13 +388,23 @@ function callForChain(waves) {
 	if(field == null || !clock.night || inTransition || Blessings.modifiers().calm) {
 		return;
 	}
-	chainCalls(CALLS, waves).forEach(function(monster) {
+	var calls = chainCalls(CALLS, waves);
+	// A shadow tide calls a shade for shorter chains too
+	if(Blessings.modifiers().chainCall === waves && calls.indexOf('shade') < 0) {
+		calls.push('shade');
+	}
+	calls.forEach(function(monster) {
 		spawnMonster(monster, waves, lastSide);
 	});
 }
 
-// Crows gather as night falls
+// Crows gather as night falls, and whatever tonight's omen brings
 function callAtNightfall() {
+	Blessings.modifiers().arrivals.forEach(function(arrival) {
+		for(var i = 0; i < arrival.count; i++) {
+			spawnMonster(arrival.monster, 3, i % 2 == 0 ? 'left' : 'right');
+		}
+	});
 	if(Blessings.modifiers().calm) {
 		return;
 	}
@@ -871,6 +881,8 @@ function eclipseFalls(boss) {
 function keeperDied() {
 	// Dude is dead. Long live the dude.
 	returnDawnHeart();
+	// The night director goes easy on the keeper tomorrow
+	GameState.lastFallDay = GameState.dayNumber;
 	inTransition = true;
 	GameState.count('DEATHS', 1);
 	GameState.savePersistents();

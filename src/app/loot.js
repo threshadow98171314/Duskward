@@ -2,6 +2,7 @@ import E from './eventmanager.js';
 import GameState from './gamestate.js';
 import Content from './gamecontent.js';
 import World from './world.js';
+import Blessings from './blessings.js';
 
 var BASE_DROP = 0.05;
 var TILE_DROP = 0.15;
@@ -9,6 +10,8 @@ var TILE_DROP = 0.15;
 function rollForLoot(monster) {
 	// %15 chance for normal monster, %15 for every tile after that.
 	var chance = (monster.dropChance || BASE_DROP) * 3 + (monster.dropChance || TILE_DROP) * (monster.options.tiles - 3);
+	// Some nights shower the field with chests
+	chance *= Blessings.modifiers().loot;
 	var roll = Math.random();
 	if(monster.forceLoot || roll < chance) {
 		// Drop loot!

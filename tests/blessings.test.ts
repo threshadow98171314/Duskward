@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import en from '../src/app/locale/en.js';
 import zhTW from '../src/app/locale/zh-TW.js';
 import { BLESSINGS } from '../src/content/blessings.ts';
+import { OMENS, QUIET_OMEN } from '../src/content/omens.ts';
 import { type BlessingDef, nightModifiers, offerBlessings } from '../src/core/blessings.ts';
+import { type OmenDef, readOmen } from '../src/core/night.ts';
 
 const pool = BLESSINGS as Record<string, BlessingDef>;
 
@@ -10,7 +12,11 @@ describe('blessings', () => {
 	it('sum up the gift and the price of a night', () => {
 		expect(nightModifiers(pool.fullArms)).toEqual({
 			fill: ['shield', 'sword', 'ward'], nightMoves: 0, monsterHealth: 1.25, monsterDamage: 0, spawns: 2, xp: 1, calm: false,
+			loot: 1, arrivals: [], chainCall: null,
 		});
+		// An omen adds to the blessing
+		expect(nightModifiers(pool.valor, (OMENS as Record<string, OmenDef>).moonless.effects))
+			.toMatchObject({ xp: 3, monsterHealth: 1.5, monsterDamage: 1, nightMoves: 3 });
 		expect(nightModifiers(pool.morningStar)).toMatchObject({ nightMoves: -5, spawns: 2 });
 		expect(nightModifiers(null)).toMatchObject({ fill: [], nightMoves: 0, monsterHealth: 1, spawns: 1, xp: 1, calm: false });
 	});
@@ -38,5 +44,34 @@ describe('blessings', () => {
 				expect(text.BLESSING_NAMES[id], id).toBeTypeOf('string');
 			}
 		}
+	});
+});
+
+describe('the night director', () => {
+	const omens = OMENS as Record<string, OmenDef>;
+	const read = (day: number, level: number, seed: number, fellLastNight = false) =>
+		readOmen(omens, { day, seed, level, fellLastNight, quiet: QUIET_OMEN });
+
+	it('keeps the night after a fall quiet', () => {
+		for (let seed = 0; seed < 50; seed++) {
+			expect(read(10, 5, seed, true)).toBe('quiet');
+		}
+	});
+
+	it('reads the same omen for the same day of the same game', () => {
+		expect(read(9, 4, 123)).toBe(read(9, 4, 123));
+	});
+
+	it('waits for the right day before the harder omens', () => {
+		for (let seed = 0; seed < 200; seed++) {
+			expect(read(1, 1, seed)).toBe('quiet');
+			expect(['quiet', 'mist', 'fallingStars']).toContain(read(2, 1, seed));
+		}
+	});
+
+	it('sends harder nights to a keeper ahead of them', () => {
+		const hard = (level: number) => Array.from({ length: 400 }, (_, seed) => read(12, level, seed))
+			.filter((id) => omens[id].hard).length;
+		expect(hard(12)).toBeGreaterThan(hard(2) * 1.5);
 	});
 });

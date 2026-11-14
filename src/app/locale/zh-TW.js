@@ -42,6 +42,26 @@ export default {
 	CHAIN_N: '連鎖 ×{0}',
 	BOUNTY_N: '豐收！{0} 種資源 +{1}%',
 	// The dusk choice
+	OMEN: '今晚的預兆：{0}',
+	OMEN_NAMES: {
+		quiet: '寧靜之夜',
+		mist: '濃霧',
+		fallingStars: '流星雨',
+		crowNight: '鴉群',
+		shadowTide: '影潮',
+		moonless: '無月之夜'
+	},
+	OMEN_WORDS: {
+		quiet: '今晚的風很平靜，應該不會有什麼怪事。',
+		mist: '霧從山谷底爬上來了。霧裡的東西比較難纏，但打倒它們學到的也更多。',
+		fallingStars: '天上在下流星！今晚怪物留下寶箱的機會大很多。',
+		crowNight: '我聽見翅膀的聲音……今晚會有一大群暮鴉。',
+		shadowTide: '影子在湧動。今晚連鎖短一點也會招來影魅。',
+		moonless: '今晚沒有月亮。夜會比較長，怪物也更兇，但撐過去的人會變得更強。'
+	},
+	BOON_LOOT: '寶箱掉落機會 ×{0}',
+	BOON_ARRIVALS: '入夜時來 {0} 隻{1}',
+	BOON_CHAIN_CALL: '連鎖到第 {0} 波就會招來影魅',
 	DUSK_CHOICE: '天快黑了。今晚想要我為你祈求什麼？代價我會先說清楚。',
 	SKILL_LOADOUT: '今晚帶上的暮光技（選兩個）',
 	NO_BLESSING: '今晚不需要祝福',

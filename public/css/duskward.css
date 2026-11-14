@@ -353,6 +353,28 @@ body.night {
 	opacity: 0;
 }
 
+.choiceOmen {
+	margin: -4px -4px 12px;
+	padding: 8px 10px;
+	border-radius: 6px;
+	background: rgba(124, 86, 150, 0.35);
+}
+
+.omenName {
+	color: #b894cc;
+	font-weight: bold;
+	margin-bottom: 4px;
+}
+
+.omenText {
+	font-size: 0.9em;
+	line-height: 1.45;
+}
+
+.badgeOmen {
+	color: #d8c4e8;
+}
+
 .choiceSpeaker {
 	color: #ffd27a;
 	font-weight: bold;

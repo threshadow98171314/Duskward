@@ -1,6 +1,7 @@
 // Blessings Sera offers at dusk: a gift for the coming night, at a price. The
-// stronger the gift, the heavier the price. A night's blessing boils down to a
-// handful of modifiers the rest of the game applies as night falls and lasts.
+// stronger the gift, the heavier the price. A night's blessing, and the omen the
+// night director chose (src/core/night.ts), boil down to a handful of modifiers
+// the rest of the game applies as night falls and lasts.
 
 import { createRandom } from './random.ts';
 
@@ -18,7 +19,13 @@ export type Boon =
 	| { type: 'spawns'; scale: number }
 	| { type: 'xp'; scale: number }
 	// No shades, lampmoths or dusk crows tonight
-	| { type: 'calm' };
+	| { type: 'calm' }
+	// Chests drop this much more often
+	| { type: 'loot'; scale: number }
+	// Monsters that arrive as night falls
+	| { type: 'arrivals'; monster: string; count: number }
+	// A shade comes for chains this long too
+	| { type: 'chainCall'; waves: number };
 
 export interface BlessingDef {
 	gift: Boon[];
@@ -35,11 +42,18 @@ export interface NightModifiers {
 	spawns: number;
 	xp: number;
 	calm: boolean;
+	loot: number;
+	arrivals: { monster: string; count: number }[];
+	chainCall: number | null;
 }
 
-export function nightModifiers(blessing: BlessingDef | null | undefined): NightModifiers {
-	const modifiers: NightModifiers = { fill: [], nightMoves: 0, monsterHealth: 1, monsterDamage: 0, spawns: 1, xp: 1, calm: false };
-	for (const boon of blessing ? [...blessing.gift, ...blessing.price] : []) {
+// What a blessing and any other boons (an omen's) add up to for the night
+export function nightModifiers(blessing: BlessingDef | null | undefined, ...more: Boon[][]): NightModifiers {
+	const modifiers: NightModifiers = {
+		fill: [], nightMoves: 0, monsterHealth: 1, monsterDamage: 0, spawns: 1, xp: 1, calm: false,
+		loot: 1, arrivals: [], chainCall: null,
+	};
+	for (const boon of [...(blessing ? [...blessing.gift, ...blessing.price] : []), ...more.flat()]) {
 		switch (boon.type) {
 			case 'fill':
 				modifiers.fill.push(boon.what);
@@ -61,6 +75,15 @@ export function nightModifiers(blessing: BlessingDef | null | undefined): NightM
 				break;
 			case 'calm':
 				modifiers.calm = true;
+				break;
+			case 'loot':
+				modifiers.loot *= boon.scale;
+				break;
+			case 'arrivals':
+				modifiers.arrivals.push({ monster: boon.monster, count: boon.count });
+				break;
+			case 'chainCall':
+				modifiers.chainCall = Math.min(modifiers.chainCall ?? boon.waves, boon.waves);
 				break;
 		}
 	}

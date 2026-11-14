@@ -3,9 +3,9 @@
 // it loads, so a mistake in a data file stops it right away with a clear message.
 
 import type { BuildingDef, Effect, ItemDef, LootRarity, ResourceDef, SkillDef, SpellDef, StateEffectDef, Use } from './types.ts';
-import type { BlessingDef } from '../core/blessings.ts';
+import type { BlessingDef, Boon } from '../core/blessings.ts';
 import type { BossDef, MonsterDef } from '../core/field.ts';
-import type { Call } from '../core/night.ts';
+import type { Call, OmenDef } from '../core/night.ts';
 
 export interface Content {
 	resources: Record<string, ResourceDef>;
@@ -24,6 +24,8 @@ export interface Content {
 	boardSpells: readonly string[];
 	bosses: Record<string, BossDef>;
 	blessings: Record<string, BlessingDef>;
+	omens: Record<string, OmenDef>;
+	quietOmen: string;
 }
 
 // Returns every problem found; an empty list means the content is sound
@@ -172,22 +174,38 @@ export function validateContent(content: Content): string[] {
 		}
 	}
 	const fills = ['health', 'shield', 'sword', 'ward', 'gauge'];
-	for (const [name, blessing] of Object.entries(content.blessings)) {
-		const where = 'blessing ' + name;
-		if (blessing.gift.length === 0) {
-			problem(where, 'gives nothing');
-		}
-		for (const boon of [...blessing.gift, ...blessing.price]) {
+	const checkBoons = (where: string, boons: Boon[]) => {
+		for (const boon of boons) {
 			if (boon.type === 'fill' && !fills.includes(boon.what)) {
 				problem(where, 'fills unknown ' + boon.what);
 			} else if (boon.type === 'nightMoves' && !Number.isInteger(boon.moves)) {
 				problem(where, 'changes the night by part of a move');
-			} else if ((boon.type === 'monsterHealth' || boon.type === 'spawns' || boon.type === 'xp') && !(boon.scale > 0)) {
+			} else if ((boon.type === 'monsterHealth' || boon.type === 'spawns' || boon.type === 'xp' || boon.type === 'loot') &&
+					!(boon.scale > 0)) {
 				problem(where, boon.type + ' should scale by more than zero');
 			} else if (boon.type === 'spawns' && !Number.isInteger(boon.scale)) {
 				problem(where, 'spawns should scale by whole monsters');
+			} else if (boon.type === 'arrivals' && (!monsters.has(boon.monster) || !(boon.count >= 1))) {
+				problem(where, 'brings unknown monster ' + boon.monster);
+			} else if (boon.type === 'chainCall' && !(boon.waves >= 2)) {
+				problem(where, 'calls on chains too short');
 			}
 		}
+	};
+	for (const [name, blessing] of Object.entries(content.blessings)) {
+		if (blessing.gift.length === 0) {
+			problem('blessing ' + name, 'gives nothing');
+		}
+		checkBoons('blessing ' + name, [...blessing.gift, ...blessing.price]);
+	}
+	for (const [name, omen] of Object.entries(content.omens)) {
+		checkBoons('omen ' + name, omen.effects);
+		if (!(omen.weight > 0)) {
+			problem('omen ' + name, 'should come up sometimes');
+		}
+	}
+	if (content.omens[content.quietOmen] === undefined) {
+		problem('omens', 'no quiet omen ' + content.quietOmen);
 	}
 	for (const call of content.calls) {
 		const where = 'call for ' + call.monster;

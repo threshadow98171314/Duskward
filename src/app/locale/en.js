@@ -42,6 +42,26 @@ export default {
 	CHAIN_N: 'Chain ×{0}',
 	BOUNTY_N: 'Bounty! {0} kinds +{1}%',
 	// The dusk choice
+	OMEN: 'Tonight\'s omen: {0}',
+	OMEN_NAMES: {
+		quiet: 'A Quiet Night',
+		mist: 'Mist',
+		fallingStars: 'Falling Stars',
+		crowNight: 'Crows',
+		shadowTide: 'Shadow Tide',
+		moonless: 'Moonless'
+	},
+	OMEN_WORDS: {
+		quiet: 'The wind is calm tonight. Nothing strange should happen.',
+		mist: 'Mist is creeping up from the valley floor. What walks in it is tougher, but there is more to learn from beating it.',
+		fallingStars: 'Falling stars! Monsters will leave chests far more often tonight.',
+		crowNight: 'I can hear wings... a great flock of dusk crows is coming tonight.',
+		shadowTide: 'The shadows are stirring. Even shorter chains will call shades tonight.',
+		moonless: 'No moon tonight. The night will be longer and the monsters fiercer, but whoever lasts it will grow stronger.'
+	},
+	BOON_LOOT: 'Chests drop {0} times as often',
+	BOON_ARRIVALS: '{0} {1} arrive as night falls',
+	BOON_CHAIN_CALL: 'Chains of {0} waves call shades',
 	DUSK_CHOICE: 'Night is coming. What shall I pray for tonight? I will tell you the price first.',
 	SKILL_LOADOUT: 'Dusk skills to take into the night (pick two)',
 	NO_BLESSING: 'No blessing tonight',

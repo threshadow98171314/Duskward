@@ -5,6 +5,7 @@ import { ITEMS, LOOT_POOLS, LOOT_RARITY } from './items.ts';
 import { SKILLS, SPELLS, STATE_EFFECTS } from './magic.ts';
 import { BLESSINGS } from './blessings.ts';
 import { BOSSES } from './bosses.ts';
+import { OMENS, QUIET_OMEN } from './omens.ts';
 import { BOARD_SPELLS, CALLS, MONSTERS } from './monsters.ts';
 import { RESOURCES } from './resources.ts';
 import { type Content, validateContent } from './validate.ts';
@@ -25,6 +26,8 @@ export const CONTENT: Content = {
 	boardSpells: BOARD_SPELLS,
 	bosses: BOSSES,
 	blessings: BLESSINGS,
+	omens: OMENS,
+	quietOmen: QUIET_OMEN,
 };
 
 // Stops the game with every problem listed, rather than failing somewhere later

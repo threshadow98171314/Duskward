@@ -34,6 +34,12 @@ function describe(boon) {
 		return boon.scale >= 1 ? G().getText('BOON_XP_UP', boon.scale) : G().getText('BOON_XP_DOWN', percent(boon.scale));
 	case 'calm':
 		return G().getText('BOON_CALM');
+	case 'loot':
+		return G().getText('BOON_LOOT', boon.scale);
+	case 'arrivals':
+		return G().getText('BOON_ARRIVALS', boon.count, G().getText('MONSTER_NAMES')[boon.monster]);
+	case 'chainCall':
+		return G().getText('BOON_CHAIN_CALL', boon.waves);
 	}
 	return '';
 }
@@ -47,12 +53,15 @@ function card(id, blessing) {
 		.append(G().make('cardPrice').text(price));
 }
 
-function showBadge(id) {
+function showBadge(omen, id) {
 	if(badge == null) {
 		badge = G().make('blessingBadge');
 		G().getStatusContainer().append(badge);
 	}
-	badge.text(G().getText('TONIGHT', G().getText('BLESSING_NAMES')[id]));
+	badge.empty().append(G().make('badgeOmen').text(G().getText('OMEN_NAMES')[omen]));
+	if(id) {
+		badge.append(G().make('badgeBlessing').text(G().getText('TONIGHT', G().getText('BLESSING_NAMES')[id])));
+	}
 }
 
 export default {
@@ -60,10 +69,17 @@ export default {
 		badge = null;
 	},
 
-	// Shows the choice; done(blessing or null, skills or null) once the keeper has chosen
-	offer: function(ids, skills, done, blessings) {
+	// Shows tonight's omen and the choice; done(blessing or null, skills or null) once the keeper has chosen
+	offer: function(omen, ids, skills, done, blessings) {
 		blessings = blessings || {};
+		var omenText = G().getText('OMEN_WORDS')[omen.id];
+		if(omen.effects.length > 0) {
+			omenText += '（' + omen.effects.map(describe).join('、') + '）';
+		}
 		var panel = G().make('duskChoice hidden')
+			.append(G().make('choiceOmen')
+				.append(G().make('omenName').text(G().getText('OMEN', G().getText('OMEN_NAMES')[omen.id])))
+				.append(G().make('omenText').text(omenText)))
 			.append(G().make('choiceSpeaker').text(G().getText('SERA')))
 			.append(G().make('choiceText').text(G().getText('DUSK_CHOICE')));
 
@@ -114,9 +130,7 @@ export default {
 			setTimeout(function() {
 				panel.remove();
 			}, FADE_TIME);
-			if(id) {
-				showBadge(id);
-			}
+			showBadge(omen.id, id);
 			done(id, picks ? order.slice() : null);
 			return false;
 		});

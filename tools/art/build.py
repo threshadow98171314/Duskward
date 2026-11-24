@@ -179,6 +179,10 @@ def sprite_list(sizes):
         add("tile." + name + ".dragon", "tiles", TILE_COLUMNS[name], DRAGON_TILES, TILE, TILE)
     portrait = portraits.SIZE * portraits.SCALE
     add("portrait", "portraits", 0, 0, portrait, portrait, frames=len(portraits.PORTRAITS))
+    # The sky's mountains and stars, each a whole sheet tiled across the world
+    for name in ("mountains", "stars"):
+        width, height = sizes[name + ".png"]
+        add(name, name, 0, 0, width, height)
 
     used = {sprite["sheet"] for sprite in sprites.values()}
     sheets = {name[:-len(".png")]: dict(file="img/" + name, width=size[0], height=size[1])

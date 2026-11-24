@@ -1,0 +1,50 @@
+import { describe, expect, it } from 'vitest';
+import { SkyView } from '../src/render/sky.ts';
+
+// The sky, without a canvas to draw on (as in these tests) and on a clock the test moves
+function skyView() {
+	const clock = { now: 0 };
+	const canvas = { getContext: () => null };
+	const view = new SkyView(canvas as unknown as HTMLCanvasElement, { width: 480, height: 110 }, () => clock.now);
+	return { view, clock };
+}
+
+describe('the sky', () => {
+	it('keeps the sun below the horizon until it rises, then moves it there in its own time', () => {
+		const { view, clock } = skyView();
+		expect(view.sun()).toMatchObject({ x: 15, y: 120, shown: false });
+		view.showSun(0, 0);
+		view.moveSun(15, 28, 500);
+		clock.now = 250;
+		expect(view.sun()).toMatchObject({ x: 15, y: 74, shown: true });
+		clock.now = 500;
+		expect(view.sun()).toMatchObject({ x: 15, y: 28 });
+		// A move that takes no time is there at once
+		view.moveSun(240, 0, 0);
+		expect(view.sun()).toMatchObject({ x: 240, y: 0 });
+	});
+
+	it('shows the bite out of the sun, and never out of the moon', () => {
+		const { view } = skyView();
+		view.setBite(0.4);
+		view.showSun(0, 2);
+		expect(view.sun()).toMatchObject({ face: 0, frame: 2, bite: 0.4 });
+		view.showSun(1, 0);
+		expect(view.sun()).toMatchObject({ face: 1, bite: 0 });
+	});
+
+	it('lets night and dusk fall slowly, unless they are simply so', () => {
+		const { view, clock } = skyView();
+		expect(view.nightness()).toBe(0);
+		view.setNight(true);
+		clock.now = 700;
+		expect(view.nightness()).toBeCloseTo(0.5);
+		clock.now = 1400;
+		expect(view.nightness()).toBe(1);
+		view.setDusk(true, false);
+		expect(view.duskness()).toBe(1);
+		view.setDusk(false);
+		clock.now = 2100;
+		expect(view.duskness()).toBeCloseTo(0.5);
+	});
+});

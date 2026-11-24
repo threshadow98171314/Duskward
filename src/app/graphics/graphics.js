@@ -132,6 +132,10 @@ function handleDrawRequest(requestString, options) {
 
 // Tiles of these kinds fade out, change their pictures (the board's classes say
 // each kind's level, and whether the dragon has changed them), and fade back in
+// The sun and moon take this long to move, and rise from the far left of the sky
+var CELESTIAL_MOVE = 500;
+var SKY_EDGE = 15;
+
 function changeTiles(tileTypes, classToAdd, classToRemove) {
 	BoardGraphics.hideKinds(tileTypes);
 	setTimeout(function() {
@@ -602,19 +606,25 @@ var Graphics = {
 		el.appendTo('.world');
 	},
 	
+	// The sun or moon climbs to the middle of the sky and sinks again as the day goes on
 	moveCelestial: function(entity) {
-		var el = entity.el();
 		var pos = entity.p();
 		var height = (Math.abs(pos - Graphics.worldWidth() / 2) / (Graphics.worldWidth() / 2)) * 30;
-		var left = (pos - (el.width() / 2)),
-			top = Math.floor(height);
-		el.css({
-			'transform': 'translate3d(' + left + 'px, ' + top + 'px, 0)',
-			'-webkit-transform': 'translate3d(' + left + 'px, ' + top + 'px, 0)',
-			'-moz-transform': 'translate3d(' + left + 'px, ' + top + 'px, 0)',
-			'-ms-transform': 'translate3d(' + left + 'px, ' + top + 'px, 0)',
-			'-o-transform': 'translate3d(' + left + 'px, ' + top + 'px, 0)'
-		});
+		WorldGraphics.sky().moveSun(pos, Math.floor(height), CELESTIAL_MOVE);
+	},
+
+	updateSun: function(celestial) {
+		WorldGraphics.sky().showSun(celestial.animationRow, celestial.frame);
+	},
+
+	// How much of the sun the Eclipse has eaten, from 0 to 1
+	setSunBite: function(bite) {
+		WorldGraphics.sky().setBite(bite);
+	},
+
+	// Where the village's buildings stand, each keeping a light burning at night
+	setVillageLights: function(xs) {
+		WorldGraphics.sky().setLights(xs);
 	},
 	
 	setNight: function(night) {
@@ -625,34 +635,17 @@ var Graphics = {
 		}
 	},
 	
+	// Day turns to night or back: the sun (or moon) sets, the other rises at the far left
 	phaseTransition: function(celestial, callback) {
-		var left = celestial.p() - (celestial.el().width() / 2);
-		celestial.el().css({
-			'transform': 'translate3d(' + left + 'px, ' + (Graphics.worldHeight() + 10) + 'px, 0)',
-			'-webkit-transform': 'translate3d(' + left + 'px, ' + (Graphics.worldHeight() + 10) + 'px, 0)',
-			'-moz-transform': 'translate3d(' + left + 'px, ' + (Graphics.worldHeight() + 10) + 'px, 0)',
-			'-ms-transform': 'translate3d(' + left + 'px, ' + (Graphics.worldHeight() + 10) + 'px, 0)',
-			'-o-transform': 'translate3d(' + left + 'px, ' + (Graphics.worldHeight() + 10) + 'px, 0)'
-		});
+		var sky = WorldGraphics.sky();
+		var below = Graphics.worldHeight() + 10;
+		sky.moveSun(celestial.p(), below, CELESTIAL_MOVE);
 		$('body').toggleClass('night');
 		var _g = this;
 		setTimeout(function() {
-			if($('body').hasClass('night')) {
-				celestial.animation(1);
-			} else {
-				celestial.animation(0);
-			}
-			celestial.el().addClass('noTransition');
-			celestial.el().css({
-				'transform': 'translate3d(0px, ' + (Graphics.worldHeight() + 10) + 'px, 0)',
-				'-webkit-transform': 'translate3d(0px, ' + (Graphics.worldHeight() + 10) + 'px, 0)',
-				'-moz-transform': 'translate3d(0px, ' + (Graphics.worldHeight() + 10) + 'px, 0)',
-				'-ms-transform': 'translate3d(0px, ' + (Graphics.worldHeight() + 10) + 'px, 0)',
-				'-o-transform': 'translate3d(0px, ' + (Graphics.worldHeight() + 10) + 'px, 0)'
-			});
-			
+			celestial.animation($('body').hasClass('night') ? 1 : 0);
+			sky.moveSun(SKY_EDGE, below, 0);
 			setTimeout(function() {
-				celestial.el().removeClass('noTransition');
 				_g.raiseCelestial(celestial);
 				if(callback != null) {
 					callback();

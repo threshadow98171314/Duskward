@@ -936,7 +936,6 @@ function launchCelestial() {
 	celestial = new Celestial();
 	stuff.push(celestial);
 	celestial.animation(0);
-	Graphics.addToWorld(celestial);
 	Graphics.raiseCelestial(celestial);
 	EventManager.trigger('dayBreak', [GameState.dayNumber]);
 }

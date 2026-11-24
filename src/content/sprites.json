@@ -29,6 +29,16 @@
 			"file": "img/icons.png",
 			"width": 528,
 			"height": 1063
+		},
+		"mountains": {
+			"file": "img/mountains.png",
+			"width": 480,
+			"height": 60
+		},
+		"stars": {
+			"file": "img/stars.png",
+			"width": 480,
+			"height": 110
 		}
 	},
 	"sprites": {
@@ -507,6 +517,24 @@
 			"width": 48,
 			"height": 48,
 			"frames": 4,
+			"rows": 1
+		},
+		"mountains": {
+			"sheet": "mountains",
+			"x": 0,
+			"y": 0,
+			"width": 480,
+			"height": 60,
+			"frames": 1,
+			"rows": 1
+		},
+		"stars": {
+			"sheet": "stars",
+			"x": 0,
+			"y": 0,
+			"width": 480,
+			"height": 110,
+			"frames": 1,
 			"rows": 1
 		}
 	}

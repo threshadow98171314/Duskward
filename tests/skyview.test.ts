@@ -33,6 +33,17 @@ describe('the sky', () => {
 		expect(view.sun()).toMatchObject({ face: 1, bite: 0 });
 	});
 
+	it('lets the clouds drift across, coming round again once they are off the sky', () => {
+		const { view } = skyView();
+		expect(view.cloudAt(0, 0)).toEqual({ x: 60, y: 6 });
+		expect(view.cloudAt(0, 10000)).toEqual({ x: 90, y: 6 });
+		// Off the right edge, a cloud comes back in from the left
+		const lap = (480 + 64 + 64 - (60 + 64)) / 3 * 1000;
+		expect(view.cloudAt(0, lap).x).toBeCloseTo(0);
+		// Lower clouds, nearer, drift faster
+		expect(view.cloudAt(3, 1000).x - view.cloudAt(3, 0).x).toBeGreaterThan(view.cloudAt(0, 1000).x - view.cloudAt(0, 0).x);
+	});
+
 	it('lets night and dusk fall slowly, unless they are simply so', () => {
 		const { view, clock } = skyView();
 		expect(view.nightness()).toBe(0);

@@ -1,8 +1,9 @@
 // The sky over the village, drawn on a canvas behind everything else in the world:
 // its colours by day and by night, the stars, the glow of dusk, the sun or the
-// moon (with the bite the Eclipse has taken out of the sun), the distant mountains
-// the sun sets behind, and the lights the village keeps burning through the night.
-// Night and dusk fade in and out; the game says where the sun or moon is headed.
+// moon (with the bite the Eclipse has taken out of the sun), clouds drifting across
+// it, the distant mountains the sun sets behind and the nearer hills at their feet,
+// and the lights the village keeps burning through the night. Night and dusk fade in
+// and out; the game says where the sun or moon is headed.
 
 import { SHEETS, SPRITES } from '../content/sprites.ts';
 
@@ -28,6 +29,18 @@ const LIGHT_SIZE = 4;
 const LIGHT_HEIGHT = 12;
 const FLICKER_MS = 2800;
 const FLICKER_SPREAD_MS = 700;
+// The clouds: which picture, how high, how fast they drift (px/s) and where they start;
+// the higher ones, further off, drift slower
+const CLOUDS = [
+	{ frame: 2, y: 6, speed: 3, from: 60 },
+	{ frame: 0, y: 14, speed: 4.5, from: 300 },
+	{ frame: 1, y: 24, speed: 6, from: 170 },
+	{ frame: 0, y: 34, speed: 8, from: 420 },
+];
+// By night the clouds all but fade
+const NIGHT_CLOUDS = 0.35;
+// The ridges along the bottom of the sky, far to near
+const RIDGES = ['mountains', 'hills'];
 
 function clamp(t: number): number {
 	return Math.min(1, Math.max(0, t));
@@ -60,8 +73,8 @@ export class SkyView {
 	private shown = false;
 	private bite = 0;
 	private lights: number[] = [];
-	// The mountains, by day and darkened for the night
-	private mountains: { day: CanvasImageSource; night: CanvasImageSource } | null = null;
+	// The ridges, tiled across the sky by day and darkened for the night
+	private readonly strips: Record<string, { day: CanvasImageSource; night: CanvasImageSource }> = {};
 	private frame = 0;
 
 	constructor(
@@ -80,7 +93,7 @@ export class SkyView {
 			canvas.height = Math.round(size.height * this.ratio);
 			canvas.style.width = size.width + 'px';
 			canvas.style.height = size.height + 'px';
-			for (const name of ['sun', 'stars', 'mountains']) {
+			for (const name of ['sun', 'stars', 'clouds', ...RIDGES]) {
 				this.sheet(SPRITES[name]?.sheet);
 			}
 		}
@@ -127,6 +140,15 @@ export class SkyView {
 	// Where the village's lights burn
 	lightsAt(): number[] {
 		return this.lights.slice();
+	}
+
+	// Where a cloud is now: its left edge, wrapping round once it has drifted off the sky
+	cloudAt(index: number, now: number): { x: number; y: number } {
+		const cloud = CLOUDS[index];
+		const width = SPRITES.clouds?.width ?? 0;
+		const span = this.size.width + width;
+		const along = ((cloud.from + width + cloud.speed * now / 1000) % span + span) % span;
+		return { x: along - width, y: cloud.y };
 	}
 
 	// How far night has fallen, and dusk: from 0 to 1
@@ -206,7 +228,10 @@ export class SkyView {
 		}
 
 		this.drawSun(ctx, now);
-		this.drawMountains(ctx, night);
+		this.drawClouds(ctx, now, night);
+		for (const ridge of RIDGES) {
+			this.drawRidge(ctx, ridge, night);
+		}
 		this.drawLights(ctx, now, night);
 	}
 
@@ -253,20 +278,35 @@ export class SkyView {
 		}
 	}
 
-	// The mountains along the bottom of the sky, darkening as night falls
-	private drawMountains(ctx: CanvasRenderingContext2D, night: number): void {
-		const mountains = this.mountainStrips();
-		const sprite = SPRITES.mountains;
-		if (mountains === null || sprite === undefined) {
+	private drawClouds(ctx: CanvasRenderingContext2D, now: number, night: number): void {
+		const sprite = SPRITES.clouds;
+		const sheet = this.ready(sprite?.sheet);
+		if (sprite === undefined || sheet === null) {
+			return;
+		}
+		ctx.globalAlpha = 1 - (1 - NIGHT_CLOUDS) * night;
+		CLOUDS.forEach((cloud, i) => {
+			const place = this.cloudAt(i, now);
+			ctx.drawImage(sheet, sprite.x + cloud.frame * sprite.width, sprite.y, sprite.width, sprite.height,
+				Math.round(place.x), place.y, sprite.width, sprite.height);
+		});
+		ctx.globalAlpha = 1;
+	}
+
+	// A ridge along the bottom of the sky, darkening as night falls
+	private drawRidge(ctx: CanvasRenderingContext2D, name: string, night: number): void {
+		const strip = this.ridgeStrips(name);
+		const sprite = SPRITES[name];
+		if (strip === null || sprite === undefined) {
 			return;
 		}
 		const top = this.size.height - sprite.height;
 		if (night < 1) {
-			ctx.drawImage(mountains.day, 0, top);
+			ctx.drawImage(strip.day, 0, top);
 		}
 		if (night > 0) {
 			ctx.globalAlpha = night;
-			ctx.drawImage(mountains.night, 0, top);
+			ctx.drawImage(strip.night, 0, top);
 			ctx.globalAlpha = 1;
 		}
 	}
@@ -293,12 +333,12 @@ export class SkyView {
 		ctx.globalAlpha = 1;
 	}
 
-	// The mountains tiled across the sky, once by day and once darkened for the night
-	private mountainStrips(): { day: CanvasImageSource; night: CanvasImageSource } | null {
-		if (this.mountains !== null) {
-			return this.mountains;
+	// A ridge tiled across the sky, once by day and once darkened for the night
+	private ridgeStrips(name: string): { day: CanvasImageSource; night: CanvasImageSource } | null {
+		if (this.strips[name] !== undefined) {
+			return this.strips[name];
 		}
-		const sprite = SPRITES.mountains;
+		const sprite = SPRITES[name];
 		const image = this.ready(sprite?.sheet);
 		if (sprite === undefined || image === null || typeof document === 'undefined') {
 			return null;
@@ -314,7 +354,7 @@ export class SkyView {
 					ctx.drawImage(image, sprite.x, sprite.y, sprite.width, sprite.height, x, 0, sprite.width, sprite.height);
 				}
 				if (darken) {
-					// Only where there are mountains, so the sky shows between them
+					// Only where the ridge is, so the sky shows above it
 					ctx.globalCompositeOperation = 'source-atop';
 					ctx.fillStyle = 'rgba(20, 16, 34, 0.62)';
 					ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -322,8 +362,8 @@ export class SkyView {
 			}
 			return canvas;
 		};
-		this.mountains = { day: strip(false), night: strip(true) };
-		return this.mountains;
+		this.strips[name] = { day: strip(false), night: strip(true) };
+		return this.strips[name];
 	}
 
 	// A sheet once it has loaded, or null

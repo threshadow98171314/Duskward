@@ -30,7 +30,7 @@ describe('game content', () => {
 		expect(broken((c) => { c.monsterDefs.zombie.width = 20; })).toContain('monster zombie: is 20×32 but its sprite is 16×32');
 		expect(broken((c) => { c.buildings.Shack.spriteName = 'hut'; })).toContain('building Shack: unknown sprite hut');
 		expect(broken((c) => { c.sprites.star.rows = 99; })).toContain('sprite star: does not fit on its sheet');
-		expect(broken((c) => { c.sprites.star.sheet = 'clouds'; })).toContain('sprite star: is on unknown sheet clouds');
+		expect(broken((c) => { c.sprites.star.sheet = 'no such sheet'; })).toContain('sprite star: is on unknown sheet no such sheet');
 	});
 
 	it('catches names used twice', () => {

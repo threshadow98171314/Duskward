@@ -187,10 +187,13 @@ def sprite_list(sizes):
         add("tile." + name + ".dragon", "tiles", TILE_COLUMNS[name], DRAGON_TILES, TILE, TILE)
     portrait = portraits.SIZE * portraits.SCALE
     add("portrait", "portraits", 0, 0, portrait, portrait, frames=len(portraits.PORTRAITS))
-    # The sky's mountains and stars, each a whole sheet tiled across the world
-    for name in ("mountains", "stars"):
+    # The sky's mountains, hills and stars, each a whole sheet tiled across the world
+    for name in ("mountains", "hills", "stars"):
         width, height = sizes[name + ".png"]
         add(name, name, 0, 0, width, height)
+    # Clouds, one to a frame
+    width, height = sizes["clouds.png"]
+    add("clouds", "clouds", 0, 0, width // len(scenery.CLOUDS), height, frames=len(scenery.CLOUDS))
 
     used = {sprite["sheet"] for sprite in sprites.values()}
     sheets = {name[:-len(".png")]: dict(file="img/" + name, width=size[0], height=size[1])
@@ -209,6 +212,8 @@ def main():
         ("expbar.png", lambda: icons.recolor_frame(read_png(LEGACY / "expbar.png"))),
         ("magic.png", lambda: icons.magic_sparkle().to_rgba()),
         ("mountains.png", lambda: scenery.mountains().to_rgba()),
+        ("hills.png", lambda: scenery.hills().to_rgba()),
+        ("clouds.png", lambda: scenery.clouds().to_rgba()),
         ("stars.png", lambda: scenery.stars().to_rgba()),
     )
     sizes = {}

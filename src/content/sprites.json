@@ -35,6 +35,16 @@
 			"width": 480,
 			"height": 60
 		},
+		"hills": {
+			"file": "img/hills.png",
+			"width": 480,
+			"height": 32
+		},
+		"clouds": {
+			"file": "img/clouds.png",
+			"width": 192,
+			"height": 20
+		},
 		"stars": {
 			"file": "img/stars.png",
 			"width": 480,
@@ -555,6 +565,15 @@
 			"frames": 1,
 			"rows": 1
 		},
+		"hills": {
+			"sheet": "hills",
+			"x": 0,
+			"y": 0,
+			"width": 480,
+			"height": 32,
+			"frames": 1,
+			"rows": 1
+		},
 		"stars": {
 			"sheet": "stars",
 			"x": 0,
@@ -562,6 +581,15 @@
 			"width": 480,
 			"height": 110,
 			"frames": 1,
+			"rows": 1
+		},
+		"clouds": {
+			"sheet": "clouds",
+			"x": 0,
+			"y": 0,
+			"width": 64,
+			"height": 20,
+			"frames": 3,
 			"rows": 1
 		}
 	}

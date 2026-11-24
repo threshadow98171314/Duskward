@@ -130,16 +130,13 @@ function handleDrawRequest(requestString, options) {
 	}, time);
 }
 
+// Tiles of these kinds fade out, change their pictures (the board's classes say
+// each kind's level, and whether the dragon has changed them), and fade back in
 function changeTiles(tileTypes, classToAdd, classToRemove) {
-	var tileClasses = '';
-	tileTypes.forEach(function(type) {
-		tileClasses += (tileClasses.length > 0 ? ', ' : '') + '.tile.' + type;
-	});
-	var tiles = $(tileClasses);
-	tiles.addClass('hidden');
+	BoardGraphics.hideKinds(tileTypes);
 	setTimeout(function() {
 		BoardGraphics.el().removeClass(classToRemove).addClass(classToAdd);
-		tiles.removeClass('hidden');
+		BoardGraphics.showKinds(tileTypes);
 	}, 300);
 }
 
@@ -597,14 +594,6 @@ var Graphics = {
 		(entity.el ? entity.el() : entity).removeClass('hidden');
 	},
 	
-	addTilesToContainer: function(entities) {
-		var elements = document.createDocumentFragment();
-		for(var e in entities) {
-			elements.appendChild(entities[e].el()[0]);
-		}
-		document.getElementById('tileContainer').appendChild(elements);
-	},
-	
 	addMonster: function(monster, side) {
 		var el = monster.el();
 		monster.p(side == 'left' ? -el.width() : Graphics.worldWidth() + el.width());
@@ -725,12 +714,22 @@ var Graphics = {
 		setEntityPosition(entity, pos);
 	},
 	
-	selectTile: function(tile) {
-		tile.el().addClass('selected');
+	// The cell of the board under a point on the screen, or null
+	tileAt: function(clientX, clientY) {
+		return BoardGraphics.cellAt(clientX, clientY);
 	},
-	
-	deselectTile: function(tile) {
-		tile.el().removeClass('selected');
+
+	// The size of a cell of the board, in pixels
+	tileSize: function() {
+		return BoardGraphics.cellSize();
+	},
+
+	selectTile: function(cell) {
+		BoardGraphics.select(cell);
+	},
+
+	deselectTile: function() {
+		BoardGraphics.select(null);
 	},
 
 	animateMove: function(entity, pos, callback, stopShort, speedOverride) {

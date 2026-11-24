@@ -436,7 +436,6 @@ body.paused:before {
 	border-color: black;
 }
 
-
 @media screen and (max-height: 780px) {
 	.portrait .menuBar, .portrait.night .menuBar {
 		border-top: 0px;
@@ -560,7 +559,6 @@ body.paused:before {
 .bigExplosion .daySprite {
 	opacity: 1;
 }
-
 
 .litBorder {
 	transition: all 1400ms linear;
@@ -798,315 +796,6 @@ body.paused:before {
 .night .tileContainer {
 	background-color: black;
 }
-
-.tile {
-	cursor: pointer;
-	width: 60px;
-	height: 60px;
-	position: absolute;
-	transform: translate3d(0,0,0);
-	-webkit-transform: translate3d(0,0,0);
-	-moz-transform: translate3d(0,0,0);
-	-ms-transform: translate3d(0,0,0);
-	-o-transform: translate3d(0,0,0);
-	/* graphics/gameboard.js shortens --tile-time to speed up long chains */
-	transition: transform var(--tile-time, 200ms) linear, opacity var(--tile-time, 200ms) linear;
-}
-
-.tile.pooled {
-	transition: none !important;
-}
-
-.tile > div {
-	backface-visibility: hidden;
-	-webkit-backface-visibility: hidden;
-	-moz-backface-visibility: hidden;
-	-ms-backface-visibility: hidden;
-	-o-backface-visibility: hidden;
-	border-radius: 4px;
-	border: 2px solid;
-	position: absolute;
-	top: 50%;
-	left: 50%;
-	margin: -28px 0 0 -28px;
-	width: 52px;
-	height: 52px;
-	transition: transform 500ms linear, border-color 1400ms linear;
-	-webkit-transition: -webkit-transform 500ms linear, border-color 1400ms linear;
-	-moz-transition: -moz-transform 500ms linear, border-color 1400ms linear;
-	-ms-transition: -ms-transform 500ms linear, border-color 1400ms linear;
-	-o-transition: -o-transform 500ms linear, border-color 1400ms linear;
-}
-
-.tile .nightSide {
-	transform: rotateY(180deg);
-	-webkit-transform: rotateY(180deg);
-	-moz-transform: rotateY(180deg);
-	-ms-transform: rotateY(180deg);
-	-o-transform: rotateY(180deg);
-}
-
-.night .tile .daySide {
-	transform: rotateY(180deg);
-	-webkit-transform: rotateY(180deg);
-	-moz-transform: rotateY(180deg);
-	-ms-transform: rotateY(180deg);
-	-o-transform: rotateY(180deg);
-}
-
-.night .tile .nightSide {
-	transform: rotateY(0deg);
-	-webkit-transform: rotateY(0deg);
-	-moz-transform: rotateY(0deg);
-	-ms-transform: rotateY(0deg);
-	-o-transform: rotateY(0deg);
-}
-
-.tile .daySide,
-.tile .nightSide {
-	background-image: url(../img/tiles.png);
-	background-repeat: no-repeat;
-}
-
-.tile.grain .daySide {
-	background-position: 0 0;
-}
-.tile.grain .nightSide {
-	background-position: 0 -467px;
-}
-
-.grain2 .tile.grain .daySide {
-	background-position: 0 -52px;
-}
-.grain2 .tile.grain .nightSide {
-	background-position: 0 -519px;
-}
-
-.grain3 .tile.grain .daySide {
-	background-position: 0 -104px;
-}
-.grain3 .tile.grain .nightSide {
-	background-position: 0 -571px;
-}
-
-.grain4 .tile.grain .daySide {
-	background-position: 0 -156px;
-}
-.grain4 .tile.grain .nightSide {
-	background-position: 0 -623px;
-}
-
-.dragonFight .tile.grain .nightSide {
-	background-position: 0 -936px;
-}
-
-.tile.stone .daySide {
-	background-position: -52px 0px;
-	transition-delay: 300ms, 0ms;
-}
-.tile.stone .nightSide {
-	background-position: -52px -467px;
-	transition-delay: 300ms, 0ms;
-}
-
-.stone2 .tile.stone .daySide {
-	background-position: -52px -52px;
-}
-.stone2 .tile.stone .nightSide {
-	background-position: -52px -519px;
-}
-
-.stone3 .tile.stone .daySide {
-	background-position: -52px -104px;
-}
-.stone3 .tile.stone .nightSide {
-	background-position: -52px -571px;
-}
-
-.stone4 .tile.stone .daySide {
-	background-position: -52px -156px;
-}
-.stone4 .tile.stone .nightSide {
-	background-position: -52px -623px;
-}
-
-.stone5 .tile.stone .daySide {
-	background-position: -52px -208px;
-}
-.stone5 .tile.stone .nightSide {
-	background-position: -52px -675px;
-}
-
-.stone6 .tile.stone .daySide {
-	background-position: -52px -260px;
-}
-.stone6 .tile.stone .nightSide {
-	background-position: -52px -727px;
-}
-
-.stone7 .tile.stone .daySide {
-	background-position: -52px -312px;
-}
-.stone7 .tile.stone .nightSide {
-	background-position: -52px -779px;
-}
-
-.stone8 .tile.stone .daySide {
-	background-position: -52px -364px;
-}
-.stone8 .tile.stone .nightSide {
-	background-position: -52px -831px;
-}
-
-.stone9 .tile.stone .daySide {
-	background-position: -52px -416px;
-}
-.stone9 .tile.stone .nightSide {
-	background-position: -52px -883px;
-}
-
-.tile.wood .daySide {
-	background-position: -104px 0px;
-	transition-delay: 600ms, 0ms;
-}
-.tile.wood .nightSide {
-	background-position: -104px -467px;
-	transition-delay: 600ms, 0ms;
-}
-
-.wood2 .tile.wood .daySide {
-	background-position: -104px -52px;
-}
-.wood2 .tile.wood .nightSide {
-	background-position: -104px -519px;
-}
-
-.wood3 .tile.wood .daySide {
-	background-position: -104px -104px;
-}
-.wood3 .tile.wood .nightSide {
-	background-position: -104px -571px;
-}
-
-.wood4 .tile.wood .daySide {
-	background-position: -104px -156px;
-}
-.wood4 .tile.wood .nightSide {
-	background-position: -104px -623px;
-}
-
-.wood5 .tile.wood .daySide {
-	background-position: -104px -208px;
-}
-.wood5 .tile.wood .nightSide {
-	background-position: -104px -675px;
-}
-
-.wood6 .tile.wood .daySide {
-	background-position: -104px -260px;
-}
-.wood6 .tile.wood .nightSide {
-	background-position: -104px -727px;
-}
-
-.wood7 .tile.wood .daySide {
-	background-position: -104px -312px;
-}
-.wood7 .tile.wood > div {
-	background-position: -104px -779px;
-}
-
-.wood8 .tile.wood .daySide {
-	background-position: -104px -364px;
-}
-.wood8 .tile.wood .nightSide {
-	background-position: -104px -831px;
-}
-
-.wood9 .tile.wood .daySide {
-	background-position: -104px -416px;
-}
-.wood9 .tile.wood .nightSide {
-	background-position: -104px -883px;
-}
-
-.tile.clay .daySide {
-	background-position: -156px 0px;
-	transition-delay: 900ms, 0ms;
-}
-.tile.clay .nightSide {
-	background-position: -156px -467px;
-	transition-delay: 900ms, 0ms;
-}
-
-.clay2 .tile.clay .daySide {
-	background-position: -156px -52px;
-}
-.clay2 .tile.clay .nightSide {
-	background-position: -156px -519px;
-}
-
-.clay3 .tile.clay .daySide {
-	background-position: -156px -104px;
-}
-.clay3 .tile.clay > div {
-	background-position: -156px -571px;
-}
-
-.clay4 .tile.clay .daySide {
-	background-position: -156px -156px;
-}
-.clay4 .tile.clay .nightSide {
-	background-position: -156px -623px;
-}
-
-.dragonFight .tile.clay .nightSide {
-	background-position: -156px -936px;
-}
-
-.tile.cloth .daySide {
-	background-position: -208px 0px;
-	transition-delay: 1200ms, 0ms;
-}
-.tile.cloth .nightSide {
-	background-position: -208px -467px;
-	transition-delay: 1200ms, 0ms;
-}
-
-.cloth2 .tile.cloth .daySide {
-	background-position: -208px -52px;
-}
-.cloth2 .tile.cloth .nightSide {
-	background-position: -208px -519px;
-}
-
-.cloth3 .tile.cloth .daySide {
-	background-position: -208px -104px;
-}
-.cloth3 .tile.cloth .nightSide {
-	background-position: -208px -571px;
-}
-
-.cloth4 .tile.cloth .daySide {
-	background-position: -208px -156px;
-}
-.cloth4 .tile.cloth .nightSide {
-	background-position: -208px -623px;
-}
-
-.dragonFight .tile.cloth .nightSide {
-	background-position: -208px -936px;
-}
-
-.tile.mana .daySide {
-	background-position: -260px 0px;
-	transition-delay: 1200ms, 0ms;
-}
-.tile.mana .nightSide {
-	background-position: -260px -467px;
-	transition-delay: 1200ms, 0ms;
-}
-
 .selected:after {
 	display: block;
 	position: absolute;
@@ -2599,53 +2288,6 @@ body.paused:before {
 	-o-animation: pulse 500ms infinite;
 }
 
-/** Tile Effects **/
-@keyframes volatile {
-	0% { box-shadow: inset 0 0 10px 0px #FF0000; }
-	50% { box-shadow: inset 0 0 15px 10px #FF0000; }
-	100% { box-shadow: inset 0 0 10px 0px #FF0000; }
-}
-
-@-webkit-keyframes volatile {
-	0% { box-shadow: inset 0 0 10px 0px #FF0000; }
-	50% { box-shadow: inset 0 0 15px 10px #FF0000; }
-	100% { box-shadow: inset 0 0 10px 0px #FF0000; }
-}
-
-@-moz-keyframes volatile {
-	0% { box-shadow: inset 0 0 10px 0px #FF0000; }
-	50% { box-shadow: inset 0 0 15px 10px #FF0000; }
-	100% { box-shadow: inset 0 0 10px 0px #FF0000; }
-}
-
-@-ms-keyframes volatile {
-	0% { box-shadow: inset 0 0 10px 0px #FF0000; }
-	50% { box-shadow: inset 0 0 15px 10px #FF0000; }
-	100% { box-shadow: inset 0 0 10px 0px #FF0000; }
-}
-
-@-o-keyframes volatile {
-	0% { box-shadow: inset 0 0 10px 0px #FF0000; }
-	50% { box-shadow: inset 0 0 15px 10px #FF0000; }
-	100% { box-shadow: inset 0 0 10px 0px #FF0000; }
-}
-.tile.effect_explosive > div {
-	animation: volatile 500ms infinite;
-	-webkit-animation: volatile 500ms infinite;
-	-moz-animation: volatile 500ms infinite;
-	-ms-animation: volatile 500ms infinite;
-	-o-animation: volatile 500ms infinite;
-}
-
-.ios .tile.effect_explosive > div {
-	animation: none;
-	-webkit-animation: none;
-	-moz-animation: none;
-	-ms-animation: none;
-	-o-animation: none;
-	box-shadow: inset 0 0 15px 10px #FF0000;
-}
-
 .explosion {
 	position: absolute;
 	top: 25px;
@@ -2866,7 +2508,6 @@ body.paused:before {
 	background-position: -336px -747px;
 }
 
-
 .flattr {
 	background-position: -384px -699px;
 }
@@ -2874,7 +2515,6 @@ body.paused:before {
 .flattr.nightSprite {
 	background-position: -384px -747px;
 }
-
 
 .gittip {
 	background-position: -432px -699px;
@@ -3499,7 +3139,6 @@ body.bigExplosion.fadeOut:after {
 	background-color: rgba(19, 84, 104, 0.8);
 }
 
-
 .stone7 .resourceEffect.stone,
 .stone8 .resourceEffect.stone,
 .stone9 .resourceEffect.stone {
@@ -3549,7 +3188,7 @@ body.bigExplosion.fadeOut:after {
 	100% { -webkit-filter: invert(0%); }
 }
 
-.hyperspace .tile,
+.hyperspace .boardCanvas,
 .hyperspace .statusContainer,
 .hyperspace #loadingScreen {
 	animation: hyperspaceTile 800ms linear infinite;
@@ -3674,44 +3313,6 @@ body.hyperspace,
 	background-color: white;
 	bottom: 0px;
 }
-
-.portrait .tile {
-	width: 70px;
-	height: 70px;
-}
-
-.portrait .tile > div {
-	transform: scale(1.15);
-	-webkit-transform: scale(1.15);
-	-moz-transform: scale(1.15);
-	-ms-transform: scale(1.15);
-	-o-transform: scale(1.15);
-}
-
-.portrait .tile .nightSide {
-	transform: rotateY(180deg) scale(1.15);
-	-webkit-transform: rotateY(180deg) scale(1.15);
-	-moz-transform: rotateY(180deg) scale(1.15);
-	-ms-transform: rotateY(180deg) scale(1.15);
-	-o-transform: rotateY(180deg) scale(1.15);
-}
-
-.portrait.night .tile .daySide {
-	transform: rotateY(180deg) scale(1.15);
-	-webkit-transform: rotateY(180deg) scale(1.15);
-	-moz-transform: rotateY(180deg) scale(1.15);
-	-ms-transform: rotateY(180deg) scale(1.15);
-	-o-transform: rotateY(180deg) scale(1.15);
-}
-
-.portrait.night .tile .nightSide {
-	transform: rotateY(0deg) scale(1.15);
-	-webkit-transform: rotateY(0deg) scale(1.15);
-	-moz-transform: rotateY(0deg) scale(1.15);
-	-ms-transform: rotateY(0deg) scale(1.15);
-	-o-transform: rotateY(0deg) scale(1.15);
-}
-
 /* Diffuculty switch */
 .difficultySwitch {
 	display: inline-block;

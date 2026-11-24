@@ -78,7 +78,7 @@ function flash(className, css) {
 }
 
 function lanternBurst(pos) {
-	var size = $('.tile').first().outerWidth();
+	var size = G().tileSize();
 	flash('lanternRow', { top: pos.row * size + 'px', height: size + 'px' });
 	flash('lanternColumn', { left: pos.column * size + 'px', width: size + 'px' });
 }

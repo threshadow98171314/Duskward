@@ -78,23 +78,24 @@ function canMove() {
 	return graphicsCallback == null && GameBoard.canMove() && World.canMove() && !Engine.paused;
 }
 
-function startDrag(tile) {
+// Tiles are picked up and swapped by cell, { row, column }
+function startDrag(cell) {
 	if(canMove()) {
 		if(activeTile == null) {
 			// Select the tile, unless a shade has bound it
-			if(!GameBoard.isBound(tile.options.row, tile.options.column)) {
-				activeTile = tile;
-				Graphics.selectTile(tile);
+			if(!GameBoard.isBound(cell.row, cell.column)) {
+				activeTile = cell;
+				Graphics.selectTile(cell);
 			}
 		} else {
 			// Either initiate a switch, or deselect
 			var active = activeTile;
 			activeTile = null;
 			Graphics.deselectTile(active);
-			if(tile.isAdjacent(active) && !GameBoard.isBound(tile.options.row, tile.options.column)) {
+			if(Math.abs(cell.row - active.row) + Math.abs(cell.column - active.column) == 1 && !GameBoard.isBound(cell.row, cell.column)) {
 				GameBoard.switchTiles(
-					{row: active.options.row, col: active.options.column}, 
-					{row: tile.options.row, col: tile.options.column}
+					{row: active.row, col: active.column},
+					{row: cell.row, col: cell.column}
 				);
 			}
 		}
@@ -113,12 +114,12 @@ function endDrag(delta) {
 			var active = activeTile;
 			activeTile = null;
 			Graphics.deselectTile(active);
-			if(active.options.row + dy >= 0 && active.options.row + dy < GameBoard.options.rows &&
-			   active.options.column + dx >= 0 && active.options.column + dx < GameBoard.options.columns &&
-			   !GameBoard.isBound(active.options.row + dy, active.options.column + dx)) {
+			if(active.row + dy >= 0 && active.row + dy < GameBoard.options.rows &&
+			   active.column + dx >= 0 && active.column + dx < GameBoard.options.columns &&
+			   !GameBoard.isBound(active.row + dy, active.column + dx)) {
 				GameBoard.switchTiles(
-					{row: active.options.row, col: active.options.column}, 
-					{row: active.options.row + dy, col: active.options.column + dx}
+					{row: active.row, col: active.column},
+					{row: active.row + dy, col: active.column + dx}
 				);
 			}
 			return true;
@@ -272,7 +273,7 @@ var Engine = {
 			EventManager.trigger('afterUnpaused');
 		});
 		
-		Graphics.attachHandler("GameBoard", "mousedown touchstart", '.tile', function(e) {
+		Graphics.attachHandler("GameBoard", "mousedown touchstart", '.boardCanvas', function(e) {
 			if(!canMove()) {
 				// Tapping the board while a chain plays out fast-forwards it
 				GameBoard.hurry();
@@ -282,11 +283,13 @@ var Engine = {
 				if(e.originalEvent.changedTouches) {
 					e = e.originalEvent.changedTouches[0];
 				}
-				dragStart.x = e.clientX;
-				dragStart.y = e.clientY;
-				dragging = true;
-				var tile = $.data(this, "tile");
-				startDrag(tile);
+				var cell = Graphics.tileAt(e.clientX, e.clientY);
+				if(cell) {
+					dragStart.x = e.clientX;
+					dragStart.y = e.clientY;
+					dragging = true;
+					startDrag(cell);
+				}
 			}
 			EventManager.trigger('toggleMenu');
 			return false;

@@ -1,18 +1,25 @@
 import $ from '../../vendor/jquery.js';
 import E from '../eventmanager.js';
 import GameBoard from '../gameboard.js';
-import Tile from '../entity/tile.js';
 import Content from '../gamecontent.js';
-import Options from '../gameoptions.js';
 import Graphics from './graphics.js';
+import { BoardView } from '../../render/board.ts';
+
+// The board on screen. The tiles are drawn on a canvas (src/render/board.ts); this
+// module turns the board's draw requests into the view's animations, with the
+// timing the rest of the game waits on, and keeps the grid of tiles as drawn. The
+// resources flying off the board, and the bursts and pop-ups over it, are HTML.
 
 var G = null;
 var _el = null;
-var tileContainer = null;
+var view = null;
 var tiles = [];
-var TILE_WIDTH = 0, TILE_HEIGHT = 0;
+var CELL = 60;
 var BOARD_PAD = 2;
 var FILL_DELAY = 100;
+// The board's classes as last read: each kind of tile's level, and the dragon fight
+var boardClasses = null;
+var LEVEL_CLASS = /^(grain|wood|stone|clay|cloth|mana|lantern)(\d+)$/;
 
 // Long chains speed up as they go, and tapping the board hurries the rest along
 function paceOf(opts) {
@@ -24,11 +31,6 @@ function paceOf(opts) {
 		return 0.75;
 	}
 	return 1;
-}
-
-// Tiles slide at the pace of the current wave (see --tile-time in main.css)
-function setPace(pace) {
-	tileContainer[0].style.setProperty('--tile-time', Math.round(200 * pace) + 'ms');
 }
 
 function el() {
@@ -47,7 +49,7 @@ function setTile(row, col, tile) {
 }
 
 function getTile(row, col) {
-	return tiles[row][col];
+	return tiles[row] ? tiles[row][col] : null;
 }
 
 function clearBoard() {
@@ -55,87 +57,96 @@ function clearBoard() {
 }
 
 function createBoard(rows, cols) {
-	// Generate the board element
 	var el = G.make('gameBoard litBorder');
 	if(GameBoard.options.mobile) {
 		$('body').addClass('portrait');
 	}
-	tileContainer = G.make('tileContainer').attr('id', 'tileContainer').appendTo(el);
-	// Determine the board dimensions based on the size of the tiles
-	var testTile = G.make('tile').hide().appendTo('body');
-	TILE_WIDTH = testTile.width();
-	TILE_HEIGHT = testTile.height();
-	el.width(TILE_WIDTH * cols);
-	el.height(TILE_HEIGHT * rows);
-	testTile.remove();
+	// Tiles are bigger on phones
+	var portrait = $('body').hasClass('portrait');
+	CELL = portrait ? 70 : 60;
+	el.width(CELL * cols);
+	el.height(CELL * rows);
+	var tileContainer = G.make('tileContainer').attr('id', 'tileContainer').appendTo(el);
+	var canvas = G.make('boardCanvas', 'canvas').appendTo(tileContainer);
+	if(view != null) {
+		view.stop();
+	}
+	view = new BoardView(canvas[0], { rows: rows, columns: cols, cell: CELL, pad: BOARD_PAD, scale: portrait ? 1.15 : 1 });
+	view.beforeDraw = followPage;
+	view.setNight($('body').hasClass('night'), false);
+	view.start();
+	// For debugging from the browser console
+	window.boardView = function() {
+		return view;
+	};
 	return el;
 }
 
+// The view follows the page: night falls on the body, and the board's classes say
+// each kind of tile's level and whether the dragon has changed them (see changeTiles)
+function followPage() {
+	view.setNight(document.body.classList.contains('night'));
+	var classes = _el ? _el[0].className : '';
+	if(classes !== boardClasses) {
+		boardClasses = classes;
+		var levels = {};
+		classes.split(/\s+/).forEach(function(name) {
+			var match = LEVEL_CLASS.exec(name);
+			if(match) {
+				levels[match[1]] = Math.max(levels[match[1]] || 1, Number(match[2]));
+			}
+		});
+		view.levels = levels;
+		view.dragonFight = /(^|\s)dragonFight(\s|$)/.test(classes);
+	}
+}
+
 function drawSwapTiles(opts) {
-	setPace(1);
-	var t1 = tiles[opts.pos1.row][opts.pos1.col];
-	var t2 = tiles[opts.pos2.row][opts.pos2.col];
-	tiles[opts.pos1.row][opts.pos1.col] = t2;
-	tiles[opts.pos2.row][opts.pos2.col] = t1;
-	t1.options.row = opts.pos2.row;
-	t1.options.column = opts.pos2.col;
-	t2.options.row = opts.pos1.row;
-	t2.options.column = opts.pos1.col;
-	updatePositionInBoard(t1);
-	updatePositionInBoard(t2);
-	
+	var t1 = getTile(opts.pos1.row, opts.pos1.col);
+	var t2 = getTile(opts.pos2.row, opts.pos2.col);
+	setTile(opts.pos1.row, opts.pos1.col, t2);
+	setTile(opts.pos2.row, opts.pos2.col, t1);
+	view.slide(t1, opts.pos2.row, opts.pos2.col, 0, 200);
+	view.slide(t2, opts.pos1.row, opts.pos1.col, 0, 200);
 	return 200;
 }
 
 function drawBoardClear() {
-	setPace(1);
 	for(var row in tiles) {
 		for(var col in tiles[row]) {
 			removeTile(row, col);
 		}
 	}
-
 	return 300;
 }
 
+// The new tiles drop in one by one, from the far corner
 function drawFillBoard(tileString) {
-	setPace(1);
-	var t = tileString.split('');
-	var col = 0, row = 0;
-	var mTime = (GameBoard.options.rows + GameBoard.options.columns) * FILL_DELAY;
-	(function _f() {
-		var tileChar = t.shift();
-		if(tileChar == GameBoard.SEP) {
-			col++;
-			row = 0;
-		} else {
+	var rows = GameBoard.options.rows, cols = GameBoard.options.columns;
+	var mTime = (rows + cols) * FILL_DELAY;
+	tileString.split(GameBoard.SEP).slice(0, cols).forEach(function(column, col) {
+		column.split('').forEach(function(tileChar, row) {
 			var tile = newTile(row, col, tileChar);
+			var delay = 200 + mTime - ((row + (cols - col)) * FILL_DELAY);
+			view.slide(tile, row, col, delay, 200);
 			setTimeout(function() {
-				updatePositionInBoard(tile);
-				setTimeout(function() {
-					E.trigger('tileDrop');
-				}, 100);
-			}, 200 + mTime - ((row + (GameBoard.options.columns - col)) * FILL_DELAY));
-			row++;
-		}
-		if(t.length > 0) {
-			setTimeout(_f, 0);
-		}
-	})();
+				E.trigger('tileDrop');
+			}, delay + 100);
+		});
+	});
 	return mTime + 200;
 }
-
 
 var effectPool = [];
 function getEffectEl(pos, type) {
 	var e;
 	if(effectPool.length == 0) {
-		e = G.make('resourceEffect').appendTo(el());	
+		e = G.make('resourceEffect').appendTo(el());
 	} else {
 		e = effectPool.pop();
 	}
-	var left = (pos.col * TILE_WIDTH) + (TILE_WIDTH / 2),
-		top = (pos.row * TILE_HEIGHT) + (TILE_HEIGHT / 2);
+	var left = (pos.col * CELL) + (CELL / 2),
+		top = (pos.row * CELL) + (CELL / 2);
 	e.addClass(type.className).css({
 		'transform': 'translate3d(' + left + 'px, ' + top + 'px, 0px) scale(1)',
 		'-webkit-transform': 'translate3d(' + left + 'px, ' + top + 'px, 0px) scale(1)',
@@ -164,7 +175,7 @@ function drawMatchEffect(pos, type, isNight, side) {
 			dest = [-20, 28 * G.numHearts() + 14];
 		}
 		e.css({
-			'transform': 'translate3d(' + dest[0] + 'px, ' + dest[1] + 'px, 0px) scale(0.2)', 
+			'transform': 'translate3d(' + dest[0] + 'px, ' + dest[1] + 'px, 0px) scale(0.2)',
 			'-webkit-transform': 'translate3d(' + dest[0] + 'px, ' + dest[1] + 'px, 0px) scale(0.2)',
 			'-moz-transform': 'translate3d(' + dest[0] + 'px, ' + dest[1] + 'px, 0px) scale(0.2)',
 			'-ms-transform': 'translate3d(' + dest[0] + 'px, ' + dest[1] + 'px, 0px) scale(0.2)',
@@ -176,138 +187,74 @@ function drawMatchEffect(pos, type, isNight, side) {
 	}
 }
 
+// Matched tiles fade away, the tiles above them drop into their places, and new
+// tiles drop in from above the board
 function drawMatch(opts) {
 	var pace = paceOf(opts);
-	setPace(pace);
-	var tilesToUpdate = [];
-	// Remove matched tiles
-	if(opts.removed) {
-		for(var i in opts.removed) {
-			var pos = opts.removed[i].position;
-			removeTile(pos.row, pos.col);
-			drawMatchEffect(pos, opts.removed[i].type, opts.isNight, opts.side);
-			// Drop each tile above this tile one space
-			for(var r = pos.row - 1; r >= 0; r--) {
-				var t = getTile(r, pos.col);
-				if(t) {
-					t.options.row++;
-					tilesToUpdate.push(t);
-				}
+	var dropping = [];
+	(opts.removed || []).forEach(function(removed) {
+		var pos = removed.position;
+		removeTile(pos.row, pos.col);
+		drawMatchEffect(pos, removed.type, opts.isNight, opts.side);
+		// Each tile above it drops a cell
+		for(var r = pos.row - 1; r >= 0; r--) {
+			var t = getTile(r, pos.col);
+			if(t) {
+				t.row++;
+				dropping.push(t);
 			}
 		}
-	}
-	
-	// Add new tiles to the top
-	if(opts.added) {
-		for(var i in opts.added) {
-			var a = opts.added[i];
-			var tile = newTile(a.row, a.col, a.char);
-			tilesToUpdate.push(tile);
+	});
+	(opts.added || []).forEach(function(added) {
+		dropping.push(newTile(added.row, added.col, added.char));
+	});
+	// A matched tile can drop before its own turn to go comes; it stays gone
+	var moved = [];
+	dropping.forEach(function(t) {
+		if(moved.indexOf(t) < 0 && t.fade == null) {
+			moved.push(t);
+			setTile(t.row, t.column, t);
+			view.slide(t, t.row, t.column, 200 * pace, 200 * pace);
 		}
-	}
-	
-	setTimeout(function() {
-		// Drop tiles that need dropping
-		for(var i in tilesToUpdate) {
-			var t = tilesToUpdate[i];
-			setTile(t.options.row, t.options.column, t);
-			updatePositionInBoard(t);
-		}
-	}, 200 * pace);
-	
+	});
+
 	setTimeout(function() {
 		E.trigger('tileDrop');
 	}, 300 * pace);
 	return 400 * pace;
 }
 
-function updatePositionInBoard(entity, row, column) {
-	row = row || entity.options.row;
-	column = column || entity.options.column;
-	var el = entity.el();
-	var p = getPosition(row, column);
-	el.css({
-		transform: 'translate3d(' + p.left + 'px, ' + p.top + 'px, 0)'
-	});
-}
-
-function getPosition(row, column) {
-	return {
-		top: row * TILE_HEIGHT + BOARD_PAD,
-		left: column * TILE_WIDTH + BOARD_PAD
-	};
-}
-
-var tilePool = [];
-function preloadTiles() {
-	// Preload the tiles necessary to fill the board, plus a buffer for matches.
-	for(var i = 0; i < GameBoard.options.rows * GameBoard.options.columns * 2; i++) {
-		var tile = new Tile({
-			row: -1,
-			column: 0,
-			type: Content.ResourceType.Grain
-		});
-
-		tile.el().addClass('hidden pooled');
-		updatePositionInBoard(tile, tile.options.row, tile.options.column);
-		tileContainer.append(tile.el());
-		tilePool.push(tile);
-	}
-}
+// A new tile waits above the board, a board's height up, to drop into its cell
 function newTile(row, col, tileChar) {
-	var tile;
-	var opts = {
-		type: Content.getResourceType(tileChar),
-		row: row,
-		column: col
-	};
-	if(tilePool.length == 0) {
-		var tile = new Tile(opts);
-		tileContainer.append(tile.el());
-	} else {
-		tile = tilePool.pop().repurpose(opts);
-	}
-
+	var tile = view.add(Content.getResourceType(tileChar).className, row, col, row - GameBoard.options.rows);
 	setTile(row, col, tile);
-	updatePositionInBoard(tile, tile.options.row - GameBoard.options.rows, tile.options.column);
-	
 	return tile;
 }
 
 function removeTile(row, col) {
 	var t = getTile(row, col);
 	setTile(row, col, null);
-	t.el().addClass('hidden');
-	setTimeout(function() {
-		t.el().addClass('pooled');
-		updatePositionInBoard(t, -1);
-		tilePool.push(t);
-	}, 200);
+	if(t) {
+		view.fade(t, 200);
+	}
 }
 
 function drawTileEffect(options) {
 	var tile = getTile(options.row, options.column);
-	tile && tile.el().addClass('effect_' + options.effectType);
+	if(tile) {
+		view.setEffect(tile, options.effectType, true);
+	}
 }
 
 function removeTileEffect(options) {
 	var tile = getTile(options.row, options.column);
-	tile && tile.el().removeClass('effect_' + options.effectType);
+	if(tile) {
+		view.setEffect(tile, options.effectType, false);
+	}
 }
 
 function explode(options) {
-	var explosion = G.make('explosion');
-	var p = getPosition(options.row, options.column);
-	explosion.css({
-		transform: 'translate3d(' + p.left + 'px, ' + p.top + 'px, 0)'
-	});
-	tileContainer.append(explosion);
-	setTimeout(function() {
-		explosion.remove();
-	}, 400);
-	explosion.show(function() {
-		explosion.addClass('exploded');
-	});
+	view.explode({ row: options.row, column: options.column });
 }
 
 export default {
@@ -315,9 +262,9 @@ export default {
 		G = Graphics;
 		tiles.length = 0;
 		_el = null;
+		boardClasses = null;
 		el();
-		preloadTiles();
-		
+
 		effectPool.length = 0;
 		E.bind('drawEffect', drawTileEffect);
 		E.bind('drawRemoveEffect', removeTileEffect);
@@ -326,9 +273,9 @@ export default {
 			el().removeClass('hidden');
 		});
 	},
-	
+
 	el: el,
-	
+
 	attachHandler: function(event, element, handler) {
 		if(element) {
 			el().on(event, element, handler);
@@ -336,7 +283,7 @@ export default {
 			el().on(event, handler);
 		}
 	},
-	
+
 	handleDrawRequest: function(requestString, options) {
 		switch(requestString.toLowerCase()) {
 			case 'clear':
@@ -350,7 +297,26 @@ export default {
 		}
 	},
 
-	checkTilePool: function() {
-		return tilePool.length;
+	// The cell under a point on the screen, as { row, column }, or null
+	cellAt: function(clientX, clientY) {
+		return view.cellAtClient(clientX, clientY);
+	},
+
+	cellSize: function() {
+		return CELL;
+	},
+
+	// Marks the tile in a cell as picked up; null puts it down
+	select: function(cell) {
+		view.select(cell ? getTile(cell.row, cell.column) : null);
+	},
+
+	// Tiles of these kinds fade out while their pictures change, then back in
+	hideKinds: function(kinds) {
+		view.hideKinds(kinds);
+	},
+
+	showKinds: function(kinds) {
+		view.showKinds(kinds);
 	}
 };

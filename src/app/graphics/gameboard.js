@@ -3,6 +3,7 @@ import E from '../eventmanager.js';
 import GameBoard from '../gameboard.js';
 import Content from '../gamecontent.js';
 import Graphics from './graphics.js';
+import WorldGraphics from './world.js';
 import { BoardView } from '../../render/board.ts';
 import { EffectsView } from '../../render/effects.ts';
 
@@ -104,6 +105,15 @@ function makeEffects(board, cols, rows) {
 	});
 	effects.onShake = function(dx, dy) {
 		board[0].style.translate = dx || dy ? dx + 'px ' + dy + 'px' : '';
+	};
+	// Night falls on the body; the keeper's lantern and the village's windows light it
+	var page = document.body.classList;
+	effects.setNight(page.contains('night'), false);
+	effects.beforeDraw = function() {
+		effects.setNight(page.contains('night'));
+		var lights = WorldGraphics.lights();
+		effects.keeper = lights ? lights.keeper : null;
+		effects.windows = lights ? lights.windows : [];
 	};
 	effects.start();
 }

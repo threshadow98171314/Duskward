@@ -3,7 +3,8 @@
 // does, the beam of a level gained, the blast of a bomb, the loot found in a chest,
 // the bits flying off cleared tiles, sparks, smoke and dust, and the whole board
 // shaking when something big goes off. Each effect plays out over its own time and
-// is then forgotten.
+// is then forgotten. By night the ground lies in the dark, but for the light of the
+// keeper's lantern and of the village's windows.
 
 import { SHEETS, SPRITES } from '../content/sprites.ts';
 import { materialColour } from './village.ts';
@@ -34,6 +35,19 @@ const LOOT_RISE = 10;
 const LOOT_FADE_MS = 300;
 // Particles in the air at most, the oldest giving way
 const MOST_PARTICLES = 400;
+// The dark of night, deepest at the ground; and how far lights reach into it
+const NIGHT_FADE_MS = 1400;
+const DARKNESS = 0.62;
+const DARK_FROM = 0.25;
+const LANTERN_REACH = 72;
+const WINDOW_REACH = 26;
+
+// Something giving light at night, in the world: where it is and how far it reaches
+export interface Light {
+	x: number;
+	y: number;
+	reach: number;
+}
 
 // A bit flying off something: where and when it set off, its speed (px/s), how hard
 // it falls (px/s²), its colour and size, and how long it lasts
@@ -79,6 +93,14 @@ export class EffectsView {
 	// The level of each kind of tile, for the colours of the bits off cleared tiles
 	levels: Record<string, number> = {};
 	readonly particles: Particle[] = [];
+	// Called before every frame, to catch up with the page
+	beforeDraw: (() => void) | null = null;
+	// Where the keeper is, and the village's buildings with their windows lit at night
+	keeper: number | null = null;
+	windows: number[] = [];
+	private night = false;
+	private nightSince = -Infinity;
+	private dark: HTMLCanvasElement | null = null;
 	private shaking: { start: number; duration: number; strength: number } | null = null;
 	private frame = 0;
 
@@ -178,6 +200,30 @@ export class EffectsView {
 		};
 	}
 
+	setNight(night: boolean, fade = true): void {
+		if (night !== this.night) {
+			this.night = night;
+			this.nightSince = fade ? this.now() : -Infinity;
+		}
+	}
+
+	// How far night has fallen, from 0 to 1
+	nightness(): number {
+		const t = clamp((this.now() - this.nightSince) / NIGHT_FADE_MS);
+		return this.night ? t : 1 - t;
+	}
+
+	// The lights in the world now: the keeper's lantern, flickering a little, and the windows
+	lights(now: number): Light[] {
+		const ground = this.layout.world.height;
+		const lights: Light[] = this.windows.map((x) => ({ x, y: ground - 14, reach: WINDOW_REACH }));
+		if (this.keeper !== null) {
+			const flicker = 1 + 0.04 * Math.sin(now / 90) + 0.03 * Math.sin(now / 37);
+			lights.push({ x: this.keeper, y: ground - 20, reach: LANTERN_REACH * flicker });
+		}
+		return lights;
+	}
+
 	// Shakes the board, hardest at first; a stronger shake takes over a weaker one
 	shake(strength: number, duration: number): void {
 		const now = this.now();
@@ -215,6 +261,7 @@ export class EffectsView {
 	}
 
 	draw(): void {
+		this.beforeDraw?.();
 		const now = this.now();
 		for (let i = this.effects.length - 1; i >= 0; i--) {
 			if (this.progress(this.effects[i], now) === null) {
@@ -234,6 +281,7 @@ export class EffectsView {
 		ctx.setTransform(this.ratio, 0, 0, this.ratio, 0, 0);
 		ctx.clearRect(0, 0, this.layout.width, this.height());
 		ctx.imageSmoothingEnabled = false;
+		this.drawDarkness(ctx, now);
 		for (const effect of this.effects) {
 			const t = this.progress(effect, now);
 			if (t !== null) {
@@ -251,6 +299,52 @@ export class EffectsView {
 			}
 		}
 		ctx.globalAlpha = 1;
+	}
+
+	// The dark of night over the ground, with pools of light cut out of it. It is drawn
+	// on a canvas of its own first, so cutting the light out leaves the rest alone.
+	private drawDarkness(ctx: CanvasRenderingContext2D, now: number): void {
+		const night = this.nightness();
+		if (night <= 0 || typeof document === 'undefined') {
+			return;
+		}
+		const { width } = this.layout, height = this.layout.world.height;
+		if (this.dark === null) {
+			this.dark = document.createElement('canvas');
+			this.dark.width = Math.round(width * this.ratio);
+			this.dark.height = Math.round(height * this.ratio);
+		}
+		const dark = this.dark.getContext('2d');
+		if (dark === null) {
+			return;
+		}
+		dark.setTransform(this.ratio, 0, 0, this.ratio, 0, 0);
+		dark.globalCompositeOperation = 'source-over';
+		dark.clearRect(0, 0, width, height);
+		const shade = dark.createLinearGradient(0, 0, 0, height);
+		shade.addColorStop(DARK_FROM, 'rgba(8, 5, 18, 0)');
+		shade.addColorStop(1, `rgba(8, 5, 18, ${DARKNESS * night})`);
+		dark.fillStyle = shade;
+		dark.fillRect(0, 0, width, height);
+		dark.globalCompositeOperation = 'destination-out';
+		for (const light of this.lights(now)) {
+			const pool = dark.createRadialGradient(light.x, light.y, 0, light.x, light.y, light.reach);
+			pool.addColorStop(0, 'rgba(0, 0, 0, 1)');
+			pool.addColorStop(0.55, 'rgba(0, 0, 0, 0.75)');
+			pool.addColorStop(1, 'rgba(0, 0, 0, 0)');
+			dark.fillStyle = pool;
+			dark.fillRect(light.x - light.reach, light.y - light.reach, light.reach * 2, light.reach * 2);
+		}
+		ctx.drawImage(this.dark, 0, 0, width, height);
+		// A warm glow around the lantern itself
+		if (this.keeper !== null) {
+			const lantern = this.lights(now)[this.windows.length];
+			const glow = ctx.createRadialGradient(lantern.x, lantern.y, 0, lantern.x, lantern.y, lantern.reach * 0.6);
+			glow.addColorStop(0, `rgba(255, 196, 110, ${0.16 * night})`);
+			glow.addColorStop(1, 'rgba(255, 196, 110, 0)');
+			ctx.fillStyle = glow;
+			ctx.fillRect(lantern.x - lantern.reach, lantern.y - lantern.reach, lantern.reach * 2, lantern.reach * 2);
+		}
 	}
 
 	private applyShake(now: number): void {

@@ -73,6 +73,21 @@ describe('the effects', () => {
 		expect(view.particles[0]).toMatchObject({ x: 332, y: 324, colour: '#7c5840' });
 	});
 
+	it('let night fall over the ground, lit by the keeper’s lantern and the village’s windows', () => {
+		const { view, clock } = effectsView();
+		view.setNight(true);
+		clock.now = 700;
+		expect(view.nightness()).toBeCloseTo(0.5);
+		view.windows = [30, 150];
+		expect(view.lights(clock.now)).toEqual([{ x: 30, y: 96, reach: 26 }, { x: 150, y: 96, reach: 26 }]);
+		view.keeper = 240;
+		const lantern = view.lights(clock.now)[2];
+		expect(lantern).toMatchObject({ x: 240, y: 90 });
+		// The lantern flickers, but only a little
+		expect(lantern.reach).toBeGreaterThan(72 * 0.9);
+		expect(lantern.reach).toBeLessThan(72 * 1.1);
+	});
+
 	it('find the icon of each item by its name', () => {
 		expect(SPRITES.items.names?.indexOf('healthPotion')).toBe(0);
 		expect(SPRITES.items.names?.indexOf('dawnHeart')).toBe(6);

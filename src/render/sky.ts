@@ -124,6 +124,11 @@ export class SkyView {
 		this.lights = xs.slice();
 	}
 
+	// Where the village's lights burn
+	lightsAt(): number[] {
+		return this.lights.slice();
+	}
+
 	// How far night has fallen, and dusk: from 0 to 1
 	nightness(): number {
 		const t = clamp((this.now() - this.nightSince) / FADE_MS);

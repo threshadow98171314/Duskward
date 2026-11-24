@@ -110,5 +110,14 @@ export default {
 	actors: function() {
 		el();
 		return actors;
+	},
+
+	// What lights the night in the world: where the keeper carries their lantern, and
+	// the village's lit windows; null before the world is made
+	lights: function() {
+		if(_el == null) {
+			return null;
+		}
+		return { keeper: actors.keeperX(), windows: sky.lightsAt() };
 	}
 };

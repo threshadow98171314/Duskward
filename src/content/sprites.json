@@ -321,6 +321,15 @@
 			"frames": 4,
 			"rows": 2
 		},
+		"fireball": {
+			"sheet": "icons",
+			"x": 0,
+			"y": 175,
+			"width": 16,
+			"height": 7,
+			"frames": 2,
+			"rows": 1
+		},
 		"gem": {
 			"sheet": "icons",
 			"x": 0,

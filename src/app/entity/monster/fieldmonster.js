@@ -1,8 +1,9 @@
 import $ from '../../../vendor/jquery.js';
 import Monster from './monster.js';
 
-// What a monster on the field looks like: its sprite and health bar. Where it is
-// and what it does is up to the field (src/core/field.ts), from its content entry.
+// A monster on the field, as the rest of the game knows it: its loot and what it
+// is worth. Where it is and what it does is up to the field (src/core/field.ts),
+// from its content entry; src/render/actors.ts draws it.
 var FieldMonster = function(actor) {
 	this.options = $.extend({}, this.options, {
 		monsterClass: actor.kind,
@@ -15,13 +16,6 @@ var FieldMonster = function(actor) {
 };
 FieldMonster.prototype = new Monster({});
 FieldMonster.constructor = FieldMonster;
-
-FieldMonster.prototype.el = function() {
-	if(this._el == null) {
-		Monster.prototype.el.call(this).toggleClass('flying', !!this.actor.def.flying);
-	}
-	return this._el;
-};
 
 FieldMonster.prototype.getMaxHealth = function() {
 	return this.actor ? this.actor.maxHp : 1;

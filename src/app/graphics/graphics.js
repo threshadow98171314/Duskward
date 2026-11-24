@@ -595,14 +595,6 @@ var Graphics = {
 		(entity.el ? entity.el() : entity).removeClass('hidden');
 	},
 	
-	addMonster: function(monster, side) {
-		var el = monster.el();
-		monster.p(side == 'left' ? -el.width() : Graphics.worldWidth() + el.width());
-		monster.animation(monster.getAnimation(side == "right" ? "left" : "right"));
-		setEntityPosition(monster, monster.p());
-		el.appendTo('.world');
-	},
-	
 	// The sun or moon climbs to the middle of the sky and sinks again as the day goes on
 	moveCelestial: function(entity) {
 		var pos = entity.p();
@@ -804,8 +796,13 @@ var Graphics = {
 		}
 	},
 
+	// The keeper carries the block now (src/render/actors.ts draws it over their shoulder)
 	pickUpBlock: function(block) {
-		block.el().appendTo('.heldBlock');
+		block.el().detach();
+	},
+
+	openChest: function(chest) {
+		WorldGraphics.actors().openChest(chest);
 	},
 	
 	updateBlock: function(block) {
@@ -941,56 +938,6 @@ var Graphics = {
 		}, 1500);
 	},
 	
-	fireArrow: function(arrowEntity, callback) {
-		var start = arrowEntity.options.fireFrom,
-			end = arrowEntity.options.fireTo;
-		var dist = end - start;
-		var ARROW_TIME = 1000;
-		var arrow = arrowEntity.el();
-		arrow.addClass(dist > 0 ? 'right' : 'left');
-		arrow.attr('style', 
-			'transform: translateX(' + start + 'px);' +
-			'-webkit-transform: translateX(' + start + 'px);' +
-			'-moz-transform: translateX(' + start + 'px);' +
-			'-ms-transform: translateX(' + start + 'px);' +
-			'-o-transform: translateX(' + start + 'px);'
-		);
-		$('.world').append(arrow);
-		
-		arrow.css('left'); // Force a redraw before animation
-		
-		// Move arrow to top of arc
-		arrow.attr('style', 
-			'transform: translateX(' + (start + dist/2) + 'px);' +
-			'-webkit-transform: translateX(' + (start + dist/2) + 'px);' + 
-			'-moz-transform: translateX(' + (start + dist/2) + 'px);' + 
-			'-ms-transform: translateX(' + (start + dist/2) + 'px);' + 
-			'-o-transform: translateX(' + (start + dist/2) + 'px);'
-		);
-		arrow.addClass('top');
-		
-		// Move arrow to end of arc
-		setTimeout(function() {
-			arrow.attr('style', 
-				'transform: translateX(' + (start + dist) + 'px);' +
-				'-webkit-transform: translateX(' + (start + dist) + 'px);' +
-				'-moz-transform: translateX(' + (start + dist) + 'px);' +
-				'-ms-transform: translateX(' + (start + dist) + 'px);' +
-				'-o-transform: translateX(' + (start + dist) + 'px);'
-			);
-			arrow.removeClass('top').addClass('bottom');
-			setTimeout(function() {
-				// Remove arrow
-				arrow.remove();
-				if(callback) {
-					callback(arrow);
-				}
-			}, ARROW_TIME / 2);
-		}, ARROW_TIME / 2);
-		
-		return arrowEntity;
-	},
-	
 	levelUp: function(dude) {
 		var p = dude.p();
 		var effect = $('<div>').addClass('levelEffect').css('left', (p - 1) + 'px').appendTo('.world');
@@ -1008,15 +955,10 @@ var Graphics = {
 		}, 1000);
 	},
 	
+	// Monsters' health bars are drawn with them (src/render/actors.ts); a boss's is its own
 	updateHealthBar: function(entity) {
 		if(entity.isBoss) {
 			Graphics.setBossHealth(entity.hp(), entity.getMaxHealth());
-		} else {
-			var bar = entity.el().find('.healthBar div');
-			if(bar.length > 0) {
-				var healthPercent = Math.floor(entity.hp() / entity.getMaxHealth() * 100);
-				bar.css('width', healthPercent + '%');
-			}
 		}
 	},
 	
@@ -1037,7 +979,7 @@ var Graphics = {
 	},
 	
 	monsterKilled: function(monster) {
-		monster.el().find('.healthBar').addClass('hidden');
+		WorldGraphics.actors().killMonster(monster);
 	},
 	
 	enablePlayButton: function() {

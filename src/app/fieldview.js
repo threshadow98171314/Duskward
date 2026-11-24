@@ -1,22 +1,27 @@
 import Graphics from './graphics/graphics.js';
+import WorldGraphics from './graphics/world.js';
 import FieldMonster from './entity/monster/fieldmonster.js';
 import TreasureChest from './entity/loot/treasurechest.js';
-import Projectile from './entity/projectile.js';
-import { carrying, TICK_MS } from '../core/field.ts';
+import { carrying } from '../core/field.ts';
 
-// Draws the field (src/core/field.ts) after every tick: moves the keeper, monsters
-// and chests to where the field has them, and shows the frame of whatever they are
-// doing. Sprite rows follow the original sheets: idle, walk right, walk left,
-// attack right, attack left, die facing right, die facing left, then rows of
-// their own (the keeper's climb, hammer, carry and loot; the lich's spell).
+// Draws the field (src/core/field.ts) after every tick: the keeper, the monsters and
+// the chests, where the field has them and in the frame of whatever they are doing
+// (src/render/actors.ts draws them). Sprite rows follow the original sheets: idle,
+// walk right, walk left, attack right, attack left, die facing right, die facing
+// left, then rows of their own (the keeper's climb, hammer, carry and loot; the
+// lich's spell). The views of monsters and chests keep what the rest of the game
+// needs of them, such as where their loot drops.
 
-var CORPSE_DECAY_TIME = 5000;
-// Further than this in one tick, the field moved someone without walking them
-var JUMP = 60;
+// Chests keep clear of the edges of the world
+var CHEST_EDGE = 20;
 
 var keeper = null;
 var monsters = {};
 var chests = {};
+
+function actors() {
+	return WorldGraphics.actors();
+}
 
 function keeperRow(field) {
 	var actor = field.keeper;
@@ -56,61 +61,18 @@ function monsterRow(actor) {
 	}
 }
 
-function show(view, row, frame) {
-	if(view.animationRow !== row || view.frame !== frame) {
-		view.animationRow = row;
-		view.frame = frame;
-		view.tempAnimation = null;
-		Graphics.updateSprite(view);
-	}
-}
-
-// Glides the view to where the field has it, arriving as the next tick comes
-function moveTo(view, x) {
-	// A glide that has not finished (the page was not drawing) catches up first
-	if(view.fieldX != null && view.p() !== view.fieldX) {
-		Graphics.stop(view);
-		view.p(view.fieldX);
-		Graphics.setPosition(view, view.fieldX);
-	}
-	view.fieldX = x;
-	var distance = Math.abs(x - view.p());
-	if(distance > JUMP) {
-		Graphics.stop(view);
-		view.p(x);
-		Graphics.setPosition(view, x);
-	} else if(distance > 0) {
-		Graphics.animateMove(view, x, null, null, TICK_MS / distance);
-	}
-}
-
-function bobHeldBlock(frame) {
-	if(frame == 1) {
-		keeper.held.css({transform: 'translate3d(0px, 1px, 0px)'});
-	} else if(frame == 3) {
-		keeper.held.css({transform: 'translate3d(0px, -1px, 0px)'});
-	} else {
-		keeper.held[0].style = '';
-	}
-}
-
-function remove(view) {
-	Graphics.stop(view);
-	view.el().remove();
-}
-
 export default {
 	init: function(keeperView) {
 		keeper = keeperView;
 		monsters = {};
 		chests = {};
+		actors().clear();
 	},
 
 	addMonster: function(actor) {
 		var view = new FieldMonster(actor);
-		Graphics.addMonster(view, actor.facing == 'right' ? 'left' : 'right');
 		view.p(actor.x);
-		Graphics.setPosition(view, actor.x);
+		actors().addMonster(view, actor.def.sprite, actor.x, !!actor.def.flying);
 		monsters[actor.id] = view;
 		return view;
 	},
@@ -124,20 +86,14 @@ export default {
 		var view = monsters[id];
 		delete monsters[id];
 		if(view) {
-			setTimeout(function() {
-				view.el().addClass('hidden');
-				setTimeout(function() {
-					view.el().remove();
-				}, 200);
-			}, CORPSE_DECAY_TIME);
+			actors().buryMonster(view);
 		}
 	},
 
 	addChest: function(chest, forceLoot) {
 		var view = new TreasureChest({ forceLoot: forceLoot });
-		view.p(chest.x);
-		Graphics.addToWorld(view);
-		Graphics.setPosition(view, chest.x);
+		view.p(Math.min(Graphics.worldWidth() - CHEST_EDGE, Math.max(CHEST_EDGE, chest.x)));
+		actors().addChest(view, view.p());
 		chests[chest.id] = view;
 		return view;
 	},
@@ -148,43 +104,30 @@ export default {
 
 	// Daybreak: monsters and chests are gone
 	clear: function() {
-		for(var id in monsters) {
-			remove(monsters[id]);
-		}
-		for(var c in chests) {
-			remove(chests[c]);
-		}
 		monsters = {};
 		chests = {};
+		actors().clear();
 	},
 
 	shoot: function(projectile) {
-		Graphics.fireArrow(new Projectile({
-			projectileClass: projectile.kind == 'fireball' ? 'arrow fireball' : 'arrow',
-			fireFrom: projectile.from,
-			fireTo: projectile.to
-		}));
+		actors().shoot(projectile.kind, projectile.from, projectile.to);
 	},
 
 	draw: function(field) {
 		var actor = field.keeper;
-		moveTo(keeper, actor.x);
-		show(keeper, keeperRow(field), actor.frame);
-		if(keeper.carrying != null) {
-			bobHeldBlock(actor.frame);
-		}
+		keeper.p(actor.x);
+		var block = keeper.carrying;
+		actors().setKeeper({ x: actor.x, row: keeperRow(field), frame: actor.frame },
+			block ? { kind: block.options.type.className, fill: block.quantity() / block.max } : null);
 
 		field.monsters.forEach(function(monster) {
 			var view = monsters[monster.id];
 			if(!view) {
 				return;
 			}
-			moveTo(view, monster.x);
-			show(view, monsterRow(monster), monster.frame);
-			if(view.hp() !== monster.hp) {
-				view.hp(monster.hp);
-			}
-			view.el().toggleClass('hidden', monster.hidden);
+			view.p(monster.x);
+			actors().updateMonster(view, { x: monster.x, row: monsterRow(monster), frame: monster.frame },
+				monster.hp / monster.maxHp, monster.hidden);
 		});
 	}
 };

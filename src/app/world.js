@@ -907,15 +907,12 @@ function runEntity(entity) {
 
 function launchDude() {
 	dude = new Dude();
-	dude.makeIdle();
-	Graphics.addToWorld(dude);
 	field = Field.createField(Graphics.worldWidth());
 	field.night = clock.night;
 	field.casual = Options.get('casualMode', false);
 	Field.climbIn(field);
 	FieldView.init(dude);
 	dude.p(field.keeper.x);
-	Graphics.setPosition(dude, dude.p());
 }
 
 function launchCelestial() {

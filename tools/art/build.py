@@ -89,6 +89,7 @@ def build_buildings():
 # The interface's own icons are placed by the style sheets for now.
 ICON_SPRITES = {
     "dragoneffects": (0, 88, 30, 44, 4, 2),  # original art: the ice block, then fire
+    "fireball": (0, 175, 16, 7, 2, 1),  # original art: flying left, then right
     "gem": (0, 183, 12, 24, 4, 4),  # a row for each number of shards
     "star": (0, 875, 16, 16, 4, 1),
     "sun": (0, 891, 30, 30, 4, 2),  # the sun, then the moon

@@ -2,14 +2,18 @@ import G from './graphics.js';
 import BoardGraphics from './gameboard.js';
 import { SkyView } from '../../render/sky.ts';
 import { VillageView } from '../../render/village.ts';
+import { ActorsView } from '../../render/actors.ts';
 
-// The world above the board. The sky is drawn on a canvas behind everything else in
-// it (src/render/sky.ts), and the village's buildings on another in front of the
-// sky (src/render/village.ts); the keeper, the monsters and the rest are still HTML.
+// The world above the board, drawn on canvases: the sky behind everything else
+// (src/render/sky.ts), the village's buildings in front of it (src/render/village.ts),
+// and the keeper, the monsters, the chests and what flies between them in front of
+// the buildings (src/render/actors.ts). The dragon, the Eclipse and a few effects
+// are still HTML.
 
 var _el = null;
 var sky = null;
 var village = null;
+var actors = null;
 
 function el() {
 	if(_el == null) {
@@ -17,6 +21,7 @@ function el() {
 		G.addToBoard(_el);
 		makeSky();
 		makeVillage();
+		makeActors();
 	}
 	return _el;
 }
@@ -54,6 +59,22 @@ function makeVillage() {
 	village.start();
 }
 
+function makeActors() {
+	var canvas = G.make('actorsCanvas', 'canvas').insertAfter(_el.children('.villageCanvas'));
+	if(actors != null) {
+		actors.stop();
+	}
+	actors = new ActorsView(canvas[0], { width: _el.width(), height: _el.height() });
+	// The keeper wears their night sprite by night; a carried block takes its tiles' colour
+	var page = document.body.classList;
+	actors.setNight(page.contains('night'), false);
+	actors.beforeDraw = function() {
+		actors.setNight(page.contains('night'));
+		actors.levels = BoardGraphics.levels();
+	};
+	actors.start();
+}
+
 export default {
 	init: function() {
 		_el = null;
@@ -84,5 +105,10 @@ export default {
 	village: function() {
 		el();
 		return village;
+	},
+
+	actors: function() {
+		el();
+		return actors;
 	}
 };

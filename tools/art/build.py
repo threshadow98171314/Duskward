@@ -1,4 +1,5 @@
-"""Assembles the game's sprite sheets in public/img.
+"""Assembles the game's sprite sheets in public/img, and the list of where every
+sprite is on them (src/content/sprites.json), which the game draws from.
 
 Each sheet starts from the original Gridland art kept in tools/art/legacy, and
 new Duskward sprites are pasted over it or appended to it. As the art overhaul
@@ -6,6 +7,7 @@ goes on, more of every sheet is replaced with new sprites.
 
 Usage: python tools/art/build.py
 """
+import json
 import pathlib
 
 import buildings
@@ -21,6 +23,7 @@ from pngio import read_png, write_png
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 LEGACY = ROOT / "tools" / "art" / "legacy"
 OUT = ROOT / "public" / "img"
+SPRITE_LIST = ROOT / "src" / "content" / "sprites.json"
 
 TILE = 52
 NIGHT_TILES = 467  # matches the night background offsets in main.css
@@ -61,26 +64,36 @@ def build_tiles():
     return sheet
 
 
-# Sprite offsets and levels of each building, in the order of graphics/sprites.js
+# Each building's sprite: where its rows start, how to draw a level, and how many levels
 BUILDING_ROWS = [
-    (0, village.blacksmith, 8),
-    (640, village.bricklayer, 4),
-    (960, village.sawmill, 8),
-    (1600, village.shack, 4),
-    (1920, lambda level: village.tower(), 5),  # only the first row is used
-    (2320, village.weaver, 4),
-    (LIGHTHOUSE_OFFSET, buildings.lighthouse, 3),
-    (ALTAR_OFFSET, buildings.altar, 3),
+    ("blacksmith", 0, village.blacksmith, 8),
+    ("bricklayer", 640, village.bricklayer, 4),
+    ("sawmill", 960, village.sawmill, 8),
+    ("shack", 1600, village.shack, 4),
+    ("tower", 1920, lambda level: village.tower(), 5),  # only the first row is used
+    ("weaver", 2320, village.weaver, 4),
+    ("lighthouse", LIGHTHOUSE_OFFSET, buildings.lighthouse, 3),
+    ("altar", ALTAR_OFFSET, buildings.altar, 3),
 ]
 
 
 def build_buildings():
     sheet = resized([], 60, ALTAR_OFFSET + 3 * BUILDING_HEIGHT)
-    for offset, draw, levels in BUILDING_ROWS:
+    for _, offset, draw, levels in BUILDING_ROWS:
         for level in range(1, levels + 1):
             paste(sheet, draw(level).to_rgba(), 0, offset + (level - 1) * BUILDING_HEIGHT)
     return sheet
 
+
+# Sprites on icons.png the game draws by name: (x, y, frame width, frame height, frames, rows).
+# The interface's own icons are placed by the style sheets for now.
+ICON_SPRITES = {
+    "dragoneffects": (0, 88, 30, 44, 4, 2),  # original art: the ice block, then fire
+    "gem": (0, 183, 12, 24, 4, 4),  # a row for each number of shards
+    "star": (0, 875, 16, 16, 4, 1),
+    "sun": (0, 891, 30, 30, 4, 2),  # the sun, then the moon
+    "treasurechest": (0, 1011, 26, 26, 1, 2),  # closed, then open
+}
 
 # Areas of icons.png that are redrawn; the rest (volume sliders, dragon effects) is still original
 ICON_AREAS = [(0, 0, 270, 60), (0, 60, 140, 88), (0, 183, 48, 279), (0, 279, 90, 335),
@@ -141,6 +154,38 @@ def build_dragon():
     return sheet
 
 
+def sprite_list(sizes):
+    """Where every sprite the game draws by name is, on the sheets just written."""
+    sprites = {}
+
+    def add(name, sheet, x, y, width, height, frames=1, rows=1):
+        sprites[name] = dict(sheet=sheet, x=x, y=y, width=width, height=height, frames=frames, rows=rows)
+
+    for name, offset, _, levels in BUILDING_ROWS:
+        add(name, "buildings", 0, offset, 60, BUILDING_HEIGHT, rows=levels)
+    for name, (offset, width, height, rows) in {**monsters.SHEET, **monsters.NEW}.items():
+        add(name, "monsters", 0, offset, width, height, frames=4, rows=rows)
+    add("dude", "monsters", 0, DUDE_OFFSET, dude.W * 2, dude.H * 2, frames=dude.FRAMES, rows=dude.ROWS)
+    add("dudenight", "monsters", 0, DUDE_NIGHT_OFFSET, dude.W * 2, dude.H * 2, frames=dude.FRAMES, rows=dude.ROWS)
+    add("dragon", "dragonsprite", 0, 0, 204, 164, frames=4, rows=10)
+    add("dragonhead", "dragonsprite", 0, 1640, 81, 30, frames=3, rows=2)  # facing left, then right
+    add("dragonneck", "dragonsprite", 0, 1700, 24, 24, rows=2)
+    for name, (x, y, width, height, frames, rows) in ICON_SPRITES.items():
+        add(name, "icons", x, y, width, height, frames=frames, rows=rows)
+    for name, x in TILE_COLUMNS.items():
+        add("tile." + name, "tiles", x, 0, TILE, TILE, rows=resources.LEVELS[name])
+        add("tile." + name + ".night", "tiles", x, NIGHT_TILES, TILE, TILE, rows=resources.LEVELS[name])
+    for name in ("grain", "clay", "cloth"):
+        add("tile." + name + ".dragon", "tiles", TILE_COLUMNS[name], DRAGON_TILES, TILE, TILE)
+    portrait = portraits.SIZE * portraits.SCALE
+    add("portrait", "portraits", 0, 0, portrait, portrait, frames=len(portraits.PORTRAITS))
+
+    used = {sprite["sheet"] for sprite in sprites.values()}
+    sheets = {name[:-len(".png")]: dict(file="img/" + name, width=size[0], height=size[1])
+              for name, size in sizes.items() if name[:-len(".png")] in used}
+    return dict(sheets=sheets, sprites=sprites)
+
+
 def main():
     sheets = (
         ("dragonsprite.png", build_dragon),
@@ -154,9 +199,14 @@ def main():
         ("mountains.png", lambda: scenery.mountains().to_rgba()),
         ("stars.png", lambda: scenery.stars().to_rgba()),
     )
+    sizes = {}
     for name, build in sheets:
-        size = write_png(OUT / name, build())
+        pixels = build()
+        sizes[name] = (len(pixels[0]), len(pixels))
+        size = write_png(OUT / name, pixels)
         print(f"wrote public/img/{name} ({size} bytes)")
+    SPRITE_LIST.write_text(json.dumps(sprite_list(sizes), indent="\t") + "\n", encoding="utf-8", newline="\n")
+    print(f"wrote {SPRITE_LIST.relative_to(ROOT).as_posix()}")
 
 
 if __name__ == "__main__":

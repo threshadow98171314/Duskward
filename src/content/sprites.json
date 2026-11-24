@@ -1,0 +1,513 @@
+{
+	"sheets": {
+		"dragonsprite": {
+			"file": "img/dragonsprite.png",
+			"width": 816,
+			"height": 1748
+		},
+		"portraits": {
+			"file": "img/portraits.png",
+			"width": 192,
+			"height": 48
+		},
+		"tiles": {
+			"file": "img/tiles.png",
+			"width": 364,
+			"height": 988
+		},
+		"buildings": {
+			"file": "img/buildings.png",
+			"width": 60,
+			"height": 3120
+		},
+		"monsters": {
+			"file": "img/monsters.png",
+			"width": 288,
+			"height": 5752
+		},
+		"icons": {
+			"file": "img/icons.png",
+			"width": 528,
+			"height": 1063
+		}
+	},
+	"sprites": {
+		"blacksmith": {
+			"sheet": "buildings",
+			"x": 0,
+			"y": 0,
+			"width": 60,
+			"height": 80,
+			"frames": 1,
+			"rows": 8
+		},
+		"bricklayer": {
+			"sheet": "buildings",
+			"x": 0,
+			"y": 640,
+			"width": 60,
+			"height": 80,
+			"frames": 1,
+			"rows": 4
+		},
+		"sawmill": {
+			"sheet": "buildings",
+			"x": 0,
+			"y": 960,
+			"width": 60,
+			"height": 80,
+			"frames": 1,
+			"rows": 8
+		},
+		"shack": {
+			"sheet": "buildings",
+			"x": 0,
+			"y": 1600,
+			"width": 60,
+			"height": 80,
+			"frames": 1,
+			"rows": 4
+		},
+		"tower": {
+			"sheet": "buildings",
+			"x": 0,
+			"y": 1920,
+			"width": 60,
+			"height": 80,
+			"frames": 1,
+			"rows": 5
+		},
+		"weaver": {
+			"sheet": "buildings",
+			"x": 0,
+			"y": 2320,
+			"width": 60,
+			"height": 80,
+			"frames": 1,
+			"rows": 4
+		},
+		"lighthouse": {
+			"sheet": "buildings",
+			"x": 0,
+			"y": 2640,
+			"width": 60,
+			"height": 80,
+			"frames": 1,
+			"rows": 3
+		},
+		"altar": {
+			"sheet": "buildings",
+			"x": 0,
+			"y": 2880,
+			"width": 60,
+			"height": 80,
+			"frames": 1,
+			"rows": 3
+		},
+		"demon": {
+			"sheet": "monsters",
+			"x": 0,
+			"y": 0,
+			"width": 72,
+			"height": 86,
+			"frames": 4,
+			"rows": 7
+		},
+		"earthelemental": {
+			"sheet": "monsters",
+			"x": 0,
+			"y": 1434,
+			"width": 58,
+			"height": 74,
+			"frames": 4,
+			"rows": 7
+		},
+		"fireelemental": {
+			"sheet": "monsters",
+			"x": 0,
+			"y": 1952,
+			"width": 30,
+			"height": 41,
+			"frames": 4,
+			"rows": 7
+		},
+		"harmour": {
+			"sheet": "monsters",
+			"x": 0,
+			"y": 2239,
+			"width": 70,
+			"height": 49,
+			"frames": 4,
+			"rows": 7
+		},
+		"imp": {
+			"sheet": "monsters",
+			"x": 0,
+			"y": 2582,
+			"width": 30,
+			"height": 60,
+			"frames": 4,
+			"rows": 7
+		},
+		"lich": {
+			"sheet": "monsters",
+			"x": 0,
+			"y": 3002,
+			"width": 41,
+			"height": 60,
+			"frames": 4,
+			"rows": 9
+		},
+		"lizardman": {
+			"sheet": "monsters",
+			"x": 0,
+			"y": 3542,
+			"width": 32,
+			"height": 35,
+			"frames": 4,
+			"rows": 7
+		},
+		"rat": {
+			"sheet": "monsters",
+			"x": 0,
+			"y": 3787,
+			"width": 40,
+			"height": 13,
+			"frames": 4,
+			"rows": 7
+		},
+		"skeleton": {
+			"sheet": "monsters",
+			"x": 0,
+			"y": 3878,
+			"width": 27,
+			"height": 32,
+			"frames": 4,
+			"rows": 7
+		},
+		"spider": {
+			"sheet": "monsters",
+			"x": 0,
+			"y": 4102,
+			"width": 60,
+			"height": 38,
+			"frames": 4,
+			"rows": 7
+		},
+		"warlock": {
+			"sheet": "monsters",
+			"x": 0,
+			"y": 4368,
+			"width": 24,
+			"height": 37,
+			"frames": 4,
+			"rows": 7
+		},
+		"waterelemental": {
+			"sheet": "monsters",
+			"x": 0,
+			"y": 4627,
+			"width": 53,
+			"height": 39,
+			"frames": 4,
+			"rows": 7
+		},
+		"zombie": {
+			"sheet": "monsters",
+			"x": 0,
+			"y": 4900,
+			"width": 16,
+			"height": 32,
+			"frames": 4,
+			"rows": 7
+		},
+		"shade": {
+			"sheet": "monsters",
+			"x": 0,
+			"y": 5124,
+			"width": 20,
+			"height": 34,
+			"frames": 4,
+			"rows": 9
+		},
+		"lampmoth": {
+			"sheet": "monsters",
+			"x": 0,
+			"y": 5430,
+			"width": 18,
+			"height": 14,
+			"frames": 4,
+			"rows": 7
+		},
+		"duskcrow": {
+			"sheet": "monsters",
+			"x": 0,
+			"y": 5528,
+			"width": 24,
+			"height": 16,
+			"frames": 4,
+			"rows": 7
+		},
+		"eclipsespawn": {
+			"sheet": "monsters",
+			"x": 0,
+			"y": 5640,
+			"width": 16,
+			"height": 16,
+			"frames": 4,
+			"rows": 7
+		},
+		"dude": {
+			"sheet": "monsters",
+			"x": 0,
+			"y": 602,
+			"width": 34,
+			"height": 32,
+			"frames": 4,
+			"rows": 13
+		},
+		"dudenight": {
+			"sheet": "monsters",
+			"x": 0,
+			"y": 1018,
+			"width": 34,
+			"height": 32,
+			"frames": 4,
+			"rows": 13
+		},
+		"dragon": {
+			"sheet": "dragonsprite",
+			"x": 0,
+			"y": 0,
+			"width": 204,
+			"height": 164,
+			"frames": 4,
+			"rows": 10
+		},
+		"dragonhead": {
+			"sheet": "dragonsprite",
+			"x": 0,
+			"y": 1640,
+			"width": 81,
+			"height": 30,
+			"frames": 3,
+			"rows": 2
+		},
+		"dragonneck": {
+			"sheet": "dragonsprite",
+			"x": 0,
+			"y": 1700,
+			"width": 24,
+			"height": 24,
+			"frames": 1,
+			"rows": 2
+		},
+		"dragoneffects": {
+			"sheet": "icons",
+			"x": 0,
+			"y": 88,
+			"width": 30,
+			"height": 44,
+			"frames": 4,
+			"rows": 2
+		},
+		"gem": {
+			"sheet": "icons",
+			"x": 0,
+			"y": 183,
+			"width": 12,
+			"height": 24,
+			"frames": 4,
+			"rows": 4
+		},
+		"star": {
+			"sheet": "icons",
+			"x": 0,
+			"y": 875,
+			"width": 16,
+			"height": 16,
+			"frames": 4,
+			"rows": 1
+		},
+		"sun": {
+			"sheet": "icons",
+			"x": 0,
+			"y": 891,
+			"width": 30,
+			"height": 30,
+			"frames": 4,
+			"rows": 2
+		},
+		"treasurechest": {
+			"sheet": "icons",
+			"x": 0,
+			"y": 1011,
+			"width": 26,
+			"height": 26,
+			"frames": 1,
+			"rows": 2
+		},
+		"tile.grain": {
+			"sheet": "tiles",
+			"x": 0,
+			"y": 0,
+			"width": 52,
+			"height": 52,
+			"frames": 1,
+			"rows": 4
+		},
+		"tile.grain.night": {
+			"sheet": "tiles",
+			"x": 0,
+			"y": 467,
+			"width": 52,
+			"height": 52,
+			"frames": 1,
+			"rows": 4
+		},
+		"tile.stone": {
+			"sheet": "tiles",
+			"x": 52,
+			"y": 0,
+			"width": 52,
+			"height": 52,
+			"frames": 1,
+			"rows": 9
+		},
+		"tile.stone.night": {
+			"sheet": "tiles",
+			"x": 52,
+			"y": 467,
+			"width": 52,
+			"height": 52,
+			"frames": 1,
+			"rows": 9
+		},
+		"tile.wood": {
+			"sheet": "tiles",
+			"x": 104,
+			"y": 0,
+			"width": 52,
+			"height": 52,
+			"frames": 1,
+			"rows": 9
+		},
+		"tile.wood.night": {
+			"sheet": "tiles",
+			"x": 104,
+			"y": 467,
+			"width": 52,
+			"height": 52,
+			"frames": 1,
+			"rows": 9
+		},
+		"tile.clay": {
+			"sheet": "tiles",
+			"x": 156,
+			"y": 0,
+			"width": 52,
+			"height": 52,
+			"frames": 1,
+			"rows": 4
+		},
+		"tile.clay.night": {
+			"sheet": "tiles",
+			"x": 156,
+			"y": 467,
+			"width": 52,
+			"height": 52,
+			"frames": 1,
+			"rows": 4
+		},
+		"tile.cloth": {
+			"sheet": "tiles",
+			"x": 208,
+			"y": 0,
+			"width": 52,
+			"height": 52,
+			"frames": 1,
+			"rows": 4
+		},
+		"tile.cloth.night": {
+			"sheet": "tiles",
+			"x": 208,
+			"y": 467,
+			"width": 52,
+			"height": 52,
+			"frames": 1,
+			"rows": 4
+		},
+		"tile.mana": {
+			"sheet": "tiles",
+			"x": 260,
+			"y": 0,
+			"width": 52,
+			"height": 52,
+			"frames": 1,
+			"rows": 1
+		},
+		"tile.mana.night": {
+			"sheet": "tiles",
+			"x": 260,
+			"y": 467,
+			"width": 52,
+			"height": 52,
+			"frames": 1,
+			"rows": 1
+		},
+		"tile.lantern": {
+			"sheet": "tiles",
+			"x": 312,
+			"y": 0,
+			"width": 52,
+			"height": 52,
+			"frames": 1,
+			"rows": 3
+		},
+		"tile.lantern.night": {
+			"sheet": "tiles",
+			"x": 312,
+			"y": 467,
+			"width": 52,
+			"height": 52,
+			"frames": 1,
+			"rows": 3
+		},
+		"tile.grain.dragon": {
+			"sheet": "tiles",
+			"x": 0,
+			"y": 936,
+			"width": 52,
+			"height": 52,
+			"frames": 1,
+			"rows": 1
+		},
+		"tile.clay.dragon": {
+			"sheet": "tiles",
+			"x": 156,
+			"y": 936,
+			"width": 52,
+			"height": 52,
+			"frames": 1,
+			"rows": 1
+		},
+		"tile.cloth.dragon": {
+			"sheet": "tiles",
+			"x": 208,
+			"y": 936,
+			"width": 52,
+			"height": 52,
+			"frames": 1,
+			"rows": 1
+		},
+		"portrait": {
+			"sheet": "portraits",
+			"x": 0,
+			"y": 0,
+			"width": 48,
+			"height": 48,
+			"frames": 4,
+			"rows": 1
+		}
+	}
+}

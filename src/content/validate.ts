@@ -6,6 +6,7 @@ import type { BuildingDef, Effect, ItemDef, LootRarity, ResourceDef, SkillDef, S
 import type { BlessingDef, Boon } from '../core/blessings.ts';
 import type { BossDef, MonsterDef } from '../core/field.ts';
 import type { Call, OmenDef } from '../core/night.ts';
+import type { Sprite, SpriteSheet } from './sprites.ts';
 
 export interface Content {
 	resources: Record<string, ResourceDef>;
@@ -26,6 +27,9 @@ export interface Content {
 	blessings: Record<string, BlessingDef>;
 	omens: Record<string, OmenDef>;
 	quietOmen: string;
+	// Where the sprites are drawn from
+	sheets: Record<string, SpriteSheet>;
+	sprites: Record<string, Sprite>;
 }
 
 // Returns every problem found; an empty list means the content is sound
@@ -82,8 +86,21 @@ export function validateContent(content: Content): string[] {
 		}
 	}
 
+	for (const [name, sprite] of Object.entries(content.sprites)) {
+		const sheet = content.sheets[sprite.sheet];
+		if (sheet === undefined) {
+			problem('sprite ' + name, 'is on unknown sheet ' + sprite.sheet);
+		} else if (!(sprite.width > 0 && sprite.height > 0 && sprite.frames >= 1 && sprite.rows >= 1 && sprite.x >= 0 && sprite.y >= 0 &&
+			sprite.x + sprite.width * sprite.frames <= sheet.width && sprite.y + sprite.height * sprite.rows <= sheet.height)) {
+			problem('sprite ' + name, 'does not fit on its sheet');
+		}
+	}
+
 	for (const [key, building] of buildings) {
 		const where = 'building ' + key;
+		if (content.sprites[building.spriteName] === undefined) {
+			problem(where, 'unknown sprite ' + building.spriteName);
+		}
 		for (const [resource, blocks] of Object.entries(building.cost)) {
 			if (!resourceNames.has(resource)) {
 				problem(where, 'costs unknown resource ' + resource);
@@ -134,6 +151,12 @@ export function validateContent(content: Content): string[] {
 			if (!(monster[stat] > 0)) {
 				problem(where, stat + ' should be above zero');
 			}
+		}
+		const sprite = content.sprites[monster.sprite];
+		if (sprite === undefined) {
+			problem(where, 'unknown sprite ' + monster.sprite);
+		} else if (sprite.width !== monster.width || sprite.height !== monster.height) {
+			problem(where, `is ${monster.width}×${monster.height} but its sprite is ${sprite.width}×${sprite.height}`);
 		}
 		const attacks = monster.parts.filter((part) => part.type === 'melee' || part.type === 'ranged');
 		if (attacks.length !== 1) {

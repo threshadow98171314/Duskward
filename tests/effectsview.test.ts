@@ -45,6 +45,19 @@ describe('the effects', () => {
 		expect(view.effects).toEqual([]);
 	});
 
+	it('flash and send things flying for as long as each is told', () => {
+		const { view, clock } = effectsView();
+		view.flash(100, 85, 5, 30, 400);
+		view.bolt('fireball', { x: 400, y: 50 }, { x: 100, y: 85 }, 300);
+		clock.now = 300;
+		view.draw();
+		expect(view.effects.map((effect) => effect.kind)).toEqual(['flash']);
+		expect(view.progress(view.effects[0], clock.now)).toBeCloseTo(0.75);
+		clock.now = 400;
+		view.draw();
+		expect(view.effects).toEqual([]);
+	});
+
 	it('shake the board hardest at first, and leave it still once it is over', () => {
 		const { view, clock } = effectsView();
 		const moves: [number, number][] = [];

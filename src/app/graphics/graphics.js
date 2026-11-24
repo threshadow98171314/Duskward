@@ -130,8 +130,6 @@ function handleDrawRequest(requestString, options) {
 	}, time);
 }
 
-// Tiles of these kinds fade out, change their pictures (the board's classes say
-// each kind's level, and whether the dragon has changed them), and fade back in
 // The sun and moon take this long to move, and rise from the far left of the sky
 var CELESTIAL_MOVE = 500;
 var SKY_EDGE = 15;
@@ -141,6 +139,9 @@ var BUILDING_WIDTH = 60;
 // How far in front of the keeper their blows land
 var BLOW_REACH = 14;
 var raising = new Map();
+// The dragon shows up this high in the sky, and the ground shakes this hard as it roars
+var DRAGON_FLIES_FROM = 200;
+var ROAR_SHAKE = 8;
 
 // Sparks fly where the keeper's blow lands, in front of them
 function keeperHit() {
@@ -155,6 +156,8 @@ function buildingStands(building) {
 	Graphics.effects().dust(building.p(), BUILDING_WIDTH);
 }
 
+// Tiles of these kinds fade out, change their pictures (the board's classes say
+// each kind's level, and whether the dragon has changed them), and fade back in
 function changeTiles(tileTypes, classToAdd, classToRemove) {
 	BoardGraphics.hideKinds(tileTypes);
 	setTimeout(function() {
@@ -982,7 +985,6 @@ var Graphics = {
 			notifier = $('<div>').addClass('dayNotifier').text(txt).appendTo('.world');
 		}, 1400);
 		setTimeout(function() {
-			$('.monster, .treasureChest').remove();
 			notifier.addClass('hidden');
 		}, 3000);
 		setTimeout(function() {
@@ -1033,20 +1035,18 @@ var Graphics = {
 		}
 	},
 	
+	// The dragon flies down onto the field, the board tilting under it, and roars
 	landDragon: function(dragon, cb) {
 		isDragon = true;
 		dragon.setPosture('idle');
-		dragon.el().addClass('flying');
-		dragon.p(dragon.options.flip ? 50 : this.worldWidth() - 50);
+		dragon.p(dragon.view.x);
 		dragon.animation(1, true, function(frame) {
 			if(frame == 2) {
 				EventManager.trigger('flap');
 			}
 		});
 		dragon.setNeckMount({ x: 50, y: 47 });
-		this.addToWorld(dragon);
-		dragon.el().css('left'); // force redraw
-		dragon.el().removeClass('flying');
+		dragon.comeDown(DRAGON_FLIES_FROM, 1000);
 		var tiltClass = dragon.options.flip ? 'flipTilted' : 'tilted';
 		setTimeout(function() {
 			EventManager.trigger('landDragon');
@@ -1075,8 +1075,8 @@ var Graphics = {
 			dragon.setPosture('windup', 500);
 		}, 1500);
 		setTimeout(function() { EventManager.trigger('roar'); dragon.setPosture('roar', 500); }, 2000);
-		setTimeout(function() { BoardGraphics.el().addClass('shaking'); }, 2500);
-		setTimeout(function() { BoardGraphics.el().removeClass('shaking'); dragon.setPosture('idle', 500); }, 3500);
+		setTimeout(function() { Graphics.effects().shake(ROAR_SHAKE, 1000); }, 2500);
+		setTimeout(function() { dragon.setPosture('idle', 500); }, 3500);
 		if(cb) {
 			setTimeout(cb, 4000);
 		}

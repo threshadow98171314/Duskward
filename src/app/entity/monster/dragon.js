@@ -1,105 +1,32 @@
 import $ from '../../../vendor/jquery.js';
 import Monster from './monster.js';
 import G from '../../graphics/graphics.js';
-import Sprites from '../../graphics/sprites.js';
+import WorldGraphics from '../../graphics/world.js';
 import EventManager from '../../eventmanager.js';
+import { DragonView } from '../../../render/dragon.ts';
 
-var ANIMATION_ROWS = 5;
 var THRASH_SPEED = 400;
+// Fire bursts this high off the ground, where the keeper stands
+var BURST_HEIGHT = 25;
 
-var postureSpeedStylesheet = null;
-var headMount = { x: 20, y: 97 };
-var posture = {
-	stretch: ['close', [0, -10], [0, -10], [0, -10], [0, -10]],
-	idle: ['close', [80, -10], [15, -10], [-50, -10], [-50, -10]],
-	windup: ['close', [100, -14], [20, -14], [-100, -10], [-19, -10]],
-	roar: ['open', [40, -14], [0, -14], [0, -14], [-22, -8]],
-	aim: ['close', [80, -10], [15, -10], [-50, -10], ['target', -10]],
-	aimClose: ['close-fast', [80, -10], [15, -10], [-50, -10], ['target', -10]],
-	aimOpen: ['open', [80, -10], [15, -10], [-50, -10], ['target', -10]],
-	shoot: ['open-fast', [80, -10], [15, -10], [-50, -10], ['target', -5]],
-	aimbite: ['open', [80, -17], [-30, -15], [-30, -15], ['target', -10]],
-	bite: ['close-fast', [65, -17], [-62, -17], [-23, -15], ['target', -15]],
-	thrashup: ['open', [20, -10], [20, -10], [20, -10], [20, -10]],
-	thrashdown: ['open', [-20, -10], [-20, -10], [-20, -10], [-20, -10]]
-};
-
-var _headWidth = null, _headHeight = null, _width = null;
-
-function setSegmentPosture(segment, pos, flip) {
-	var r = flip ? -pos[0] : pos[0];
-	var t = flip ? -pos[1] : pos[1];
-	var cssValue = 'rotate(' + r + 'deg) translateX(' + t + 'px)';
-	segment.css({
-		'transform': cssValue,
-		'-webkit-transform': cssValue,
-		'-moz-transform': cssValue,
-		'-ms-transform': cssValue,
-		'-o-transform': cssValue
-	});
+// A burst of fire on the ground
+function boom(x) {
+	G.effects().flash(x, G.worldHeight() - BURST_HEIGHT, 5, 30, 400);
 }
 
-function rad(deg) {
-    return deg * Math.PI/180;
-}
-
-function deg(rad) {
-	return rad * 180/Math.PI;
-}
-
-function rotate(v, theta) {
-	var tRad = rad(theta);
-    return {
-        x: v.x*Math.cos(tRad) - v.y*Math.sin(tRad),
-        y: v.x*Math.sin(tRad) + v.y*Math.cos(tRad),
-        r: v.r + theta
-    };
-}
-
-function translate(v, dx, dy) {
-    return {
-        x: v.x + dx,
-        y: v.y + dy,
-        r: v.r
-    };
-}
-
-function getTargetRotation(pos, targetPos) {
-	var dx = Math.abs(pos.x - targetPos.x);
-	var dy = Math.abs(pos.y - targetPos.y);
-	var theta = Math.atan(dy/dx);
-	return (this.options.flip ? 1 : -1) * pos.r - deg(theta);
-}
-
-function explodeSegment(segment) {
-	var explosion = G.make('segmentExplosion').appendTo(segment);
-	segment.addClass('gone');
-	explosion.css('left');
-	explosion.addClass('exploded');
-	setTimeout(function() {
-		segment.remove();
-	}, 400);
-}
-
-// The Fallen Dawnwyrm as drawn: its body, neck and head, and the show of each of
-// its strikes. What it does and when is up to the field (src/core/field.ts).
+// The Fallen Dawnwyrm as the rest of the game knows it: its health, and the show of
+// each of its strikes. What it does and when is up to the field (src/core/field.ts);
+// src/render/dragon.ts draws it, and the effects (src/render/effects.ts) what it
+// shoots and the flashes of what blows apart.
 var Dragon = function(options) {
 	this.options = $.extend({}, this.options, {}, options);
 	this.boss = this.options.boss;
 	this.timers = [];
 
 	this.hp(this.getMaxHealth());
-	this.headFrame = 0;
-	this.headState = 'close';
 	this.target = this.options.target;
 	this.isBoss = true;
-	
-	if(!postureSpeedStylesheet) {
-		var style = document.createElement('style');
-		style.appendChild(document.createTextNode("")); // Stupid Webkit
-		document.head.appendChild(style);
-		postureSpeedStylesheet = style.sheet;
-	}
+	this.view = new DragonView(this.boss ? this.boss.x : 0, !!this.options.flip, G.worldHeight());
 };
 Dragon.prototype = new Monster({
 	monsterClass: 'dragon',
@@ -109,196 +36,71 @@ Dragon.prototype = new Monster({
 });
 Dragon.constructor = Dragon;
 
-Dragon.prototype.el = function() {
-	if(this._el == null) {
-		this._segments = [];
-		this._el = Monster.prototype.el.call(this);
-		if(this.options.flip) this._el.addClass('flip');
-		this._segments.push(G.make('neck').appendTo(this._el));
-		this._segments.push(G.make('neck').appendTo(this._segments[0]));
-		this._segments.push(G.make('neck').appendTo(this._segments[1]));
-		this._segments.push(G.make('head').appendTo(this._segments[2]));
-	}
-	return this._el;
-};
-
-Dragon.prototype.getHead = function() {
-	return this._segments[3];
-};
-
-Dragon.prototype.headHeight = function() {
-	if(!_headHeight) {
-		_headHeight = this._segments[3].height();
-	}
-	return _headHeight;
-};
-
-Dragon.prototype.headWidth = function() {
-	if(!_headWidth) {
-		_headWidth = this._segments[3].width();
-	}
-	return _headWidth;
-};
-
-Dragon.prototype.width = function() {
-	if(!_width) {
-		_width = this.el().width();
-	}
-	return _width;
-};
-
+// The body moves on a frame every step, and the jaws with it
 Dragon.prototype.animate = function() {
-	Monster.prototype.animate.call(this);
-	var inc = 1;
-	if(this.animateHead != null && this.animateHead.indexOf('-fast') > 0) {
-		this.animateHead = this.animateHead.substring(0, this.animateHead.indexOf('-fast'));
-		inc = 2;
-	}
-	if(this.animateHead != null && this.animateHead != this.headState) {
-		if(this.animateHead == 'open' && (this.headFrame += inc) >= 2) {
-			this.animateHead = null;
-			this.headState = this.animateHead;
-			this.headFrame = 2;
-		} else if(this.animateHead == 'close' && (this.headFrame -= inc) <= 0) {
-			this.animateHead = null;
-			this.headState = this.animateHead;
-			this.headFrame = 0;
+	if(++this.frame >= this.options.animationFrames) {
+		this.frame = 0;
+		if(this.tempAnimation != null) {
+			this.tempAnimation = null;
+			this.stepFunction = null;
 		}
-		var y = this.options.flip ? this.headHeight() : 0;
-		y += Sprites.getOffset('dragonhead');
-		G.updateSpritePos(
-			this._segments[3], 
-			this.headWidth() * this.headFrame, 
-			y
-		);
+	}
+	this.show();
+	this.view.stepJaw();
+};
+
+// Shows the frame the body is in, and does whatever goes with it
+Dragon.prototype.show = function() {
+	this.view.setBody((this.tempAnimation == null ? this.animationRow : this.tempAnimation) || 0, this.frame);
+	if(this.stepFunction) {
+		this.stepFunction(this.frame);
 	}
 };
 
 Dragon.prototype.animation = function(row, stopTempAnimations, stepFunction) {
-	row += this.options.flip ? ANIMATION_ROWS : 0;
-	Monster.prototype.animation.call(this, row, stopTempAnimations, stepFunction);
+	if(stopTempAnimations) {
+		this.tempAnimation = null;
+		this.stepFunction = null;
+	}
+	if(stepFunction) {
+		this.stepFunction = stepFunction;
+	}
+	this.animationRow = row;
+	this.frame = 0;
+	this.show();
 };
 
 Dragon.prototype.animationOnce = function(row, stepFunction) {
-	row += this.options.flip ? ANIMATION_ROWS : 0;
-	Monster.prototype.animationOnce.call(this, row, stepFunction);
+	this.tempAnimation = row;
+	this.frame = 0;
+	this.stepFunction = stepFunction || null;
+	this.show();
 };
 
+// Where the neck meets the body, as it moves with the wings; nothing puts it back
 Dragon.prototype.setNeckMount = function(pos) {
-	pos = pos || headMount;
-	var css = {
-		top: pos.y + 'px'
-	};
-	if(this.options.flip) {
-		css.right = pos.x + 'px';
-	} else {
-		css.left = pos.x + 'px';
-	}
-	this._segments[0].css(css);
+	this.view.mountAt(pos || null);
 };
 
-Dragon.prototype.explode = function(delay) {
-	var _this = this;
-	var segmentNum = _this._segments.length - 1;
-	(function doExplode() {
-		explodeSegment(_this._segments[segmentNum]);
-		EventManager.trigger('segmentExplode');
-		if(segmentNum-- > 0) {
-			setTimeout(doExplode, delay);
-		} else {
-			setTimeout(function() {
-				EventManager.trigger('dragonExplode');
-				var explosion = G.make('dragonExplosion').appendTo(_this.el());
-				explosion.css('left');
-				explosion.addClass('exploded');
-				_this.el().addClass('gone');
-				setTimeout(function() {
-					explosion.remove();
-					_this.el().remove();
-					_this.dead = true;
-					_this.action = null;
-					_this.gone = true;
-				}, 2000);
-			}, delay);
-		}
-	})();
+// Eases into a posture (at once without a speed), turning its head to the keeper
+// where the posture says so
+Dragon.prototype.setPosture = function(name, speed) {
+	this.view.pose(name, speed || 0, this.target ? this.target.p() : this.view.x);
 };
 
-Dragon.prototype.setPosture = function(p, speed) {
-	if(this.currentPosture == null || this.currentPosture != p) {
-		this.currentPosture = p;
-		var pos = posture[p];
-		if(pos) {
-			if(postureSpeedStylesheet.cssRules.length > 0) {
-				postureSpeedStylesheet.deleteRule(0);
-			}
-			if(postureSpeedStylesheet.addRule) {
-				postureSpeedStylesheet.addRule(
-					'.dragon .neck, .dragon .head', 
-					'transition-duration: ' + speed + 'ms',
-				0);
-			} else {
-				postureSpeedStylesheet.insertRule(
-					'.dragon .neck, .dragon .head {' +
-					'transition-duration: ' + speed + 'ms; }',
-				0);
-			}
-			
-			var headPos = { x: 0, y: 0, r: 0 };
-			var dynamicPos = null;
-			for(var i = this._segments.length; i > 0; i--) {
-				var r;
-				if(!isNaN(pos[i][0])) {
-					setSegmentPosture(this._segments[i - 1], pos[i], this.options.flip);
-					r = pos[i][0];
-				} else {
-					r = 0;
-					dynamicPos = pos[i];
-				}
+// Shows up high in the sky, and comes down onto the field in its own time
+Dragon.prototype.comeDown = function(height, duration) {
+	this.view.fly(height);
+	this.view.descend(duration);
+	WorldGraphics.actors().boss = this.view;
+};
 
-				if(i < this._segments.length) {
-					headPos = translate(rotate(headPos, r * (this.options.flip ? -1 : 1)), 
-							pos[i][1] * (this.options.flip ? -1 : 1), 0);
-				}
-			}
-			
-			var dragonPos = this.el().position();
-			this.animateHead = pos[0];
-			var left;
-			if(this.options.flip) {
-				left = dragonPos.left + this.width() - headMount.x + headPos.x - 20;
-			} else {
-				left = headMount.x + dragonPos.left + headPos.x + 10;
-			}
-			
-			this.absHeadPos = {
-				x: left,
-				y: headMount.y + dragonPos.top + headPos.y,
-				r: headPos.r
-			};
-			
-			if(dynamicPos != null) {
-				var newPos = [
-				    getTargetRotation.call(this, this.absHeadPos, { 
-				    	x: this.target.p(), 
-				    	y: G.worldHeight() - this.target.height()
-			    	}), 
-				    dynamicPos[1]
-			    ];
-				setSegmentPosture(this._segments[this._segments.length - 1], newPos, this.options.flip);
-				if(this.options.flip) {
-					this.absHeadPos.r = 180 + newPos[0] - headPos.r;
-				} else {
-					this.absHeadPos.r = -newPos[0] - headPos.r;
-				}
-			}
-			
-			setTimeout(function() {
-				if(postureSpeedStylesheet.cssRules.length > 0) {
-					postureSpeedStylesheet.deleteRule(0);
-				}
-			}, speed);
-		}
+// Takes it off the field: whatever it was doing stops, and it is no longer drawn
+Dragon.prototype.remove = function() {
+	this.cancel();
+	var actors = WorldGraphics.actors();
+	if(actors.boss === this.view) {
+		actors.boss = null;
 	}
 };
 
@@ -316,34 +118,17 @@ Dragon.prototype.cancel = function() {
 	this.timers = [];
 };
 
-function boom(x) {
-	var explosion = G.make('fireBoom').css('transform', 'translateX(' + x + 'px)');
-	G.addToWorld(explosion);
-	explosion.css('left');
-	explosion.addClass('exploded');
-	setTimeout(function() {
-		explosion.remove();
-	}, 400);
-}
-
 // A strike begins
 Dragon.prototype.strike = function(name, targetX) {
 	var _this = this;
+	var view = this.view;
+	var ground = G.worldHeight() - BURST_HEIGHT;
 	switch(name) {
 	case 'fireball':
 		this.setPosture('aim', 500);
 		this.later(function() {
-			var angle = -_this.absHeadPos.r;
-			var delta = -Math.sqrt(Math.pow(targetX - _this.absHeadPos.x, 2) + Math.pow(_this.absHeadPos.y, 2));
 			_this.setPosture('shoot', 200);
-			_this.projectile = G.make('dragonFireball').css({
-				top: _this.absHeadPos.y,
-				left: _this.absHeadPos.x,
-				transform: 'rotate(' + angle + 'deg) translateX(0)'
-			});
-			G.addToWorld(_this.projectile);
-			_this.projectile.css('left'); // Force redraw before animation
-			_this.projectile.css('transform', 'rotate(' + angle + 'deg) translateX(' + delta + 'px)');
+			G.effects().bolt('fireball', view.mouth(), { x: targetX, y: ground }, 300);
 			EventManager.trigger('shootFire');
 		}, 500);
 		break;
@@ -357,14 +142,10 @@ Dragon.prototype.strike = function(name, targetX) {
 	case 'fireBlast':
 		this.setPosture('aimClose', 100);
 		this.later(function() {
-			if(name == 'fireBlast') {
-				var reach = Math.sqrt(Math.pow(targetX - _this.absHeadPos.x, 2) + Math.pow(_this.absHeadPos.y, 2));
-				_this.beam = G.make('fireBlast').css('width', (reach - 60) + 'px');
-			} else {
-				_this.beam = G.make('iceBeam');
-			}
+			// Its breath gathers in its mouth, then goes out at the keeper
+			var mouth = view.mouth();
+			view.breathe(name == 'fireBlast' ? 'fire' : 'ice', Math.hypot(targetX - mouth.x, ground - mouth.y));
 			_this.setPosture('aimOpen', 500);
-			_this.getHead().append(_this.beam);
 			EventManager.trigger('charge');
 		}, 100);
 		break;
@@ -386,13 +167,9 @@ Dragon.prototype.strike = function(name, targetX) {
 
 // A strike lands where the keeper is now
 Dragon.prototype.land = function(name, targetX, hit) {
-	var beam = this.beam;
+	var view = this.view;
 	switch(name) {
 	case 'fireball':
-		if(this.projectile) {
-			this.projectile.remove();
-			this.projectile = null;
-		}
 		boom(targetX);
 		EventManager.trigger('explodeFire');
 		break;
@@ -404,11 +181,11 @@ Dragon.prototype.land = function(name, targetX, hit) {
 	case 'iceBeam':
 		EventManager.trigger('ice');
 		this.later(function() {
-			beam && beam.remove();
+			view.stopBreath();
 		}, 200);
 		break;
 	case 'fireBlast':
-		beam && beam.remove();
+		view.stopBreath();
 		boom(targetX);
 		break;
 	case 'wingBuffet':
@@ -417,7 +194,7 @@ Dragon.prototype.land = function(name, targetX, hit) {
 	}
 };
 
-// Thrashes, then comes apart segment by segment
+// Thrashes, then comes apart a piece at a time
 Dragon.prototype.dying = function() {
 	var _this = this;
 	var dir = 'up';
@@ -433,6 +210,34 @@ Dragon.prototype.dying = function() {
 		_this.exploding = true;
 		_this.explode(800);
 	}, 1500);
+};
+
+// The head, then each segment of the neck down to the body, blow apart one after
+// another; then the body bursts, and it is gone
+Dragon.prototype.explode = function(delay) {
+	var _this = this;
+	var view = this.view;
+	var segment = 3;
+	(function blowApart() {
+		var at = view.explode(segment);
+		G.effects().flash(at.x, at.y, 5, 40, 400);
+		EventManager.trigger('segmentExplode');
+		if(segment-- > 0) {
+			_this.later(blowApart, delay);
+			return;
+		}
+		_this.later(function() {
+			EventManager.trigger('dragonExplode');
+			var burst = view.vanish();
+			G.effects().flash(burst.x, burst.y, 5, 200, 2000);
+			_this.later(function() {
+				_this.remove();
+				_this.dead = true;
+				_this.action = null;
+				_this.gone = true;
+			}, 2000);
+		}, delay);
+	})();
 };
 
 export default Dragon;

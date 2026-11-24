@@ -65,12 +65,14 @@ describe('the field as drawn', () => {
 		expect(view.flightAt({ from: 300, to: 100, start: 0 }, 0)?.angle).toBe(Math.PI / 4);
 	});
 
-	it('clears the monsters and chests away at daybreak', () => {
+	it('clears the monsters, chests and fires away at daybreak', () => {
 		const { view } = actorsView();
 		const rat = {}, chest = {};
 		view.addMonster(rat, 'rat', 50, false);
 		view.addChest(chest, 60);
+		view.fires = [120, 200];
 		view.clear();
 		expect(view.monsterAt(rat)).toBeNull();
+		expect(view.fires).toEqual([]);
 	});
 });

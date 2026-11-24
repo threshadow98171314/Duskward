@@ -10,7 +10,6 @@ import Gem from './entity/gem.js';
 import Resources from './resources.js';
 import Celestial from './entity/celestial.js';
 import Dude from './entity/dude.js';
-import WorldEffect from './entity/worldeffect.js';
 import { register } from './modules.js';
 import Engine from './engine.js';
 import GameBoard from './gameboard.js';
@@ -41,13 +40,9 @@ var effects = {};
 var clock = Day.createClock();
 // How the dragon looks while it is on the field
 var theDragon = null;
-// Fires burning on the ground, by the field's id
-var fires = {};
 // The Eclipse's health as last drawn
 var eclipseHp = null;
 var stuff = [];
-// The ice the dragon's breath leaves around the keeper
-var iceBlock = null;
 var inTransition = false;
 var gameLoop = null;
 var prioritizedBuilding = null;
@@ -273,17 +268,6 @@ var World = {
 		console.log(recorded + " resources have been gained.");
 	},
 	
-	removeAllEffects: function(effectClass) {
-		var len = stuff.length;
-		while(len--) {
-			var thing = stuff[len];
-			if(thing instanceof WorldEffect && thing.options.effectClass == effectClass) {
-				stuff.splice(len, 1);
-				thing.el().remove();
-			}
-		}
-	},
-	
 	gameOver: function() {
 		GameState.save();
 		Graphics.notifySave();
@@ -458,19 +442,14 @@ function endStateEffect(effect) {
 	}
 }
 
+// The ice the dragon's breath locks the keeper in is drawn while the field has them
+// frozen (see fieldview.js)
 function freezeKeeper() {
 	dude.paused = true;
-	if(iceBlock == null) {
-		iceBlock = new WorldEffect({effectClass: 'iceBlock', spriteName: 'dragoneffects'});
-		iceBlock.p(dude.p());
-		EventManager.trigger('newEntity', [iceBlock]);
-	}
 }
 
 function thawKeeper() {
 	dude.paused = false;
-	EventManager.trigger('removeEntity', [iceBlock]);
-	iceBlock = null;
 }
 
 function handleNewEntity(entity) {
@@ -742,12 +721,6 @@ function handleFieldEvents(events) {
 				EventManager.trigger('endStateEffect', [Content.StateEffects.frozen]);
 			}
 			break;
-		case 'fireLit':
-			lightFire(event.fire);
-			break;
-		case 'fireOut':
-			putOutFire(event.fire.id);
-			break;
 		case 'bossDying':
 			if(event.boss.kind == 'eclipse') {
 				EclipseView.dying();
@@ -785,21 +758,6 @@ function buildingRaised(building) {
 	}
 }
 
-function lightFire(fire) {
-	var view = new WorldEffect({ effectClass: 'fire', spriteName: 'dragoneffects', row: 1, animationFrames: 4 });
-	view.p(fire.x);
-	fires[fire.id] = view;
-	EventManager.trigger('newEntity', [view]);
-}
-
-function putOutFire(id) {
-	var view = fires[id];
-	if(view) {
-		delete fires[id];
-		EventManager.trigger('removeEntity', [view]);
-	}
-}
-
 // The dragon finishes coming apart (it removes its own body) and leaves the heart of the dawn behind
 function bossGone(boss) {
 	if(boss.kind == 'eclipse') {
@@ -825,13 +783,9 @@ function dismissDragon(now) {
 	if(theDragon != null) {
 		handleRemoveEntity(theDragon);
 		if(now) {
-			theDragon.cancel();
-			theDragon.el().remove();
+			theDragon.remove();
 		}
 		theDragon = null;
-	}
-	for(var id in fires) {
-		putOutFire(id);
 	}
 }
 

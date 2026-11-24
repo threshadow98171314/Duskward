@@ -1,9 +1,10 @@
 // Effects over the world and the board, drawn on a canvas in front of both: the
 // bands of light when a lantern tile bursts, the board lighting up when a sun tile
 // does, the beam of a level gained, the blast of a bomb, the loot found in a chest,
-// the rays and the drops of shadow of the Eclipse's strikes, the bits flying off
-// cleared tiles, sparks, smoke and dust, and the whole board shaking when something
-// big goes off. Each effect plays out over its own time and
+// the rays and the drops of shadow of the Eclipse's strikes, the dragon's fireballs
+// and the flashes of what it blows up (and of itself, blown apart), the bits flying
+// off cleared tiles, sparks, smoke and dust, and the whole board shaking when
+// something big goes off. Each effect plays out over its own time and
 // is then forgotten. By night the ground lies in the dark, but for the light of the
 // keeper's lantern and of the village's windows.
 
@@ -33,10 +34,12 @@ export type Effect =
 	| { kind: 'blast'; x: number; start: number }
 	| { kind: 'loot'; name: string; x: number; start: number }
 	| { kind: 'ray'; look: RayLook; from: Point; to: Point; start: number; lasts: number }
-	| { kind: 'drops'; xs: number[]; y: number; start: number };
+	| { kind: 'drops'; xs: number[]; y: number; start: number }
+	| { kind: 'flash'; x: number; y: number; from: number; to: number; start: number; lasts: number }
+	| { kind: 'bolt'; sprite: string; from: Point; to: Point; start: number; lasts: number };
 
-// How long each kind of effect lasts; a ray lasts as long as it is told
-const LASTS: Record<Exclude<Effect['kind'], 'ray'>, number> = {
+// How long each kind of effect lasts, but for those that last as long as they are told
+const LASTS: Record<Exclude<Effect['kind'], 'ray' | 'flash' | 'bolt'>, number> = {
 	row: 700, column: 700, board: 700, beam: 1000, blast: 800, loot: 1500, drops: 700,
 };
 // The beam of a level gained grows down the sky, holds, then spreads across it and fades
@@ -105,7 +108,7 @@ function easeOut(t: number): number {
 }
 
 function lastsOf(effect: Effect): number {
-	return effect.kind === 'ray' ? effect.lasts : LASTS[effect.kind];
+	return 'lasts' in effect ? effect.lasts : LASTS[effect.kind];
 }
 
 export class EffectsView {
@@ -178,6 +181,17 @@ export class EffectsView {
 	// Drops of shadow falling from a height, one at each place along it
 	shadowRain(xs: number[], y: number): void {
 		this.effects.push({ kind: 'drops', xs, y, start: this.now() });
+	}
+
+	// A white flash swelling from one size to another and fading, within the world
+	flash(x: number, y: number, from: number, to: number, lasts: number): void {
+		this.effects.push({ kind: 'flash', x, y, from, to, start: this.now(), lasts });
+	}
+
+	// Something flying straight from one point to another, turned the way it flies
+	bolt(sprite: string, from: Point, to: Point, lasts: number): void {
+		this.sheet(SPRITES[sprite]?.sheet);
+		this.effects.push({ kind: 'bolt', sprite, from, to, start: this.now(), lasts });
 	}
 
 	// Particles from a point, in a colour
@@ -492,6 +506,34 @@ export class EffectsView {
 					ctx.roundRect(x - 2, effect.y + DROP_FALL * fall, 4, 8, 2);
 				}
 				ctx.fill();
+				break;
+			}
+			case 'flash': {
+				const grow = easeOut(t);
+				ctx.beginPath();
+				ctx.rect(0, 0, this.layout.width, world.height);
+				ctx.clip();
+				ctx.globalAlpha = 1 - grow;
+				ctx.fillStyle = 'white';
+				ctx.beginPath();
+				ctx.arc(effect.x, effect.y, effect.from + (effect.to - effect.from) * grow, 0, 2 * Math.PI);
+				ctx.fill();
+				break;
+			}
+			case 'bolt': {
+				const sprite = SPRITES[effect.sprite];
+				const sheet = this.ready(sprite?.sheet);
+				if (sprite === undefined || sheet === null) {
+					break;
+				}
+				const { from, to } = effect;
+				const angle = Math.atan2(to.y - from.y, to.x - from.x);
+				// Its first frame flies left, its second right
+				const right = Math.abs(angle) <= Math.PI / 2 ? 1 : 0;
+				ctx.translate(from.x + (to.x - from.x) * t, from.y + (to.y - from.y) * t);
+				ctx.rotate(right ? angle : angle - Math.PI);
+				ctx.drawImage(sheet, sprite.x + right * sprite.width, sprite.y, sprite.width, sprite.height,
+					-sprite.width / 2, -sprite.height / 2, sprite.width, sprite.height);
 				break;
 			}
 		}

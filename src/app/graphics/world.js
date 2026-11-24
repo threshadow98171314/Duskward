@@ -7,8 +7,8 @@ import { ActorsView } from '../../render/actors.ts';
 // The world above the board, drawn on canvases: the sky behind everything else
 // (src/render/sky.ts), the village's buildings in front of it (src/render/village.ts),
 // and the keeper, the monsters, the chests and what flies between them in front of
-// the buildings (src/render/actors.ts), and behind them the Eclipse while it is out
-// (src/render/eclipse.ts). The dragon and a few of its effects are still HTML.
+// the buildings (src/render/actors.ts), and behind them the dragon or the Eclipse
+// while it is out (src/render/dragon.ts, src/render/eclipse.ts).
 
 var _el = null;
 var sky = null;

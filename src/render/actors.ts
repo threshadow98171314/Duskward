@@ -1,7 +1,8 @@
 // The field's figures, drawn on a canvas in front of the village: the keeper (and
 // the block they carry), the monsters with their health bars and, for a while,
-// their bodies, the chests, and the arrows and fireballs in flight; and behind them
-// all, the boss in the sky while it is out (src/render/eclipse.ts). The field says
+// their bodies, the chests, the arrows and fireballs in flight, the fires the dragon
+// leaves on the ground and the ice it locks the keeper in; and behind them all, the
+// boss while it is out (src/render/eclipse.ts, src/render/dragon.ts). The field says
 // where everyone is after each tick and what frame they are in; the view glides
 // them there in time for the next tick.
 
@@ -61,6 +62,8 @@ const BAR_ABOVE = 15;
 const BAR_WIDTH = 32;
 const BAR_HEIGHT = 5;
 const FLYING_LIFT = 24;
+// Fire on the ground flickers to its next frame this often
+const FIRE_FRAME_MS = 200;
 // Arrows and fireballs: a second in the air, rising this high from this far off the ground
 const FLIGHT_MS = 1000;
 const FLIGHT_BASE = 20;
@@ -87,8 +90,11 @@ export class ActorsView {
 	levels: Record<string, number> = {};
 	// Called before every frame, to catch up with the page
 	beforeDraw: (() => void) | null = null;
-	// The boss in the sky while it is out, in front of the village but behind everyone
+	// The boss while it is out, in front of the village but behind everyone
 	boss: { draw(ctx: CanvasRenderingContext2D): void } | null = null;
+	// Where fires burn on the ground, and whether the keeper is locked in ice
+	fires: number[] = [];
+	frozen = false;
 
 	private readonly ctx: CanvasRenderingContext2D | null;
 	private readonly ratio: number;
@@ -114,7 +120,7 @@ export class ActorsView {
 			canvas.height = Math.round(size.height * this.ratio);
 			canvas.style.width = size.width + 'px';
 			canvas.style.height = size.height + 'px';
-			for (const name of ['dude', 'dudenight', 'treasurechest', 'fireball']) {
+			for (const name of ['dude', 'dudenight', 'treasurechest', 'fireball', 'dragoneffects']) {
 				this.sheet(SPRITES[name]?.sheet);
 			}
 		}
@@ -189,6 +195,7 @@ export class ActorsView {
 		this.monsters.clear();
 		this.chests.clear();
 		this.flights.length = 0;
+		this.fires = [];
 	}
 
 	setNight(night: boolean, fade = true): void {
@@ -270,6 +277,8 @@ export class ActorsView {
 				this.drawFigure(ctx, chest, chest.opened ? 1 : 0, 0, now);
 			}
 		}
+		ctx.globalAlpha = 1;
+		this.drawGround(ctx, 'fire', this.fires, Math.floor(now / FIRE_FRAME_MS));
 		for (const monster of this.monsters.values()) {
 			const alpha = at(monster.alpha, now);
 			if (alpha <= 0) {
@@ -296,8 +305,25 @@ export class ActorsView {
 			if (this.held !== null && top !== null) {
 				this.drawHeld(ctx, at(this.keeper.x, now), top, this.keeper.frame);
 			}
+			if (this.frozen) {
+				this.drawGround(ctx, 'ice', [at(this.keeper.x, now)], 0);
+			}
 		}
 		ctx.globalAlpha = 1;
+	}
+
+	// Fire burning on the ground, flickering through its frames, or the ice around the keeper
+	private drawGround(ctx: CanvasRenderingContext2D, kind: 'fire' | 'ice', xs: number[], frame: number): void {
+		const sprite = SPRITES.dragoneffects;
+		const sheet = this.ready(sprite?.sheet);
+		if (sprite === undefined || sheet === null) {
+			return;
+		}
+		const row = kind === 'ice' ? 0 : 1;
+		for (const x of xs) {
+			ctx.drawImage(sheet, sprite.x + (frame % sprite.frames) * sprite.width, sprite.y + row * sprite.height, sprite.width, sprite.height,
+				Math.round(x - sprite.width / 2), this.size.height - sprite.height, sprite.width, sprite.height);
+		}
 	}
 
 	private figure(sprite: string, x: number): Figure {

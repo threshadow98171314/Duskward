@@ -5,8 +5,8 @@ import TreasureChest from './entity/loot/treasurechest.js';
 import { carrying } from '../core/field.ts';
 
 // Draws the field (src/core/field.ts) after every tick: the keeper, the monsters and
-// the chests, where the field has them and in the frame of whatever they are doing
-// (src/render/actors.ts draws them). Sprite rows follow the original sheets: idle,
+// the chests, where the field has them and in the frame of whatever they are doing,
+// and the dragon's fires and ice (src/render/actors.ts draws them). Sprite rows follow the original sheets: idle,
 // walk right, walk left, attack right, attack left, die facing right, die facing
 // left, then rows of their own (the keeper's climb, hammer, carry and loot; the
 // lich's spell). The views of monsters and chests keep what the rest of the game
@@ -130,5 +130,10 @@ export default {
 			actors().updateMonster(view, { x: monster.x, row: monsterRow(monster), frame: monster.frame },
 				monster.hp / monster.maxHp, monster.hidden);
 		});
+
+		actors().fires = field.fires.map(function(fire) {
+			return fire.x;
+		});
+		actors().frozen = field.keeperFrozen;
 	}
 };

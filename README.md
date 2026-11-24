@@ -53,7 +53,7 @@ npm run dev
 | `src/app/locale/` | 語系檔（`zh-TW`、`en`），介面文字和劇情文字都在這裡 |
 | `src/core/` | 規則核心（TypeScript）：盤面、時間、收穫、成長、戰鬥數值、戰場（主角與怪物的移動和戰鬥）、可指定種子的亂數和模擬，不碰畫面 |
 | `src/content/` | 遊戲內容的資料：資源、建築、道具、法術與暮光技、怪物，以及美術工具寫出的精靈圖清單，載入時會檢查 |
-| `src/render/` | 新的繪製層（TypeScript、canvas）：盤面、天空、建築、角色、特效與蝕日者 |
+| `src/render/` | 新的繪製層（TypeScript、canvas）：盤面、天空、建築、角色、特效與兩個魔王 |
 | `src/platform/` | 用 TypeScript 新寫的平台層，目前有存檔版本與升級 |
 | `src/ui/` | 新的介面元件，目前有錯誤復原畫面 |
 | `src/vendor/` | 沿用的第三方程式：jQuery 2.0.3 和 Base64 |

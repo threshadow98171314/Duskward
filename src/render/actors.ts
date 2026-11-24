@@ -1,6 +1,7 @@
 // The field's figures, drawn on a canvas in front of the village: the keeper (and
 // the block they carry), the monsters with their health bars and, for a while,
-// their bodies, the chests, and the arrows and fireballs in flight. The field says
+// their bodies, the chests, and the arrows and fireballs in flight; and behind them
+// all, the boss in the sky while it is out (src/render/eclipse.ts). The field says
 // where everyone is after each tick and what frame they are in; the view glides
 // them there in time for the next tick.
 
@@ -86,6 +87,8 @@ export class ActorsView {
 	levels: Record<string, number> = {};
 	// Called before every frame, to catch up with the page
 	beforeDraw: (() => void) | null = null;
+	// The boss in the sky while it is out, in front of the village but behind everyone
+	boss: { draw(ctx: CanvasRenderingContext2D): void } | null = null;
 
 	private readonly ctx: CanvasRenderingContext2D | null;
 	private readonly ratio: number;
@@ -258,6 +261,7 @@ export class ActorsView {
 		ctx.clearRect(0, 0, this.size.width, this.size.height);
 		ctx.imageSmoothingEnabled = false;
 		const night = this.nightness();
+		this.boss?.draw(ctx);
 
 		// Chests only show at night, which is the only time they lie about
 		if (night > 0) {

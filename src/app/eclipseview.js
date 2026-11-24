@@ -1,15 +1,24 @@
 import $ from '../vendor/jquery.js';
 import E from './eventmanager.js';
 import Graphics from './graphics/graphics.js';
+import WorldGraphics from './graphics/world.js';
+import { EclipseView } from '../render/eclipse.ts';
 
-// The Eclipse as drawn: a black sun ringed with stolen light in the middle of the
-// sky, and the show of each of its strikes. What it does and when is up to the
-// field (src/core/field.ts).
+// The Eclipse in the middle of the sky, and the show of each of its strikes. It is
+// drawn in front of the village, behind the keeper and the monsters
+// (src/render/eclipse.ts), and the rays and the shadow it sends down with the effects
+// (src/render/effects.ts). What it does and when is up to the field
+// (src/core/field.ts).
 
 var SIZE = 64;
 var TOP = 6;
+// Its shadow drops from just under it, its gaze lands on the keeper, and lantern
+// light comes up at it from the board
+var DROPS_FROM = 66;
+var KEEPER_Y = 96;
+var BOARD_Y = 110;
 
-var el = null;
+var view = null;
 var timers = [];
 
 function later(callback, delay) {
@@ -20,57 +29,35 @@ function center() {
 	return { x: Graphics.worldWidth() / 2, y: TOP + SIZE / 2 };
 }
 
-// A line of light between the Eclipse and a point on the ground
-function ray(className, x, y, lasts) {
-	var from = center();
-	var dx = x - from.x, dy = y - from.y;
-	var line = Graphics.make(className).css({
-		left: from.x + 'px',
-		top: from.y + 'px',
-		width: Math.sqrt(dx * dx + dy * dy) + 'px',
-		transform: 'rotate(' + Math.atan2(dy, dx) + 'rad)'
-	}).appendTo('.world');
-	later(function() {
-		line.remove();
-	}, lasts);
-}
-
-function flash(className, lasts) {
-	if(el == null) {
-		return;
-	}
-	el.addClass(className);
-	later(function() {
-		el && el.removeClass(className);
-	}, lasts);
-}
-
 export default {
 	appear: function() {
-		el = Graphics.make('eclipse hidden').css('left', (center().x - SIZE / 2) + 'px').appendTo('.world');
-		el.css('opacity'); // Force a reflow so the transition runs
-		el.removeClass('hidden');
+		view = new EclipseView(center());
+		WorldGraphics.actors().boss = view;
 		E.trigger('roar');
 	},
 
 	strike: function(name) {
+		if(view == null) {
+			return;
+		}
 		switch(name) {
 		case 'gaze':
-			flash('gazing', 1500);
+			view.feel('gazing', 1500);
 			break;
 		case 'shadowRain':
 			// Drops of shadow fall towards both edges, where its spawn will land
+			var xs = [];
 			for(var i = 0; i < 6; i++) {
-				var drop = Graphics.make('shadowDrop').css('left', (center().x + (i - 2.5) * 14) + 'px').appendTo('.world');
-				later(drop.remove.bind(drop), 700);
+				xs.push(center().x + (i - 2.5) * 14);
 			}
-			flash('flare', 600);
+			Graphics.effects().shadowRain(xs, DROPS_FROM);
+			view.feel('flare', 600);
 			break;
 		case 'eclipseLight':
-			flash('flare', 800);
+			view.feel('flare', 800);
 			break;
 		case 'eclipse':
-			flash('darken', 1200);
+			view.feel('darken', 1200);
 			E.trigger('charge');
 			break;
 		}
@@ -78,7 +65,9 @@ export default {
 
 	land: function(name, keeperX) {
 		if(name == 'gaze') {
-			ray('eclipseBeam', keeperX, 96, 300);
+			if(view != null) {
+				Graphics.effects().ray('black', center(), { x: keeperX, y: KEEPER_Y }, 300);
+			}
 			E.trigger('explodeFire');
 		} else if(name == 'eclipseLight') {
 			E.trigger('ice');
@@ -87,17 +76,20 @@ export default {
 
 	// Lantern light pierces it
 	pierce: function() {
+		if(view == null) {
+			return;
+		}
 		var from = center();
-		ray('pierceBeam', from.x + (Math.random() - 0.5) * 40, 110, 400);
-		flash('struck', 300);
+		Graphics.effects().ray('lantern', from, { x: from.x + (Math.random() - 0.5) * 40, y: BOARD_Y }, 400);
+		view.feel('struck', 300);
 		E.trigger('sunBurst');
 	},
 
 	dying: function() {
-		if(el == null) {
+		if(view == null) {
 			return;
 		}
-		el.addClass('breaking');
+		view.breakApart();
 		E.trigger('roar');
 		later(function() {
 			E.trigger('dragonExplode');
@@ -108,11 +100,13 @@ export default {
 	remove: function() {
 		timers.forEach(clearTimeout);
 		timers = [];
-		if(el != null) {
-			el.remove();
-			el = null;
+		if(view != null) {
+			var actors = WorldGraphics.actors();
+			if(actors.boss === view) {
+				actors.boss = null;
+			}
+			view = null;
 		}
-		$('.eclipseBeam, .pierceBeam, .shadowDrop').remove();
 		$('body').removeClass('dawnBreaks');
 	}
 };

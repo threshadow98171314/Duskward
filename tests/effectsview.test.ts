@@ -28,6 +28,23 @@ describe('the effects', () => {
 		expect(view.effects).toEqual([]);
 	});
 
+	it('send rays for as long as each is told, and drops of shadow for their own time', () => {
+		const { view, clock } = effectsView();
+		view.ray('black', { x: 242, y: 38 }, { x: 100, y: 96 }, 300);
+		view.ray('lantern', { x: 242, y: 38 }, { x: 250, y: 110 }, 400);
+		view.shadowRain([228, 242, 256], 66);
+		clock.now = 300;
+		view.draw();
+		expect(view.effects).toMatchObject([{ kind: 'ray', look: 'lantern' }, { kind: 'drops' }]);
+		expect(view.progress(view.effects[0], clock.now)).toBeCloseTo(0.75);
+		clock.now = 400;
+		view.draw();
+		expect(view.effects.map((effect) => effect.kind)).toEqual(['drops']);
+		clock.now = 700;
+		view.draw();
+		expect(view.effects).toEqual([]);
+	});
+
 	it('shake the board hardest at first, and leave it still once it is over', () => {
 		const { view, clock } = effectsView();
 		const moves: [number, number][] = [];

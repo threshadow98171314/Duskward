@@ -1,8 +1,9 @@
 // Effects over the world and the board, drawn on a canvas in front of both: the
 // bands of light when a lantern tile bursts, the board lighting up when a sun tile
 // does, the beam of a level gained, the blast of a bomb, the loot found in a chest,
-// the bits flying off cleared tiles, sparks, smoke and dust, and the whole board
-// shaking when something big goes off. Each effect plays out over its own time and
+// the rays and the drops of shadow of the Eclipse's strikes, the bits flying off
+// cleared tiles, sparks, smoke and dust, and the whole board shaking when something
+// big goes off. Each effect plays out over its own time and
 // is then forgotten. By night the ground lies in the dark, but for the light of the
 // keeper's lantern and of the village's windows.
 
@@ -16,14 +17,28 @@ export interface EffectsLayout {
 	board: { top: number; rows: number; columns: number; cell: number; pad: number };
 }
 
+// A point over the world or the board
+export interface Point {
+	x: number;
+	y: number;
+}
+
+// Black light from the Eclipse, or lantern light piercing it
+export type RayLook = 'black' | 'lantern';
+
 export type Effect =
 	| { kind: 'row' | 'column'; index: number; start: number }
 	| { kind: 'board'; start: number }
 	| { kind: 'beam'; x: number; start: number }
 	| { kind: 'blast'; x: number; start: number }
-	| { kind: 'loot'; name: string; x: number; start: number };
+	| { kind: 'loot'; name: string; x: number; start: number }
+	| { kind: 'ray'; look: RayLook; from: Point; to: Point; start: number; lasts: number }
+	| { kind: 'drops'; xs: number[]; y: number; start: number };
 
-const LASTS: Record<Effect['kind'], number> = { row: 700, column: 700, board: 700, beam: 1000, blast: 800, loot: 1500 };
+// How long each kind of effect lasts; a ray lasts as long as it is told
+const LASTS: Record<Exclude<Effect['kind'], 'ray'>, number> = {
+	row: 700, column: 700, board: 700, beam: 1000, blast: 800, loot: 1500, drops: 700,
+};
 // The beam of a level gained grows down the sky, holds, then spreads across it and fades
 const BEAM_GROW_MS = 200;
 const BEAM_SPREAD_FROM = 500;
@@ -33,6 +48,13 @@ const BLAST_RADIUS = 350;
 const LOOT_ABOVE = 35;
 const LOOT_RISE = 10;
 const LOOT_FADE_MS = 300;
+// A ray's colours from end to end, how thick it is, and its glow
+const RAYS: Record<RayLook, { from: string; to: string; width: number; glow: string; blur: number }> = {
+	black: { from: '#2a1438', to: '#7c5696', width: 3, glow: 'rgba(184, 148, 204, 0.8)', blur: 8 },
+	lantern: { from: '#ffe9a0', to: 'rgba(255, 233, 160, 0.2)', width: 4, glow: 'rgba(255, 210, 92, 0.8)', blur: 10 },
+};
+// Drops of shadow fall this far, faster as they go, fading
+const DROP_FALL = 40;
 // Particles in the air at most, the oldest giving way
 const MOST_PARTICLES = 400;
 // The dark of night, deepest at the ground; and how far lights reach into it
@@ -80,6 +102,10 @@ function clamp(t: number): number {
 
 function easeOut(t: number): number {
 	return 1 - (1 - t) * (1 - t);
+}
+
+function lastsOf(effect: Effect): number {
+	return effect.kind === 'ray' ? effect.lasts : LASTS[effect.kind];
 }
 
 export class EffectsView {
@@ -142,6 +168,16 @@ export class EffectsView {
 
 	loot(name: string, x: number): void {
 		this.effects.push({ kind: 'loot', name, x, start: this.now() });
+	}
+
+	// A ray of light between two points, for a while
+	ray(look: RayLook, from: Point, to: Point, lasts: number): void {
+		this.effects.push({ kind: 'ray', look, from, to, start: this.now(), lasts });
+	}
+
+	// Drops of shadow falling from a height, one at each place along it
+	shadowRain(xs: number[], y: number): void {
+		this.effects.push({ kind: 'drops', xs, y, start: this.now() });
 	}
 
 	// Particles from a point, in a colour
@@ -243,7 +279,7 @@ export class EffectsView {
 
 	// How far into its time an effect is, from 0 to 1, or null once it is over
 	progress(effect: Effect, now: number): number | null {
-		const t = (now - effect.start) / LASTS[effect.kind];
+		const t = (now - effect.start) / lastsOf(effect);
 		return t >= 1 ? null : clamp(t);
 	}
 
@@ -426,6 +462,36 @@ export class EffectsView {
 				ctx.drawImage(sheet, sprite.x + frame * sprite.width, sprite.y, sprite.width, sprite.height,
 					Math.round(effect.x - sprite.width / 2), Math.round(world.height - LOOT_ABOVE - sprite.height - LOOT_RISE * fade),
 					sprite.width, sprite.height);
+				break;
+			}
+			case 'ray': {
+				const look = RAYS[effect.look];
+				const { from, to } = effect;
+				const light = ctx.createLinearGradient(from.x, from.y, to.x, to.y);
+				light.addColorStop(0, look.from);
+				light.addColorStop(1, look.to);
+				ctx.strokeStyle = light;
+				ctx.lineWidth = look.width;
+				// Shadows are not scaled with the rest of the canvas
+				ctx.shadowColor = look.glow;
+				ctx.shadowBlur = look.blur * this.ratio;
+				ctx.beginPath();
+				ctx.moveTo(from.x, from.y);
+				ctx.lineTo(to.x, to.y);
+				ctx.stroke();
+				break;
+			}
+			case 'drops': {
+				const fall = t * t;
+				ctx.globalAlpha = 1 - 0.8 * fall;
+				ctx.fillStyle = '#3a2350';
+				ctx.shadowColor = '#b894cc';
+				ctx.shadowBlur = 3 * this.ratio;
+				ctx.beginPath();
+				for (const x of effect.xs) {
+					ctx.roundRect(x - 2, effect.y + DROP_FALL * fall, 4, 8, 2);
+				}
+				ctx.fill();
 				break;
 			}
 		}

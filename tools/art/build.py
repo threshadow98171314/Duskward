@@ -85,6 +85,9 @@ def build_buildings():
     return sheet
 
 
+# The items' icons, side by side on icons.png in this order
+ITEMS = ("healthPotion", "manaPotion", "bomb", "equipment", "shard", "callDragon", "dawnHeart")
+
 # Sprites on icons.png the game draws by name: (x, y, frame width, frame height, frames, rows).
 # The interface's own icons are placed by the style sheets for now.
 ICON_SPRITES = {
@@ -122,7 +125,7 @@ def build_icons():
     for x, y, kind in ((0, 279, "outline"), (30, 279, "gold"), (60, 279, "fill"),
                        (0, 307, "nightOutline"), (30, 307, "gold")):
         place(icons.heart(kind), x, y)
-    for i, name in enumerate(("healthPotion", "manaPotion", "bomb", "equipment", "shard", "callDragon", "dawnHeart")):
+    for i, name in enumerate(ITEMS):
         place(icons.item(name), i * 28, 335)
     place(icons.menu(False), 0, 362)
     place(icons.menu(True), 0, 402)
@@ -159,8 +162,10 @@ def sprite_list(sizes):
     """Where every sprite the game draws by name is, on the sheets just written."""
     sprites = {}
 
-    def add(name, sheet, x, y, width, height, frames=1, rows=1):
+    def add(name, sheet, x, y, width, height, frames=1, rows=1, names=None):
         sprites[name] = dict(sheet=sheet, x=x, y=y, width=width, height=height, frames=frames, rows=rows)
+        if names:
+            sprites[name]["names"] = list(names)
 
     for name, offset, _, levels in BUILDING_ROWS:
         add(name, "buildings", 0, offset, 60, BUILDING_HEIGHT, rows=levels)
@@ -173,6 +178,8 @@ def sprite_list(sizes):
     add("dragonneck", "dragonsprite", 0, 1700, 24, 24, rows=2)
     for name, (x, y, width, height, frames, rows) in ICON_SPRITES.items():
         add(name, "icons", x, y, width, height, frames=frames, rows=rows)
+    # Each item's icon is the frame of its name
+    add("items", "icons", 0, 335, 28, 28, frames=len(ITEMS), names=ITEMS)
     for name, x in TILE_COLUMNS.items():
         add("tile." + name, "tiles", x, 0, TILE, TILE, rows=resources.LEVELS[name])
         add("tile." + name + ".night", "tiles", x, NIGHT_TILES, TILE, TILE, rows=resources.LEVELS[name])

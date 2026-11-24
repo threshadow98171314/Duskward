@@ -638,6 +638,9 @@ function makeStuffHappen() {
 	hasteTick = !hasteTick;
 }
 
+// A blow this hard shakes the board
+var HEAVY_BLOW = 5;
+
 // What the field needs from the rest of the game
 var fieldHost = {
 	keeperAlive: function() {
@@ -655,6 +658,9 @@ var fieldHost = {
 			return;
 		}
 		dude.takeDamage(damage, { options: { monsterClass: by } });
+		if(damage >= HEAVY_BLOW) {
+			Graphics.effects().shake(3, 250);
+		}
 	},
 	nextTask: function() {
 		return World.nextTask();

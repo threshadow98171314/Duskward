@@ -878,6 +878,15 @@ body.paused:before {
 	top: 0;
 }
 
+/* Effects over the world and the board (src/render/effects.ts), from the top of the world */
+.effectsCanvas {
+	position: absolute;
+	z-index: 3;
+	left: 0;
+	top: -112px;
+	pointer-events: none;
+}
+
 /* The keeper, the monsters and the chests, in front of the buildings (src/render/actors.ts);
    clicks go through to the buildings */
 .actorsCanvas {
@@ -1336,20 +1345,6 @@ body.paused:before {
 	background-position: -16px 0;
 }
 
-.levelEffect {
-	position: absolute;
-	height: 0%;
-	width: 2px;
-	top: 0px;
-	background-color: white;
-	opacity: 1;
-	transition: all 500ms ease-out, height 200ms ease-out;
-	-webkit-transition: all 500ms ease-out, height 200ms ease-out;
-	-moz-transition: all 500ms ease-out, height 200ms ease-out;
-	-ms-transition: all 500ms ease-out, height 200ms ease-out;
-	-o-transition: all 500ms ease-out, height 200ms ease-out;
-}
-
 /** Loot **/
 .inventory {
 	background-color: #FFFFFF;
@@ -1443,8 +1438,7 @@ body.paused:before {
 	background-color: white;
 }
 
-.inventory .button div:nth-child(1),
-.loot {
+.inventory .button div:nth-child(1) {
 	position: absolute;
 	width: 28px;
 	height: 28px;
@@ -1457,35 +1451,22 @@ body.paused:before {
 	left: 6px;
 }
 
-.loot {
-	bottom: 35px;
-}
-
-.loot.healthPotion,
 .button.healthPotion div:nth-child(1) {
 	background-position: 0 -335px;
 }
 
-.loot.manaPotion,
 .button.manaPotion div:nth-child(1) {
 	background-position: -28px -335px;
 }
 
-.loot.bomb,
 .button.bomb div:nth-child(1) {
 	background-position: -56px -335px;
 }
 
-.loot.equipment,
 .button.equipment div:nth-child(1) {
 	background-position: -84px -335px;
 }
 
-.loot.shard {
-	background-position: -112px -335px;
-}
-
-.loot.callDragon,
 .button.callDragon div:nth-child(1) {
 	background-position: -140px -335px;
 }
@@ -2775,41 +2756,7 @@ body.hyperspace,
 }
 
 /** Bomb **/
-@keyframes bombsplosion {
-	0% { transform: scale(0); opacity: 1; }
-	100% { transform: scale(1); opacity: 0; }
-}
-@-webkit-keyframes bombsplosion {
-	0% { -webkit-transform: scale(0); opacity: 1; }
-	100% { -webkit-transform: scale(1); opacity: 0; }
-}
-@-moz-keyframes bombsplosion {
-	0% { -moz-transform: scale(0); opacity: 1; }
-	100% { -moz-transform: scale(1); opacity: 0; }
-}
-@-ms-keyframes bombsplosion {
-	0% { -ms-transform: scale(0); opacity: 1; }
-	100% { -ms-transform: scale(1); opacity: 0; }
-}
-@-o-keyframes bombsplosion {
-	0% { -o-transform: scale(0); opacity: 1; }
-	100% { -o-transform: scale(1); opacity: 0; }
-}
 
-.bombsplosion {
-	position: absolute;
-	animation: bombsplosion 800ms ease-out 1;
-	-webkit-animation: bombsplosion 800ms ease-out 1;
-	-moz-animation: bombsplosion 800ms ease-out 1;
-	-ms-animation: bombsplosion 800ms ease-out 1;
-	-o-animation: bombsplosion 800ms ease-out 1;
-	width: 700px;
-	height: 700px;
-	border-radius: 50%;
-	margin: 0 0 -350px -350px;
-	background-color: white;
-	bottom: 0px;
-}
 /* Diffuculty switch */
 .difficultySwitch {
 	display: inline-block;

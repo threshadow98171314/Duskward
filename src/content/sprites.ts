@@ -21,6 +21,8 @@ export interface Sprite {
 	height: number;
 	frames: number;
 	rows: number;
+	// What each frame shows, for a sprite whose frames are different things (the items)
+	names?: string[];
 }
 
 export const SHEETS: Record<string, SpriteSheet> = list.sheets;

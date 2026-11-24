@@ -4,6 +4,7 @@ import GameBoard from '../gameboard.js';
 import Content from '../gamecontent.js';
 import Graphics from './graphics.js';
 import { BoardView } from '../../render/board.ts';
+import { EffectsView } from '../../render/effects.ts';
 
 // The board on screen. The tiles are drawn on a canvas (src/render/board.ts); this
 // module turns the board's draw requests into the view's animations, with the
@@ -13,6 +14,12 @@ import { BoardView } from '../../render/board.ts';
 var G = null;
 var _el = null;
 var view = null;
+var effects = null;
+// The world sits this far above the board, and is this tall (see .world)
+var WORLD_TOP = 112;
+var WORLD_HEIGHT = 110;
+// A long chain, a powder keg and the power tiles going off shake the board
+var LONG_CHAIN = 8;
 var tiles = [];
 var CELL = 60;
 var BOARD_PAD = 2;
@@ -75,11 +82,30 @@ function createBoard(rows, cols) {
 	view.beforeDraw = followPage;
 	view.setNight($('body').hasClass('night'), false);
 	view.start();
+	makeEffects(el, cols, rows);
 	// For debugging from the browser console
 	window.boardView = function() {
 		return view;
 	};
 	return el;
+}
+
+// Effects over the world and the board, on a canvas in front of both; the whole
+// board moves while it shakes
+function makeEffects(board, cols, rows) {
+	var canvas = G.make('effectsCanvas', 'canvas').appendTo(board);
+	if(effects != null) {
+		effects.stop();
+	}
+	effects = new EffectsView(canvas[0], {
+		width: CELL * cols + 2 * BOARD_PAD,
+		world: { height: WORLD_HEIGHT },
+		board: { top: WORLD_TOP, rows: rows, columns: cols, cell: CELL, pad: BOARD_PAD }
+	});
+	effects.onShake = function(dx, dy) {
+		board[0].style.translate = dx || dy ? dx + 'px ' + dy + 'px' : '';
+	};
+	effects.start();
 }
 
 // The view follows the page: night falls on the body, and the board's classes say
@@ -218,6 +244,9 @@ function drawMatch(opts) {
 		}
 	});
 
+	if(opts.chain >= LONG_CHAIN && !opts.hurried) {
+		effects.shake(2, 250);
+	}
 	setTimeout(function() {
 		E.trigger('tileDrop');
 	}, 300 * pace);
@@ -255,6 +284,7 @@ function removeTileEffect(options) {
 
 function explode(options) {
 	view.explode({ row: options.row, column: options.column });
+	effects.shake(5, 400);
 }
 
 export default {
@@ -304,6 +334,11 @@ export default {
 
 	cellSize: function() {
 		return CELL;
+	},
+
+	// Effects over the world and the board, and the board shaking (src/render/effects.ts)
+	effects: function() {
+		return effects;
 	},
 
 	// The level each kind of tile has reached, as the board's classes say

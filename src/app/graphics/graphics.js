@@ -732,6 +732,11 @@ var Graphics = {
 		return BoardGraphics.cellSize();
 	},
 
+	// Flashes, beams, blasts and loot over the world and the board, and shaking it
+	effects: function() {
+		return BoardGraphics.effects();
+	},
+
 	selectTile: function(cell) {
 		BoardGraphics.select(cell);
 	},
@@ -938,21 +943,9 @@ var Graphics = {
 		}, 1500);
 	},
 	
+	// A beam of light comes down on the keeper and spreads across the sky
 	levelUp: function(dude) {
-		var p = dude.p();
-		var effect = $('<div>').addClass('levelEffect').css('left', (p - 1) + 'px').appendTo('.world');
-		effect.css('left'); // force redraw before animation
-		effect.css('height', '100%');
-		setTimeout(function() {
-			effect.css({
-				'width': '100%',
-				'left': '0px',
-				'opacity': 0
-			});
-		}, 500);
-		setTimeout(function() {
-			effect.remove();
-		}, 1000);
+		Graphics.effects().levelBeam(dude.p());
 	},
 	
 	// Monsters' health bars are drawn with them (src/render/actors.ts); a boss's is its own

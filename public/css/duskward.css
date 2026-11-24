@@ -186,38 +186,6 @@ body.night {
 	50% { opacity: 1; }
 }
 
-.burst {
-	position: absolute;
-	z-index: 3;
-	pointer-events: none;
-	animation: burstFade 700ms ease-out forwards;
-}
-
-.burst.lanternRow {
-	left: 0;
-	width: 100%;
-	background: linear-gradient(to bottom, rgba(255, 210, 92, 0), rgba(255, 236, 160, 0.9), rgba(255, 210, 92, 0));
-}
-
-.burst.lanternColumn {
-	top: 0;
-	height: 100%;
-	background: linear-gradient(to right, rgba(255, 210, 92, 0), rgba(255, 236, 160, 0.9), rgba(255, 210, 92, 0));
-}
-
-.burst.sunFlash {
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 100%;
-	background: radial-gradient(circle, rgba(255, 246, 228, 0.95), rgba(255, 210, 92, 0.6) 50%, rgba(255, 210, 92, 0) 80%);
-}
-
-@keyframes burstFade {
-	0% { opacity: 1; }
-	100% { opacity: 0; }
-}
-
 .chainPopup {
 	position: absolute;
 	z-index: 5;
@@ -633,7 +601,6 @@ body.night {
 
 /** The Dawn Heart, left by the Fallen Dawnwyrm **/
 
-.loot.dawnHeart,
 .button.dawnHeart div:nth-child(1) {
 	background-position: -168px -335px;
 }

@@ -3,7 +3,6 @@ import E from '../eventmanager.js';
 import State from '../gamestate.js';
 import Graphics from './graphics.js';
 
-var BURST_TIME = 700;
 
 var _ward = null;
 var _chainPopup = null;
@@ -69,22 +68,15 @@ function bounty(kinds, percent) {
 	}, 2000);
 }
 
-// Flashes over board cells; tiles are laid out on a uniform grid inside the tile container
-function flash(className, css) {
-	var el = G().make('burst ' + className).css(css).appendTo('.tileContainer');
-	setTimeout(function() {
-		el.remove();
-	}, BURST_TIME);
-}
-
+// Light runs along a burst lantern tile's row and down its column
 function lanternBurst(pos) {
-	var size = G().tileSize();
-	flash('lanternRow', { top: pos.row * size + 'px', height: size + 'px' });
-	flash('lanternColumn', { left: pos.column * size + 'px', width: size + 'px' });
+	G().effects().lanternBurst(pos.row, pos.column);
+	G().effects().shake(2, 200);
 }
 
 function sunBurst() {
-	flash('sunFlash', {});
+	G().effects().sunBurst();
+	G().effects().shake(3, 300);
 }
 
 export default {

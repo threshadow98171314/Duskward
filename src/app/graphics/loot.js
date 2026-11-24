@@ -10,13 +10,9 @@ function openChest(chest) {
 	chest.animation(1);
 }
 
+// What the chest held shows above it for a moment
 function drawLoot(loot, entity) {
-	var lootIcon = G.make('loot ' + loot);
-	G.addToWorld(lootIcon);
-	G.setPosition(lootIcon, entity.p());
-	setTimeout(function() {
-		G.remove(lootIcon);
-	}, 1500);
+	G.effects().loot(loot, entity.p());
 }
 
 function updateLootButtons() {
@@ -43,13 +39,11 @@ function updateLootButton(loot, num) {
 	btn.removeClass('hidden');
 }
 
+// A bomb goes off around the keeper
 function drawLootEffect(loot) {
 	if(loot == 'bomb') {
-		var effect = G.make('bombsplosion').css('left', getModule('world').getDude().p());
-		G.addToWorld(effect);
-		setTimeout(function() {
-			effect.remove();
-		}, 790);
+		G.effects().blast(getModule('world').getDude().p());
+		G.effects().shake(6, 500);
 	}
 }
 

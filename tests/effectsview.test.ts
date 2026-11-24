@@ -52,6 +52,27 @@ describe('the effects', () => {
 		expect(view.strengthAt(100)).toBeCloseTo(5 * 0.75 * 0.75);
 	});
 
+	it('throw particles that fly, fall and fade, and keep only so many', () => {
+		const { view, clock } = effectsView();
+		// With the test's random numbers, a spray leaning all up flies straight sideways at full speed
+		view.spray(100, 50, 'red', { count: 1, speed: 100, life: 1000, gravity: 200, size: 2, upward: 1 });
+		const [bit] = view.particles;
+		clock.now = 500;
+		expect(view.particleAt(bit, clock.now)).toEqual({ x: 150, y: 75, left: 0.5 });
+		clock.now = 1000;
+		view.draw();
+		expect(view.particles).toEqual([]);
+		view.spray(0, 0, 'red', { count: 450, speed: 10, life: 1000, gravity: 0, size: 2, upward: 0 });
+		expect(view.particles).toHaveLength(400);
+	});
+
+	it('send the bits of a cleared tile off from the middle of its cell', () => {
+		const { view } = effectsView();
+		view.tileBits(3, 5, 'wood', 4);
+		expect(view.particles).toHaveLength(4);
+		expect(view.particles[0]).toMatchObject({ x: 332, y: 324, colour: '#7c5840' });
+	});
+
 	it('find the icon of each item by its name', () => {
 		expect(SPRITES.items.names?.indexOf('healthPotion')).toBe(0);
 		expect(SPRITES.items.names?.indexOf('dawnHeart')).toBe(6);

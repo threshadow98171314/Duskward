@@ -61,6 +61,8 @@ const MATERIALS: Record<string, [number, string][]> = {
 	clay: [[1, '#c65645']],
 	cloth: [[1, '#edc842'], [3, '#853aff']],
 	lantern: [[1, '#f29a3a']],
+	// Not a material, but its tiles' bits fly too
+	mana: [[1, '#a77bd6']],
 };
 
 function clamp(t: number): number {

@@ -123,6 +123,7 @@ function followPage() {
 			}
 		});
 		view.levels = levels;
+		effects.levels = levels;
 		view.dragonFight = /(^|\s)dragonFight(\s|$)/.test(classes);
 	}
 }
@@ -218,10 +219,15 @@ function drawMatchEffect(pos, type, isNight, side) {
 function drawMatch(opts) {
 	var pace = paceOf(opts);
 	var dropping = [];
+	// Fewer bits fly off the tiles of a chain played out fast
+	var bits = pace <= 0.5 ? 2 : 5;
 	(opts.removed || []).forEach(function(removed) {
 		var pos = removed.position;
 		removeTile(pos.row, pos.col);
 		drawMatchEffect(pos, removed.type, opts.isNight, opts.side);
+		if(removed.type) {
+			effects.tileBits(pos.row, pos.col, removed.type.className, bits);
+		}
 		// Each tile above it drops a cell
 		for(var r = pos.row - 1; r >= 0; r--) {
 			var t = getTile(r, pos.col);

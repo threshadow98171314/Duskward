@@ -116,6 +116,7 @@ export default {
 	draw: function(field) {
 		var actor = field.keeper;
 		keeper.p(actor.x);
+		keeper.facing = actor.facing;
 		var block = keeper.carrying;
 		actors().setKeeper({ x: actor.x, row: keeperRow(field), frame: actor.frame },
 			block ? { kind: block.options.type.className, fill: block.quantity() / block.max } : null);

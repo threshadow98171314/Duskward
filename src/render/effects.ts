@@ -1,10 +1,12 @@
 // Effects over the world and the board, drawn on a canvas in front of both: the
 // bands of light when a lantern tile bursts, the board lighting up when a sun tile
 // does, the beam of a level gained, the blast of a bomb, the loot found in a chest,
-// and the whole board shaking when something big goes off. Each effect plays out
-// over its own time and is then forgotten.
+// the bits flying off cleared tiles, sparks, smoke and dust, and the whole board
+// shaking when something big goes off. Each effect plays out over its own time and
+// is then forgotten.
 
 import { SHEETS, SPRITES } from '../content/sprites.ts';
+import { materialColour } from './village.ts';
 
 export interface EffectsLayout {
 	width: number;
@@ -30,6 +32,33 @@ const BLAST_RADIUS = 350;
 const LOOT_ABOVE = 35;
 const LOOT_RISE = 10;
 const LOOT_FADE_MS = 300;
+// Particles in the air at most, the oldest giving way
+const MOST_PARTICLES = 400;
+
+// A bit flying off something: where and when it set off, its speed (px/s), how hard
+// it falls (px/s²), its colour and size, and how long it lasts
+export interface Particle {
+	x: number;
+	y: number;
+	vx: number;
+	vy: number;
+	gravity: number;
+	born: number;
+	life: number;
+	colour: string;
+	size: number;
+}
+
+// How a spray of particles flies: how many, how fast, for how long, how they fall,
+// and how far they lean upwards (0 every way, 1 all up)
+export interface Spray {
+	count: number;
+	speed: number;
+	life: number;
+	gravity: number;
+	size: number;
+	upward: number;
+}
 
 function clamp(t: number): number {
 	return Math.min(1, Math.max(0, t));
@@ -47,6 +76,9 @@ export class EffectsView {
 	private readonly ratio: number;
 	private readonly images: Record<string, HTMLImageElement> = {};
 	readonly effects: Effect[] = [];
+	// The level of each kind of tile, for the colours of the bits off cleared tiles
+	levels: Record<string, number> = {};
+	readonly particles: Particle[] = [];
 	private shaking: { start: number; duration: number; strength: number } | null = null;
 	private frame = 0;
 
@@ -88,6 +120,62 @@ export class EffectsView {
 
 	loot(name: string, x: number): void {
 		this.effects.push({ kind: 'loot', name, x, start: this.now() });
+	}
+
+	// Particles from a point, in a colour
+	spray(x: number, y: number, colour: string, spray: Spray): void {
+		const born = this.now();
+		for (let i = 0; i < spray.count; i++) {
+			const angle = -Math.PI / 2 + (this.random() * 2 - 1) * Math.PI * (1 - spray.upward / 2);
+			const speed = spray.speed * (0.4 + 0.6 * this.random());
+			this.particles.push({
+				x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, gravity: spray.gravity,
+				born, life: spray.life * (0.7 + 0.3 * this.random()), colour, size: spray.size,
+			});
+		}
+		if (this.particles.length > MOST_PARTICLES) {
+			this.particles.splice(0, this.particles.length - MOST_PARTICLES);
+		}
+	}
+
+	// Bits of a cleared tile fly off its cell, in the colour of what it gave
+	tileBits(row: number, column: number, kind: string, count: number): void {
+		const { board } = this.layout;
+		this.spray(board.pad + (column + 0.5) * board.cell, board.top + board.pad + (row + 0.5) * board.cell,
+			materialColour(kind, this.levels[kind] ?? 1), { count, speed: 160, life: 450, gravity: 500, size: 3, upward: 0.6 });
+	}
+
+	// Sparks where the keeper's blow lands
+	sparks(x: number): void {
+		this.spray(x, this.layout.world.height - 18, '#fff3c4', { count: 6, speed: 140, life: 220, gravity: 0, size: 2, upward: 0 });
+	}
+
+	// A fallen monster's last breath of shadow
+	smoke(x: number): void {
+		this.spray(x, this.layout.world.height - 12, 'rgba(48, 32, 72, 0.85)',
+			{ count: 12, speed: 45, life: 800, gravity: -30, size: 4, upward: 0.8 });
+	}
+
+	// Dust along the foot of a building that has just stood up
+	dust(x: number, width: number): void {
+		for (let i = 0; i < 5; i++) {
+			this.spray(x - width / 2 + width * (i + 0.5) / 5, this.layout.world.height - 2, '#c9b28a',
+				{ count: 3, speed: 50, life: 700, gravity: 40, size: 3, upward: 0.9 });
+		}
+	}
+
+	// Where a particle is now, and how much of it is left (from 1 to 0), or null once gone
+	particleAt(particle: Particle, now: number): { x: number; y: number; left: number } | null {
+		const age = now - particle.born;
+		if (age >= particle.life) {
+			return null;
+		}
+		const s = age / 1000;
+		return {
+			x: particle.x + particle.vx * s,
+			y: particle.y + particle.vy * s + particle.gravity * s * s / 2,
+			left: 1 - age / particle.life,
+		};
 	}
 
 	// Shakes the board, hardest at first; a stronger shake takes over a weaker one
@@ -133,6 +221,11 @@ export class EffectsView {
 				this.effects.splice(i, 1);
 			}
 		}
+		for (let i = this.particles.length - 1; i >= 0; i--) {
+			if (this.particleAt(this.particles[i], now) === null) {
+				this.particles.splice(i, 1);
+			}
+		}
 		this.applyShake(now);
 		const ctx = this.ctx;
 		if (ctx === null) {
@@ -149,6 +242,15 @@ export class EffectsView {
 				ctx.restore();
 			}
 		}
+		for (const particle of this.particles) {
+			const place = this.particleAt(particle, now);
+			if (place !== null) {
+				ctx.globalAlpha = place.left;
+				ctx.fillStyle = particle.colour;
+				ctx.fillRect(Math.round(place.x - particle.size / 2), Math.round(place.y - particle.size / 2), particle.size, particle.size);
+			}
+		}
+		ctx.globalAlpha = 1;
 	}
 
 	private applyShake(now: number): void {

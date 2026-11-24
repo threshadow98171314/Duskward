@@ -137,7 +137,23 @@ var CELESTIAL_MOVE = 500;
 var SKY_EDGE = 15;
 // A building takes this long to rise; the buildings rising now, with their timers
 var BUILD_TIME = 5000;
+var BUILDING_WIDTH = 60;
+// How far in front of the keeper their blows land
+var BLOW_REACH = 14;
 var raising = new Map();
+
+// Sparks fly where the keeper's blow lands, in front of them
+function keeperHit() {
+	var keeper = getModule('world').getDude();
+	if(keeper) {
+		Graphics.effects().sparks(keeper.p() + (keeper.facing == 'left' ? -BLOW_REACH : BLOW_REACH));
+	}
+}
+
+// Dust rises along the foot of a building that has just stood up
+function buildingStands(building) {
+	Graphics.effects().dust(building.p(), BUILDING_WIDTH);
+}
 
 function changeTiles(tileTypes, classToAdd, classToRemove) {
 	BoardGraphics.hideKinds(tileTypes);
@@ -459,6 +475,9 @@ var Graphics = {
 		EventManager.bind('pause', setPaused.bind(this, true));
 		EventManager.bind('unpause', setPaused.bind(this, false));
 		EventManager.bind('monsterKilled', this.monsterKilled);
+		EventManager.bind('sharpHit', keeperHit);
+		EventManager.bind('bluntHit', keeperHit);
+		EventManager.bind('buildingComplete', buildingStands);
 		EventManager.bind('newEntity', this.addToWorld);
 		EventManager.bind('removeEntity', this.removeFromWorld);
 		EventManager.bind('healthChanged', this.updateHealthBar);
@@ -971,8 +990,10 @@ var Graphics = {
 		}, 3500);
 	},
 	
+	// A monster falls: its health bar goes, and a breath of shadow leaves it
 	monsterKilled: function(monster) {
 		WorldGraphics.actors().killMonster(monster);
+		Graphics.effects().smoke(monster.p());
 	},
 	
 	enablePlayButton: function() {

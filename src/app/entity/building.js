@@ -1,8 +1,10 @@
 import $ from '../../vendor/jquery.js';
 import WorldEntity from './worldentity.js';
-import Block from './block.js';
 import Content from '../gamecontent.js';
-import G from '../graphics/graphics.js';
+import { SPRITES } from '../../content/sprites.ts';
+
+// A building in the village. It is drawn by the village view (src/render/village.ts),
+// which Graphics tells as it is raised, lifted for an upgrade or sinks away.
 
 var Building = function(options) {
 	this.options = $.extend({}, this.options, {
@@ -43,23 +45,9 @@ Building.makeBuilding = function(savedBuilding) {
 	return building;
 };
 
-Building.prototype.el = function() {
-	if(this._el == null) {
-		this._el = WorldEntity.prototype.el.call(this).addClass(this.options.type.className);
-		
-		if(!this.built) {
-			var resourceBars = G.make("resourceBars", "ul");
-			resourceBars.data('building', this);
-			var numTypes = 0;
-			for(var r in this.options.type.cost) {
-				numTypes++;
-				resourceBars.append(G.createResourceBar(r, this.options.type.cost[r]));
-			}
-			resourceBars.addClass('bars-' + numTypes);
-			this._el.append(resourceBars);
-		}
-	}
-	return this._el;
+// Buildings hold still; the village view draws each at its level
+Building.prototype.animate = function() {
+	return false;
 };
 
 Building.prototype.readyToBuild = function() {
@@ -74,8 +62,9 @@ Building.prototype.readyToBuild = function() {
 	return true;
 };
 
+// Where the keeper stands to work on the building: at its right edge
 Building.prototype.dudeSpot = function() {
-	return this.p() + this.el().width() / 2;
+	return this.p() + SPRITES[this.options.spriteName].width / 2;
 };
 
 Building.prototype.getReplaces = function(State) {

@@ -306,6 +306,11 @@ export default {
 		return CELL;
 	},
 
+	// The level each kind of tile has reached, as the board's classes say
+	levels: function() {
+		return view ? view.levels : {};
+	},
+
 	// Marks the tile in a cell as picked up; null puts it down
 	select: function(cell) {
 		view.select(cell ? getTile(cell.row, cell.column) : null);

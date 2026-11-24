@@ -177,13 +177,8 @@ body.night {
 }
 
 /** Lantern resource **/
-.block.lantern div,
-.lantern .resourceBar-inner {
+.block.lantern div {
 	background-color: #f29a3a;
-}
-
-.resourceBar.lantern {
-	background-color: rgba(242, 154, 58, 0.2);
 }
 
 @keyframes powerPulse {

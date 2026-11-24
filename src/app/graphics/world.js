@@ -1,17 +1,22 @@
 import G from './graphics.js';
+import BoardGraphics from './gameboard.js';
 import { SkyView } from '../../render/sky.ts';
+import { VillageView } from '../../render/village.ts';
 
 // The world above the board. The sky is drawn on a canvas behind everything else in
-// it (src/render/sky.ts); what lives in the world is still HTML, for now.
+// it (src/render/sky.ts), and the village's buildings on another in front of the
+// sky (src/render/village.ts); the keeper, the monsters and the rest are still HTML.
 
 var _el = null;
 var sky = null;
+var village = null;
 
 function el() {
 	if(_el == null) {
 		_el = G.make('world');
 		G.addToBoard(_el);
 		makeSky();
+		makeVillage();
 	}
 	return _el;
 }
@@ -31,6 +36,22 @@ function makeSky() {
 		sky.setDusk(page.contains('dusk'));
 	};
 	sky.start();
+}
+
+function makeVillage() {
+	var canvas = G.make('villageCanvas', 'canvas').insertAfter(_el.children('.skyCanvas'));
+	if(village != null) {
+		village.stop();
+	}
+	village = new VillageView(canvas[0], { width: _el.width(), height: _el.height() });
+	// Buildings fade into the night; the colours of the materials follow the tiles' levels
+	var page = document.body.classList;
+	village.setNight(page.contains('night'), false);
+	village.beforeDraw = function() {
+		village.setNight(page.contains('night'));
+		village.levels = BoardGraphics.levels();
+	};
+	village.start();
 }
 
 export default {
@@ -58,5 +79,10 @@ export default {
 	sky: function() {
 		el();
 		return sky;
+	},
+
+	village: function() {
+		el();
+		return village;
 	}
 };

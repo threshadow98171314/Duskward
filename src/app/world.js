@@ -10,7 +10,6 @@ import Gem from './entity/gem.js';
 import Resources from './resources.js';
 import Celestial from './entity/celestial.js';
 import Dude from './entity/dude.js';
-import Star from './entity/star.js';
 import WorldEffect from './entity/worldeffect.js';
 import { register } from './modules.js';
 import Engine from './engine.js';
@@ -51,7 +50,6 @@ var stuff = [];
 var iceBlock = null;
 var inTransition = false;
 var gameLoop = null;
-var star = null;
 var prioritizedBuilding = null;
 var recorded = null;
 var streak = 0;
@@ -78,7 +76,6 @@ var World = {
 		dude = null;
 		field = null;
 		celestial = null;
-		star = null;
 		gem = null;
 		stuff.length = 0;
 		effects = {};
@@ -137,17 +134,13 @@ var World = {
 			for(var i in GameState.buildings) {
 				var building = GameState.buildings[i];
 				if(building.built && !building.obsolete) {
-					Graphics.addToWorld(building);
-					Graphics.setPosition(building, building.p());
+					Graphics.addBuilding(building, true);
 					if(building.options.type.tileMod) {
 						$('.gameBoard').addClass(building.options.type.tileMod + building.options.type.tileLevel);
 					}
-					building.el().css('bottom', '0px');
-					building.el().find('.blockPile').css('top', '100%');
 					deferredCallbacks.push(built.bind(null, building.options.type));
 				} else if(!building.obsolete && canBuild(building.options.type)) {
-					Graphics.addToWorld(building);
-					Graphics.setPosition(building, building.p());
+					Graphics.addBuilding(building, false);
 					Graphics.updateCosts(building);
 				}
 
@@ -200,8 +193,7 @@ var World = {
 					type: buildingType
 				});
 				GameState.buildings.push(building);
-				Graphics.addToWorld(building);
-				Graphics.setPosition(building, building.p());
+				Graphics.addBuilding(building, false);
 			}
 			
 			// If it's ready to build, build it.
@@ -249,7 +241,7 @@ var World = {
 	removeBuilding: function(building) {
 		building.obsolete = true;
 		stuff.splice(stuff.indexOf(building), 1);
-		building.el().remove();
+		Graphics.removeBuilding(building);
 	},
 	
 	hasEffect: function(effectName) {
@@ -324,16 +316,10 @@ function prioritizeBuilding(building) {
 		clearPriorityIfNeeded(building);
 		EventManager.trigger('deprioritize');
 	} else {
-		if(!star) {
-			star = new Star();
-			EventManager.trigger('newEntity', [star]);
-		}
 		EventManager.trigger('prioritize');
 		prioritizedBuilding = building;
 		GameState.prioritizedBuilding = building.options.type.className;
-		star.p(building.options.type.position);
-		Graphics.setPosition(star, star.p());
-		star.el().css('display', 'block');
+		Graphics.markPriority(building);
 	}
 }
 
@@ -341,7 +327,7 @@ function clearPriorityIfNeeded(building) {
 	if(prioritizedBuilding == building) {
 		prioritizedBuilding = null;
 		GameState.prioritizedBuilding = null;
-		star.el().css('display', 'none');
+		Graphics.markPriority(null);
 	}
 }
 

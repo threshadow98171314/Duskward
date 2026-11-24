@@ -340,21 +340,17 @@ var Engine = {
 			EventManager.trigger('toggleMenu');
 			return e.target.tagName == 'TEXTAREA' || e.target.tagName == 'A' || e.target.tagName == 'INPUT' || e.target.hasAttribute('data-clickable');
 		});
-		Graphics.attachHandler("World", "mousedown touchstart", '.resourceBars', function(e) {
+		// A building's bars of materials, or a building lifted for its upgrade: see to it first
+		Graphics.attachHandler("World", "mousedown touchstart", '.villageCanvas', function(e) {
 			// Handle wacky touch event objects
 			if(e.originalEvent.changedTouches) {
 				e = e.originalEvent.changedTouches[0];
 			}
-			EventManager.trigger('prioritizeBuilding', [$(e.target).closest('.resourceBars').data('building')]);
-			EventManager.trigger('click', ['building']);
-		});
-		Graphics.attachHandler("World", "mousedown touchstart", '.building.upgrading', function(e) {
-			// Handle wacky touch event objects
-			if(e.originalEvent.changedTouches) {
-				e = e.originalEvent.changedTouches[0];
+			var building = Graphics.buildingAt(e.clientX, e.clientY);
+			if(building) {
+				EventManager.trigger('prioritizeBuilding', [building]);
+				EventManager.trigger('click', ['building']);
 			}
-			EventManager.trigger('prioritizeBuilding', [$(e.target).closest('.building').data('upgrade')]);
-			EventManager.trigger('click', ['building']);
 		});
 		Graphics.attachHandler("World", "mousedown touchstart", function(e) {
 			// Handle wacky touch event objects

@@ -135,6 +135,9 @@ function handleDrawRequest(requestString, options) {
 // The sun and moon take this long to move, and rise from the far left of the sky
 var CELESTIAL_MOVE = 500;
 var SKY_EDGE = 15;
+// A building takes this long to rise; the buildings rising now, with their timers
+var BUILD_TIME = 5000;
+var raising = new Map();
 
 function changeTiles(tileTypes, classToAdd, classToRemove) {
 	BoardGraphics.hideKinds(tileTypes);
@@ -536,12 +539,6 @@ var Graphics = {
 		thing.remove();
 	},
 	
-	createResourceBar: function(resource, number) {
-		var el = $('<li>').addClass('resourceBar').addClass(resource);
-		$('<div>').addClass('resourceBar-inner').appendTo(el);
-		return el;
-	},
-	
 	make: function(className, tagName) {
 		tagName = tagName || 'div';
 		return $('<' + tagName + '>').addClass(className);
@@ -659,22 +656,48 @@ var Graphics = {
 		this.moveCelestial(celestial);
 	},
 	
+	// A building joins the village: standing if it has been raised, otherwise still underground
+	addBuilding: function(building, standing) {
+		WorldGraphics.village().add(building, {
+			sprite: building.options.spriteName,
+			row: building.animationRow || 0,
+			x: building.p(),
+			standing: standing
+		});
+	},
+
+	removeBuilding: function(building) {
+		WorldGraphics.village().remove(building);
+	},
+
+	// The bars of materials delivered to a building; once there are any, the building
+	// it will replace lifts for it
 	updateCosts: function(building) {
 		var show = false;
+		var costs = [];
 		for(var r in building.requiredResources) {
 			var total = building.options.type.cost[r];
 			var has = total - building.requiredResources[r];
 			if(has > 0) show = true;
-			building.el().find('.resourceBar.' + r + ' .resourceBar-inner').css('width', (has / total * 100) + '%');
+			costs.push({ kind: r, share: has / total });
 		}
+		WorldGraphics.village().setCosts(building, costs);
 		if(show) {
-			building.el().find('.resourceBars').addClass('show');
 			var replaces = building.getReplaces(State);
 			if(replaces) {
-				replaces.el().data('upgrade', building);
-				Graphics.markUpgrading(replaces, true);
+				Graphics.markUpgrading(replaces, building);
 			}
 		}
+	},
+
+	// The building on a point of the screen that the keeper can be asked to see to first
+	buildingAt: function(clientX, clientY) {
+		return WorldGraphics.village().buildingAtClient(clientX, clientY);
+	},
+
+	// The star over the building the keeper sees to first; null takes it down
+	markPriority: function(building) {
+		WorldGraphics.village().setPriority(building);
 	},
 	
 	updateSprite: function(entity) {
@@ -736,56 +759,51 @@ var Graphics = {
 		};
 	},
 	
-	markUpgrading: function(building, upgrading) {
-		if(upgrading) {
-			building.el().addClass('upgrading');
-		} else {
-			building.el().removeClass('upgrading');
-		}
+	// A building lifts while its upgrade gathers materials, and can be clicked for it
+	markUpgrading: function(building, upgrade) {
+		WorldGraphics.village().setUpgrade(building, upgrade || null);
 	},
 	
+	// The keeper raises a building out of the ground; the building it replaces sinks away
 	raiseBuilding: function(building, callback) {
+		var village = WorldGraphics.village();
 		if(building.options.type.isBase) {
 			$('.resources').addClass('hidden');
 		}
-		var el = building.el();
 		var replaces = building.getReplaces(State);
 		if(replaces) {
-			replaces.el().addClass('sunk');
+			village.setSunk(replaces, true);
 		}
-		$('.resourceBars', el).addClass('sunk');
-		el.animate({
-			'bottom': 0
-		}, {
-			duration: 5000,
-			easing: 'linear',
-			complete: function() {
-				if(building.options.type.isBase) {
-					$('.resources').removeClass('hidden');
-				}
-				el.find('.resourceBars').remove();
-				if(building.options.type.tileMod) {
-					changeTiles(
-						[building.options.type.tileMod], 
-						building.options.type.tileMod + building.options.type.tileLevel,
-						building.options.type.tileMod + (building.options.type.tileLevel - 1)
-					);
-				}
-				callback(building);
+		village.raise(building, BUILD_TIME);
+		clearTimeout(raising.get(building));
+		raising.set(building, setTimeout(function() {
+			raising.delete(building);
+			if(building.options.type.isBase) {
+				$('.resources').removeClass('hidden');
 			}
-		});
+			village.raised(building);
+			if(building.options.type.tileMod) {
+				changeTiles(
+					[building.options.type.tileMod],
+					building.options.type.tileMod + building.options.type.tileLevel,
+					building.options.type.tileMod + (building.options.type.tileLevel - 1)
+				);
+			}
+			callback(building);
+		}, BUILD_TIME));
 	},
-	
+
+	// Night fell before the building stood: it drops back into the ground
 	sinkBuilding: function(building) {
-		var el = building.el();
-		$('.resourceBars', el).removeClass('sunk');
-		el.stop().css('bottom', '-80px');
+		clearTimeout(raising.get(building));
+		raising.delete(building);
+		WorldGraphics.village().sink(building);
 		var replaces = building.getReplaces(State);
 		if(replaces) {
-			replaces.el().removeClass('sunk');
+			WorldGraphics.village().setSunk(replaces, false);
 		}
 	},
-	
+
 	pickUpBlock: function(block) {
 		block.el().appendTo('.heldBlock');
 	},

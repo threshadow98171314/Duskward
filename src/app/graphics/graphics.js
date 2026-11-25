@@ -664,6 +664,11 @@ var Graphics = {
 		WorldGraphics.actors().openChest(chest);
 	},
 	
+	// The board's element, which holds the world, the tiles and the interface beside them
+	board: function() {
+		return BoardGraphics.el()[0];
+	},
+
 	// The keeper's status: hearts, shield, sword, experience, the ward and tonight's
 	// blessing (src/ui/status.ts)
 	status: function() {

@@ -2,117 +2,38 @@ import E from '../eventmanager.js';
 import State from '../gamestate.js';
 import G from './graphics.js';
 import C from '../gamecontent.js';
+import { LastingEffects, MagicMenu } from '../../ui/magic.ts';
+
+// The magic button and its spells, and the lasting effects beside it (src/ui/magic.ts)
 
 var MANA_COST = 3;
-	
-var _el = null;
-var _open = false;
-var _spells = null;
-var _states = null;
 
-function el() {
-	if(_el == null) {
-		_el = G.make('hidden magic')
-			.append(G.make('button litBorder').append(G.make('inner').append(G.make())));
-		updateMana(State.mana, State.maxMana());
-		G.addToBoard(_el);
-		setTimeout(function() {
-			_el.removeClass('hidden');
-		}, 100);
-	}
-	return _el;
-}
-
-function spells() {
-	if(_spells == null) {
-		_spells = G.make('spells');
-		for(var spell in C.Spells) {
-			_spells.append(G.make(spell + ' litBorder spell').data('spellName', spell));
-		}
-	}
-	return _spells;
-}
-
-function states() {
-	if(_states == null) {
-		_states = G.make('states');
-		G.addToBoard(_states);
-	}
-	return _states;
-}
-
-function updateMana(current, total) {
-	var percent = Math.ceil((current / total) * 100);
-	if(current == total) {
-		el().find('.button').addClass('full');
-	} else {
-		el().find('.button').removeClass('full');
-	}
-	el().find('.button > .inner > div').css('height', percent + '%');
-}
-
-function handleClick(thing) {
-
-	var spell = thing.closest('.spell');
-	if(spell.length > 0 ) {
-		if(!_open) return true;
-		// cast a spell
-		E.trigger('castSpell', [spell.data('spellName')]);
-	}
-	
-	// toggle the menu
-	toggleMenu(thing.closest('.button'));
-}
-
-function toggleMenu(button) {
-	var open = false;
-	if(_open) {
-		open = button ? button.hasClass('open') : false;
-		G.get('.button.open', null, true).removeClass('open');
-		setTimeout(spells().detach.bind(spells()), 200);
-		_open = false;
-	}
-	
-	if(button && !open && State.mana >= MANA_COST) {
-		button.append(spells());
-		spells().css('left'); // redraw
-		button.addClass('open');
-		_open = true;
-	}
-}
-
-function closeMenu() {
-	G.get('.button.open').removeClass('open');
-}
-
-function drawStateEffect(effect) {
-	var state = states().find('.' + effect.className);
-	state.remove();
-	state = G.make(effect.className).appendTo(states());
-	
-	setTimeout(function() {
-		state.addClass('expiring');
-	}, effect.duration - 3000);
-	
-	setTimeout(function() {
-		state.remove();
-	}, effect.duration);
-}
-
-function removeStateEffect(effect) {
-	states().find('.' + effect.className).remove();
-}
+var menu = null;
+var lasting = null;
 
 export default {
 	init: function() {
-		_el = null, _spells = null, _states = null;
-		E.bind("updateMana", updateMana);
-		E.bind("magicClick", handleClick);
-		E.bind("toggleMenu", toggleMenu);
-		E.bind("newStateEffect", drawStateEffect);
-		E.bind("endStateEffect", removeStateEffect);
-		E.bind("enableMagic", function() {
-			el(); // Trigger graphics initialization
+		menu = new MagicMenu(G.board(), Object.keys(C.Spells), function() {
+			return State.mana >= MANA_COST;
+		}, function(spell) {
+			E.trigger('castSpell', [spell]);
+		});
+		lasting = new LastingEffects(G.board());
+		E.bind('updateMana', function(current, total) {
+			menu.setMana(current, total);
+		});
+		// Pressing anything else closes the spells
+		E.bind('toggleMenu', function() {
+			menu.close();
+		});
+		E.bind('newStateEffect', function(effect) {
+			lasting.add(effect.className, effect.duration);
+		});
+		E.bind('endStateEffect', function(effect) {
+			lasting.remove(effect.className);
+		});
+		E.bind('enableMagic', function() {
+			menu.setMana(State.mana, State.maxMana());
 		});
 	}
 };

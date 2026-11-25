@@ -251,6 +251,13 @@ var Engine = {
 		});
 		
 		EventManager.bind('slotChosen', startGame);
+		// An item pressed is used, unless the world is busy
+		EventManager.bind('itemPressed', function(item) {
+			if(World.canMove()) {
+				EventManager.trigger('toggleMenu');
+				Loot.useItem(item);
+			}
+		});
 		EventManager.bind('deleteSlot', GameState.deleteSlot);
 		EventManager.bind('importSlot', importSlot);
 		EventManager.bind('pause', setPaused.bind(this, true));
@@ -314,28 +321,6 @@ var Engine = {
 			return false;
 		});
 		
-		Graphics.attachHandler("GameBoard", "mousedown touchstart", ".inventory .button", function(e) {
-			if(World.canMove()) {
-				// Handle wacky touch event objects
-				if(e.originalEvent.changedTouches) {
-					e = e.originalEvent.changedTouches[0];
-				}
-				var loot = $(e.target).closest('.button').data('lootName');
-				EventManager.trigger('toggleMenu');
-				Loot.useItem(loot);
-				EventManager.trigger('click', [loot]);
-			}
-			return false;
-		});
-		Graphics.attachHandler("GameBoard", "mousedown touchstart", ".magic .button", function(e) {
-			// Handle wacky touch event objects
-			if(e.originalEvent.changedTouches) {
-				e = e.originalEvent.changedTouches[0];
-			}
-			EventManager.trigger('magicClick', [$(e.target)]);
-			EventManager.trigger('click', ['magic']);
-			return false;
-		});
 		$('body').off().on('mousedown touchstart', function(e) {
 			EventManager.trigger('toggleMenu');
 			return e.target.tagName == 'TEXTAREA' || e.target.tagName == 'A' || e.target.tagName == 'INPUT' || e.target.hasAttribute('data-clickable');

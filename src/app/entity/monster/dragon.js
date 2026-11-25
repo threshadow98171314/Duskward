@@ -1,4 +1,4 @@
-import $ from '../../../vendor/jquery.js';
+import Util from '../../util.js';
 import Monster from './monster.js';
 import G from '../../graphics/graphics.js';
 import WorldGraphics from '../../graphics/world.js';
@@ -19,7 +19,7 @@ function boom(x) {
 // src/render/dragon.ts draws it, and the effects (src/render/effects.ts) what it
 // shoots and the flashes of what blows apart.
 var Dragon = function(options) {
-	this.options = $.extend({}, this.options, {}, options);
+	this.options = Util.extend({}, this.options, {}, options);
 	this.boss = this.options.boss;
 	this.timers = [];
 

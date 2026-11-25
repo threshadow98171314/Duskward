@@ -1,4 +1,4 @@
-import $ from '../../vendor/jquery.js';
+import Util from '../util.js';
 import Entity from './entity.js';
 import EventManager from '../eventmanager.js';
 
@@ -11,7 +11,7 @@ var MOVE_ANIMS = {
 };
 
 var worldEntity = function(options) {
-	this.options = $.extend({}, this.options, {
+	this.options = Util.extend({}, this.options, {
 		// Nuthin'
 	}, options);
 	this.hp(this.getMaxHealth());

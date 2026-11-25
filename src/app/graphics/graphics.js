@@ -1,4 +1,3 @@
-import $ from '../../vendor/jquery.js';
 import EventManager from '../eventmanager.js';
 import TextStore from '../textStore.js';
 import Options from '../gameoptions.js';
@@ -8,7 +7,6 @@ import LootGraphics from './loot.js';
 import MagicGraphics from './magic.js';
 import AudioGraphics from './audio.js';
 import Sprites from './sprites.js';
-import { register, getModule } from '../modules.js';
 import { StatusBar, heartsFor } from '../../ui/status.ts';
 import { Notices } from '../../ui/notices.ts';
 import { TitleScreen } from '../../ui/title.ts';
@@ -21,13 +19,15 @@ var MIN_SCREEN_WIDTH = 600, MIN_SCREEN_HEIGHT = 650, PORTRAIT_HEIGHT = 725;
 
 var textStore;
 var _ww = null, _wh = null;
-var styleSheet = null;
 var currentScale = null;
 // The keeper's status beside the board, and the words that come up over it (src/ui)
 var status = null;
 var notices = null;
-var imageLoaded = false;
 var isDragon = false;
+// The keeper, as the engine finds them
+var keeper = function() {
+	return null;
+};
 
 function handleDrawRequest(requestString, options) {
 	var moduleString = requestString.substring(0, requestString.indexOf('.'));
@@ -77,9 +77,9 @@ var ROAR_SHAKE = 8;
 
 // Sparks fly where the keeper's blow lands, in front of them
 function keeperHit() {
-	var keeper = getModule('world').getDude();
-	if(keeper) {
-		Graphics.effects().sparks(keeper.p() + (keeper.facing == 'left' ? -BLOW_REACH : BLOW_REACH));
+	var dude = keeper();
+	if(dude) {
+		Graphics.effects().sparks(dude.p() + (dude.facing == 'left' ? -BLOW_REACH : BLOW_REACH));
 	}
 }
 
@@ -93,9 +93,20 @@ function buildingStands(building) {
 function changeTiles(tileTypes, classToAdd, classToRemove) {
 	BoardGraphics.hideKinds(tileTypes);
 	setTimeout(function() {
-		BoardGraphics.el().removeClass(classToRemove).addClass(classToAdd);
+		var board = BoardGraphics.el().classList;
+		classNames(classToRemove).forEach(function(name) {
+			board.remove(name);
+		});
+		classNames(classToAdd).forEach(function(name) {
+			board.add(name);
+		});
 		BoardGraphics.showKinds(tileTypes);
 	}, 300);
+}
+
+// The classes in a list of them, which may be empty
+function classNames(list) {
+	return list.split(/\s+/).filter(Boolean);
 }
 
 // The end screen (src/ui/ending.ts), made the first time it comes down
@@ -124,7 +135,7 @@ function gameOver(counts) {
 function continueGame() {
 	EventManager.trigger('phaseChange', [false]);
 	ending().hide();
-	BoardGraphics.el()[0].classList.remove('dragonFight');
+	BoardGraphics.el().classList.remove('dragonFight');
 	var page = document.body.classList;
 	setTimeout(function() {
 		page.add('fadeOut');
@@ -136,7 +147,7 @@ function continueGame() {
 
 function newGamePlus() {
 	ending().hide();
-	BoardGraphics.el()[0].classList.remove('dragonFight');
+	BoardGraphics.el().classList.remove('dragonFight');
 	var page = document.body.classList;
 	page.remove('night');
 	setTimeout(function() {
@@ -196,79 +207,61 @@ function savedGame(slotInfo) {
 // The menu bar along the bottom of the page (src/ui/menu.ts); there is only the one
 var menuBar = null;
 
+// The game is scaled down to fit a small window, by a rule in a style sheet of its own
 var scaleSheet = null;
+var listeningToResize = false;
 function scaleToViewport() {
 	var widthScale = document.documentElement.clientWidth / MIN_SCREEN_WIDTH,
 		heightScale = document.documentElement.clientHeight /
 			(GameBoard.options.mobile ? PORTRAIT_HEIGHT : MIN_SCREEN_HEIGHT);
 
 	if(!scaleSheet) {
-		scaleSheet = newStylesheet();
+		var style = document.createElement('style');
+		document.head.appendChild(style);
+		scaleSheet = style.sheet;
 	}
 
-	var minScale = widthScale  < heightScale ? widthScale : heightScale;
+	var minScale = Math.min(widthScale, heightScale);
 	if(minScale != currentScale && minScale < 1) {
 		currentScale = minScale;
-		scaleSheet.cssRules.length > 0 && scaleSheet.deleteRule(0);
-		Graphics.addStyleRule('#loadingScreen, #gameContainer', 
-			'transform-origin: 50% 0 0;' +
-			'-webkit-transform-origin: 50% 0 0;' +
-			'-moz-transform-origin: 50% 0 0;' +
-			'-ms-transform-origin: 50% 0 0;' +
-			'-o-transform-origin: 50% 0 0;' +
-			'transform: scale(' + minScale +');' +
-			'-webkit-transform: scale(' + minScale +');' +
-			'-moz-transform: scale(' + minScale +');' +
-			'-ms-transform: scale(' + minScale +');' +
-			'-o-transform: scale(' + minScale +');',
-			scaleSheet
-		);
-	} else if(minScale != currentScale && Graphics.isScaled()) {
+		if(scaleSheet.cssRules.length > 0) {
+			scaleSheet.deleteRule(0);
+		}
+		scaleSheet.insertRule('#loadingScreen, #gameContainer { transform-origin: 50% 0 0; transform: scale(' + minScale + '); }', 0);
+	} else if(minScale != currentScale && currentScale != null) {
 		currentScale = null;
-		scaleSheet.cssRules.length > 0 && scaleSheet.deleteRule(0);
+		if(scaleSheet.cssRules.length > 0) {
+			scaleSheet.deleteRule(0);
+		}
 	}
-}
-
-function initStylesheet() {
-	var style = $('#styleSheet');
-	if(style.length > 0) {
-		$(style).remove();
-	}
-	styleSheet = newStylesheet('styleSheet');
-}
-
-function newStylesheet(id){
-	var style = document.createElement('style');
-	if(id) {
-		style.id = id;
-	}
-	style.appendChild(document.createTextNode("")); // Stupid Webkit
-	document.head.appendChild(style);
-	return style.sheet;
 }
 
 function activateHyperspace() {
-	$('body').addClass('hyperspace');
+	document.body.classList.add('hyperspace');
 	setTimeout(function() {
-		$('body').removeClass('hyperspace');
+		document.body.classList.remove('hyperspace');
 	}, 1000);
 }
 
 function setPaused(p) {
-	$('body').toggleClass('paused', p);
+	document.body.classList.toggle('paused', p);
 }
 
 var Graphics = {
 	init: function(opts) {
 		isDragon = false;
-		$('body').removeClass('night').toggleClass('ios', opts.ios);
+		keeper = opts.keeper || keeper;
+		document.body.classList.remove('night');
+		document.body.classList.toggle('ios', !!opts.ios);
 
 		textStore = new TextStore(Options.get('language') || TextStore.detectLocale());
-		$('html').attr('lang', textStore.localeName == 'zh-TW' ? 'zh-Hant-TW' : 'en');
+		document.documentElement.lang = textStore.localeName == 'zh-TW' ? 'zh-Hant-TW' : 'en';
 
-		initStylesheet();
 		scaleToViewport();
-		$(window).off('resize').on('resize', scaleToViewport);
+		if(!listeningToResize) {
+			listeningToResize = true;
+			window.addEventListener('resize', scaleToViewport);
+		}
 		
 		EventManager.bind('draw', handleDrawRequest);
 		
@@ -293,17 +286,13 @@ var Graphics = {
 
 		BoardGraphics.init();
 		WorldGraphics.init();
-		status = new StatusBar(BoardGraphics.el()[0], WorldGraphics.element());
-		notices = new Notices(WorldGraphics.element(), BoardGraphics.el()[0]);
+		status = new StatusBar(BoardGraphics.el(), WorldGraphics.element());
+		notices = new Notices(WorldGraphics.element(), BoardGraphics.el());
 		LootGraphics.init();
 		MagicGraphics.init();
-		if(!getModule('engine').isSilent()) {
+		if(!opts.silent) {
 			AudioGraphics.init();
 		}
-	},
-	
-	isScaled: function() {
-		return currentScale != null;
 	},
 	
 	isReady: function() {
@@ -318,62 +307,26 @@ var Graphics = {
 		return textStore.localeName;
 	},
 	
-	attachHandler: function(moduleName, event, element, handler) {
-		var modules = { gameboard: BoardGraphics, world: WorldGraphics };
-		modules[moduleName.toLowerCase()].attachHandler(event, element, handler);
-	},
-	
-	get: function(selector, context, returnEmpty) {
-		var ret = context ? context.find(selector) : $(selector);
-		if(returnEmpty || ret.length > 0) {
-			return ret;
-		}
-		return null;
-	},
-	
-	addStyleRule: function(selector, rules, sheet) {
-		sheet = sheet || styleSheet;
-		if(sheet.addRule) {
-			// Useless goddamn IE non-standard API. Rabble rabble.
-			var length = sheet.cssRules.length;
-			sheet.addRule(selector, rules);
-			return length;
-		} else {
-			return sheet.insertRule(selector + '{' + rules + '}', 0);
-		}
-	},
-
-	removeStyleRule: function(index) {
-		styleSheet.deleteRule(index);
-	},
-	
-	make: function(className, tagName) {
-		tagName = tagName || 'div';
-		return $('<' + tagName + '>').addClass(className);
-	},
-	
+	// The size of the world, as laid out on the page
 	worldWidth: function() {
 		if(_ww == null) {
-			_ww = $('.world').width();
+			_ww = parseFloat(getComputedStyle(WorldGraphics.element()).width);
 		}
 		return _ww;
 	},
-	
+
 	worldHeight: function() {
 		if(_wh == null) {
-			_wh = $('.world').height();
+			_wh = parseFloat(getComputedStyle(WorldGraphics.element()).height);
 		}
 		return _wh;
 	},
-	
-	addToGame: function(entity) {
-		$('#gameContainer').append(entity.el ? entity.el() : entity);
+
+	// The world's element, above the board
+	world: function() {
+		return WorldGraphics.element();
 	},
-	
-	addToBoard: function(entity) {
-		$('.gameBoard').append(entity.el ? entity.el() : entity);
-	},
-	
+
 	// Adds a part to the menu bar
 	addToMenu: function(part) {
 		menuBar.add(part);
@@ -406,11 +359,7 @@ var Graphics = {
 	},
 	
 	setNight: function(night) {
-		if(night) {
-			$('body').addClass('night');
-		} else {
-			$('body').removeClass('night');
-		}
+		document.body.classList.toggle('night', !!night);
 	},
 	
 	// Day turns to night or back: the sun (or moon) sets, the other rises at the far left
@@ -418,10 +367,10 @@ var Graphics = {
 		var sky = WorldGraphics.sky();
 		var below = Graphics.worldHeight() + 10;
 		sky.moveSun(celestial.p(), below, CELESTIAL_MOVE);
-		$('body').toggleClass('night');
+		document.body.classList.toggle('night');
 		var _g = this;
 		setTimeout(function() {
-			celestial.animation($('body').hasClass('night') ? 1 : 0);
+			celestial.animation(document.body.classList.contains('night') ? 1 : 0);
 			sky.moveSun(SKY_EDGE, below, 0);
 			setTimeout(function() {
 				_g.raiseCelestial(celestial);
@@ -555,7 +504,7 @@ var Graphics = {
 	
 	// The board's element, which holds the world, the tiles and the interface beside them
 	board: function() {
-		return BoardGraphics.el()[0];
+		return BoardGraphics.el();
 	},
 
 	// The keeper's status: hearts, shield, sword, experience, the ward and tonight's
@@ -590,7 +539,7 @@ var Graphics = {
 	},
 
 	fadeOut: function(callback) {
-		$('.gameBoard').addClass('hidden');
+		BoardGraphics.el().classList.add('hidden');
 		if(callback) {
 			setTimeout(callback, 1000);
 		}
@@ -684,12 +633,12 @@ var Graphics = {
 				})());
 			});
 			dragon.setPosture('idle', 500);
-			BoardGraphics.el().addClass(tiltClass);
+			BoardGraphics.el().classList.add(tiltClass);
 			changeTiles(['clay', 'cloth', 'grain'], 'dragonFight', '');
 		}, 1000);
 		setTimeout(function() {
 			Graphics.setBossHealth(dragon.hp(), dragon.getMaxHealth());
-			BoardGraphics.el().removeClass(tiltClass);
+			BoardGraphics.el().classList.remove(tiltClass);
 			dragon.setPosture('windup', 500);
 		}, 1500);
 		setTimeout(function() { EventManager.trigger('roar'); dragon.setPosture('roar', 500); }, 2000);
@@ -711,5 +660,4 @@ var Graphics = {
 	}
 };
 
-register('graphics/graphics', Graphics);
 export default Graphics;

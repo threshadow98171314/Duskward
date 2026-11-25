@@ -1,10 +1,10 @@
-import G from './graphics.js';
 import BoardGraphics from './gameboard.js';
 import GameState from '../gamestate.js';
 import Resources from '../resources.js';
 import { SkyView } from '../../render/sky.ts';
 import { VillageView } from '../../render/village.ts';
 import { ActorsView } from '../../render/actors.ts';
+import { element } from '../../ui/dom.ts';
 
 // The world above the board, drawn on canvases: the sky behind everything else
 // (src/render/sky.ts), the village's buildings and stockpile in front of it (src/render/village.ts),
@@ -19,8 +19,8 @@ var actors = null;
 
 function el() {
 	if(_el == null) {
-		_el = G.make('world');
-		G.addToBoard(_el);
+		_el = element('div', 'world');
+		BoardGraphics.el().appendChild(_el);
 		makeSky();
 		makeVillage();
 		makeActors();
@@ -28,12 +28,19 @@ function el() {
 	return _el;
 }
 
+// The world's size, as laid out on the page
+function sizeOf(world) {
+	var style = getComputedStyle(world);
+	return { width: parseFloat(style.width), height: parseFloat(style.height) };
+}
+
 function makeSky() {
-	var canvas = G.make('skyCanvas', 'canvas').prependTo(_el);
+	var canvas = element('canvas', 'skyCanvas');
+	_el.prepend(canvas);
 	if(sky != null) {
 		sky.stop();
 	}
-	sky = new SkyView(canvas[0], { width: _el.width(), height: _el.height() });
+	sky = new SkyView(canvas, sizeOf(_el));
 	// The sky follows the page: night and dusk fall on the body
 	var page = document.body.classList;
 	sky.setNight(page.contains('night'), false);
@@ -51,11 +58,12 @@ function stored(block) {
 }
 
 function makeVillage() {
-	var canvas = G.make('villageCanvas', 'canvas').insertAfter(_el.children('.skyCanvas'));
+	var canvas = element('canvas', 'villageCanvas');
+	_el.querySelector(':scope > .skyCanvas').after(canvas);
 	if(village != null) {
 		village.stop();
 	}
-	village = new VillageView(canvas[0], { width: _el.width(), height: _el.height() });
+	village = new VillageView(canvas, sizeOf(_el));
 	// Buildings fade into the night; the colours of the materials follow the tiles' levels.
 	// The stockpile shows the stores once the village has them.
 	var page = document.body.classList;
@@ -69,11 +77,12 @@ function makeVillage() {
 }
 
 function makeActors() {
-	var canvas = G.make('actorsCanvas', 'canvas').insertAfter(_el.children('.villageCanvas'));
+	var canvas = element('canvas', 'actorsCanvas');
+	_el.querySelector(':scope > .villageCanvas').after(canvas);
 	if(actors != null) {
 		actors.stop();
 	}
-	actors = new ActorsView(canvas[0], { width: _el.width(), height: _el.height() });
+	actors = new ActorsView(canvas, sizeOf(_el));
 	// The keeper wears their night sprite by night; a carried block takes its tiles' colour
 	var page = document.body.classList;
 	actors.setNight(page.contains('night'), false);
@@ -92,23 +101,7 @@ export default {
 
 	// The world's element
 	element: function() {
-		return el()[0];
-	},
-
-	attachHandler: function(event, element, handler) {
-		if(element) {
-			el().on(event, element, handler);
-		} else {
-			el().on(event, handler);
-		}
-	},
-
-	add: function(thing) {
-		el().append(thing);
-	},
-
-	remove: function(thing) {
-		thing.remove();
+		return el();
 	},
 
 	sky: function() {

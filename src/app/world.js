@@ -1,4 +1,4 @@
-import $ from '../vendor/jquery.js';
+import Util from './util.js';
 import EventManager from './eventmanager.js';
 import Graphics from './graphics/graphics.js';
 import Building from './entity/building.js';
@@ -9,7 +9,6 @@ import Block from './entity/block.js';
 import Resources from './resources.js';
 import Celestial from './entity/celestial.js';
 import Dude from './entity/dude.js';
-import { register } from './modules.js';
 import Engine from './engine.js';
 import GameBoard from './gameboard.js';
 import Options from './gameoptions.js';
@@ -65,7 +64,7 @@ var World = {
 		nightMoves: 15
 	},
 	init: function(opts) {
-		$.extend(this.options, opts);
+		Util.extend(this.options, opts);
 		dude = null;
 		field = null;
 		celestial = null;
@@ -126,7 +125,7 @@ var World = {
 				if(building.built && !building.obsolete) {
 					Graphics.addBuilding(building, true);
 					if(building.options.type.tileMod) {
-						$('.gameBoard').addClass(building.options.type.tileMod + building.options.type.tileLevel);
+						Graphics.board().classList.add(building.options.type.tileMod + building.options.type.tileLevel);
 					}
 					deferredCallbacks.push(built.bind(null, building.options.type));
 				} else if(!building.obsolete && canBuild(building.options.type)) {
@@ -1080,5 +1079,4 @@ function callDragon() {
 }
 
 
-register('world', World);
 export default World;

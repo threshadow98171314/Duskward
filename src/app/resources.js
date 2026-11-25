@@ -1,4 +1,4 @@
-import $ from '../vendor/jquery.js';
+import Util from './util.js';
 import EventManager from './eventmanager.js';
 import Content from './gamecontent.js';
 import GameState from './gamestate.js';
@@ -10,7 +10,7 @@ var Resources = {
 		cols: 3
 	},
 	init : function(opts) {
-		$.extend(this.options, opts);
+		Util.extend(this.options, opts);
 		this.loaded = true;
 		EventManager.trigger('resourceInit');
 	},

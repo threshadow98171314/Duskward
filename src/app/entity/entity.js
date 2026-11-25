@@ -1,11 +1,11 @@
-import $ from '../../vendor/jquery.js';
+import Util from '../util.js';
 
 // Something in the world that animates. The views under src/render draw it; this
 // keeps the frame and row of its animation, and lets an animation do something on
 // each of its frames.
 var entity = function(options) {
 	
-	this.options = $.extend({
+	this.options = Util.extend({
 		className: "blank",
 		animationFrames: 4,
 		speed: 40

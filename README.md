@@ -56,7 +56,7 @@ npm run dev
 | `src/render/` | 新的繪製層（TypeScript、canvas）：盤面、天空、建築、角色、特效與兩個魔王 |
 | `src/platform/` | 用 TypeScript 新寫的平台層，目前有存檔版本與升級 |
 | `src/ui/` | 新的介面元件（TypeScript）：狀態列、道具與法術按鈕、標題畫面、選單、劇情與抉擇、錯誤復原畫面，以及照精靈圖清單產生的介面圖示樣式 |
-| `src/vendor/` | 沿用的第三方程式：jQuery 2.0.3 和 Base64 |
+| `src/vendor/` | 沿用的第三方程式：Base64 |
 | `public/` | 原樣發布的 CSS、圖片和音效 |
 | `tests/` | Vitest 測試 |
 | `docs/` | 設計文件和架構規劃 |

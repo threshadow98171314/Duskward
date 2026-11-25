@@ -1,9 +1,8 @@
-import $ from '../vendor/jquery.js';
+import Util from './util.js';
 import EventManager from './eventmanager.js';
 import Resources from './resources.js';
 import Content from './gamecontent.js';
 import State from './gamestate.js';
-import { getModule } from './modules.js';
 import * as Board from '../core/board.ts';
 import { createRandom } from '../core/random.ts';
 
@@ -19,6 +18,32 @@ var moved = false;
 var checkQueued = false;
 // The player asked to fast-forward the chain being settled
 var hurried = false;
+// What the board asks of the rest of the game: whether it is paused, whether it is
+// night, and whether the Eclipse is out. The engine says how to tell as it starts
+// the board; on its own (as in the tests), the board plays by day and never stops.
+var asks = null;
+// What to do once the animation being drawn is over
+var waiting = null;
+
+function never() {
+	return false;
+}
+
+// The board waits for each animation to be drawn before it goes on
+function waitFor(next) {
+	if(waiting != null) {
+		throw "Already waiting on graphics!";
+	}
+	waiting = next;
+}
+
+function graphicsDone() {
+	if(typeof waiting == 'function') {
+		var next = waiting;
+		waiting = null;
+		next();
+	}
+}
 
 var GameBoard = {
 	SEP: 'X',
@@ -27,15 +52,23 @@ var GameBoard = {
 		columns : 8
 	},
 	init : function(opts) {
+		opts = opts || {};
 		// Tests and replays can pass their own random number generator
-		random = opts && opts.random ? opts.random : createRandom();
-		$.extend(this.options, opts);
+		random = opts.random ? opts.random : createRandom();
+		asks = {
+			paused: opts.paused || never,
+			night: opts.night || never,
+			eclipseOut: opts.eclipseOut || never
+		};
+		waiting = null;
+		Util.extend(this.options, { rows: opts.rows, columns: opts.columns, mobile: opts.mobile });
 		Resources.loaded = false;
 		board = Board.createBoard(this.options.rows, this.options.columns);
 		lastSwitch = null;
 		checkQueued = false;
 		hurried = false;
 
+		EventManager.bind('graphicsActionComplete', graphicsDone);
 		EventManager.bind("refreshBoard", refreshBoard);
 		EventManager.bind("createTileEffect", createEffect);
 		EventManager.bind("tilesSwapped", expireEffects);
@@ -70,7 +103,7 @@ var GameBoard = {
 		Board.swapTiles(board, { row: pos1.row, column: pos1.col }, { row: pos2.row, column: pos2.col });
 		moved = true;
 
-		getModule('engine').setGraphicsCallback(cb);
+		waitFor(cb);
 		EventManager.trigger('draw', ['board.swap', {
 			pos1: pos1,
 			pos2: pos2
@@ -93,8 +126,9 @@ var GameBoard = {
 		return Object.keys(tileMap());
 	},
 
+	// Moves wait while an animation is drawn
 	canMove: function() {
-		return true;
+		return waiting == null;
 	},
 
 	// Plays the rest of the chain being settled at full speed
@@ -127,7 +161,7 @@ function tileMap() {
 		map.f = 1;
 	}
 	// Lantern light is the one thing that hurts the Eclipse
-	if(getModule('world').bossOut('eclipse')) {
+	if(asks.eclipseOut()) {
 		map.f = 2;
 	}
 
@@ -148,7 +182,7 @@ function tileString() {
 
 function fill() {
 	Board.fillBoard(board, tileMap(), random);
-	getModule('engine').setGraphicsCallback(function(){});
+	waitFor(function() {});
 	EventManager.trigger("draw", ['board.fill', tileString()]);
 }
 
@@ -161,13 +195,12 @@ function noMoreMoves() {
 function refreshBoard() {
 	board.effects.fill(null);
 	board.pendingPowers = [];
-	getModule('engine').setGraphicsCallback(fill);
+	waitFor(fill);
 	EventManager.trigger("draw", ['board.clear', {}]);
 }
 
 function checkMatches() {
-	var Engine = getModule('engine');
-	if(Engine.paused) {
+	if(asks.paused()) {
 		checkQueued = true;
 		return;
 	}
@@ -176,7 +209,7 @@ function checkMatches() {
 	var hadPowers = board.pendingPowers.length > 0;
 	var wave = Board.resolveWave(board, {
 		weights: tileMap(),
-		gems: !Engine.isNight() && State.magicEnabled()
+		gems: !asks.night() && State.magicEnabled()
 	}, random);
 
 	wave.placed.forEach(function(power) {
@@ -201,7 +234,7 @@ function checkMatches() {
 		}
 		lastSwitch = null;
 
-		Engine.setGraphicsCallback(checkMatches);
+		waitFor(checkMatches);
 		EventManager.trigger('draw', ['board.match', {
 			removed: wave.removed.map(function(cleared) {
 				return {
@@ -212,7 +245,7 @@ function checkMatches() {
 			added: wave.added.map(function(added) {
 				return { row: added.row, col: added.column, char: added.tile };
 			}),
-			isNight: Engine.isNight(),
+			isNight: asks.night(),
 			side: swapSide,
 			chain: wave.chain,
 			hurried: hurried

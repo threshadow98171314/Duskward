@@ -1,10 +1,10 @@
-import $ from '../../../vendor/jquery.js';
+import Util from '../../util.js';
 import WorldEntity from '../worldentity.js';
 import Options from '../../gameoptions.js';
 import { monsterStat } from '../../../core/combat.ts';
 
 var Monster = function(options) {
-	this.options = $.extend({ multiplier: 1 }, this.options, options);
+	this.options = Util.extend({ multiplier: 1 }, this.options, options);
 	this.hostile = true;
 	this.action = null;
 	this.noIdle = true;

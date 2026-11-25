@@ -11,5 +11,23 @@ export default {
 			o.__guid = this.guid();
 		}
 		return o.__guid;
+	},
+
+	// Copies the properties of each source onto the target, as jQuery's extend did:
+	// a missing source is passed over, and so is a property that is undefined
+	extend: function(target) {
+		for(var i = 1; i < arguments.length; i++) {
+			var source = arguments[i];
+			if(source == null) {
+				continue;
+			}
+			for(var name in source) {
+				var value = source[name];
+				if(value !== undefined && value !== target) {
+					target[name] = value;
+				}
+			}
+		}
+		return target;
 	}
 };

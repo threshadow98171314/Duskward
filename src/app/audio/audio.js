@@ -2,7 +2,6 @@ import E from '../eventmanager.js';
 import WebAudioProvider from './webaudioprovider.js';
 import HtmlAudioProvider from './htmlaudioprovider.js';
 import HtmlWebAudioProvider from './htmlwebaudioprovider.js';
-import { register } from '../modules.js';
 import Engine from '../engine.js';
 import Options from '../gameoptions.js';
 
@@ -324,5 +323,4 @@ var GameAudio = {
 	}
 };
 
-register('audio/audio', GameAudio);
 export default GameAudio;

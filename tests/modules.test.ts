@@ -130,15 +130,6 @@ describe('module graph', () => {
 		expect(Engine.init).toBeTypeOf('function');
 	});
 
-	it('registers every module that is looked up late', async () => {
-		await import('../src/app/engine.js');
-		const { getModule } = await import('../src/app/modules.js');
-		for (const name of ['engine', 'world', 'graphics/graphics', 'audio/audio']) {
-			expect(getModule(name), name).toBeTypeOf('object');
-		}
-		expect(() => getModule('missing')).toThrow('has not loaded yet');
-	});
-
 	// RequireJS ran a module only after the modules it listed. ES modules follow
 	// import order, so in a cycle a module can run before one it needs, e.g. a
 	// subclass before its base class. Whichever module is loaded first, that cannot

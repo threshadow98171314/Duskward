@@ -1,11 +1,11 @@
-import $ from '../../../vendor/jquery.js';
+import Util from '../../util.js';
 import Monster from './monster.js';
 
 // A monster on the field, as the rest of the game knows it: its loot and what it
 // is worth. Where it is and what it does is up to the field (src/core/field.ts),
 // from its content entry; src/render/actors.ts draws it.
 var FieldMonster = function(actor) {
-	this.options = $.extend({}, this.options, {
+	this.options = Util.extend({}, this.options, {
 		monsterClass: actor.kind,
 		spriteName: actor.def.sprite,
 		tiles: actor.tiles

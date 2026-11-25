@@ -5,7 +5,7 @@ import tseslint from 'typescript-eslint';
 
 export default defineConfig(
 	{
-		ignores: ['dist/', 'node_modules/', 'coverage/', 'public/', 'tools/', 'src/vendor/*.min.js'],
+		ignores: ['dist/', 'node_modules/', 'coverage/', 'public/', 'tools/'],
 	},
 	{
 		// The original game code and libraries. ES modules always run in strict mode,

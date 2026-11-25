@@ -1,4 +1,3 @@
-import $ from '../vendor/jquery.js';
 import E from './eventmanager.js';
 import Graphics from './graphics/graphics.js';
 import WorldGraphics from './graphics/world.js';
@@ -93,7 +92,7 @@ export default {
 		E.trigger('roar');
 		later(function() {
 			E.trigger('dragonExplode');
-			$('body').addClass('dawnBreaks');
+			document.body.classList.add('dawnBreaks');
 		}, 2500);
 	},
 
@@ -107,6 +106,6 @@ export default {
 			}
 			view = null;
 		}
-		$('body').removeClass('dawnBreaks');
+		document.body.classList.remove('dawnBreaks');
 	}
 };

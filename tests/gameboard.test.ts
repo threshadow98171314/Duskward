@@ -3,7 +3,6 @@
 // original module triggered them. Before it moved onto the core, this same test drove
 // the original module and matched it move for move on these games.
 import { expect, it, vi } from 'vitest';
-import Engine from '../src/app/engine.js';
 import EventManager from '../src/app/eventmanager.js';
 import GameBoard from '../src/app/gameboard.js';
 import Content from '../src/app/gamecontent.js';
@@ -27,8 +26,6 @@ it('reports every move the way the original board module did', () => {
 		GameState.create();
 		const seeded = createRandom(game * 7919 + 1);
 		GameBoard.init({ random: seeded });
-		let callback: (() => void) | null = null;
-		(Engine as unknown as { setGraphicsCallback: (cb: () => void) => void }).setGraphicsCallback = (cb) => { callback = cb; };
 		const recorded: Recorded[] = [];
 		EventManager.bind('draw', (kind: string, data: unknown) => recorded.push(['draw:' + kind, data]));
 		for (const name of WATCHED) {
@@ -37,7 +34,8 @@ it('reports every move the way the original board module did', () => {
 		let noMoves = false;
 		EventManager.bind('noMoreMoves', () => { noMoves = true; });
 		EventManager.trigger('refreshBoard');
-		const run = () => { while (callback) { const cb: () => void = callback; callback = null; cb(); } };
+		// Nothing draws here: each animation the board waits on is over at once
+		const run = () => { while (!GameBoard.canMove()) { EventManager.trigger('graphicsActionComplete'); } };
 		run();
 		const fill = recorded.find(([kind]) => kind === 'draw:board.fill')![1] as string;
 
@@ -153,9 +151,13 @@ it('fast-forwards the rest of a chain once hurried, until the move is over', () 
 		EventManager.init();
 		GameState.create();
 		GameBoard.init({ random: createRandom(game + 1) });
-		let callback: (() => void) | null = null;
-		(Engine as unknown as { setGraphicsCallback: (cb: () => void) => void }).setGraphicsCallback = (cb) => { callback = cb; };
-		const step = () => { const cb: (() => void) | null = callback; callback = null; cb?.(); return cb !== null; };
+		const step = () => {
+			if (GameBoard.canMove()) {
+				return false;
+			}
+			EventManager.trigger('graphicsActionComplete');
+			return true;
+		};
 		const waves: { chain: number; hurried: boolean }[] = [];
 		EventManager.bind('draw', (kind: string, data: unknown) => {
 			if (kind === 'board.match') waves.push(data as { chain: number; hurried: boolean });

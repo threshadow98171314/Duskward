@@ -1,4 +1,3 @@
-import $ from '../../vendor/jquery.js';
 import E from '../eventmanager.js';
 import GameBoard from '../gameboard.js';
 import Content from '../gamecontent.js';
@@ -7,6 +6,7 @@ import WorldGraphics from './world.js';
 import { BoardView } from '../../render/board.ts';
 import { EffectsView } from '../../render/effects.ts';
 import { ResourceFlights } from '../../ui/flights.ts';
+import { element } from '../../ui/dom.ts';
 
 // The board on screen. The tiles are drawn on a canvas (src/render/board.ts); this
 // module turns the board's draw requests into the view's animations, with the
@@ -47,8 +47,8 @@ function el() {
 	if (_el == null) {
 		clearBoard();
 		_el = createBoard(GameBoard.options.rows, GameBoard.options.columns);
-		_el.addClass('hidden');
-		G.addToGame(_el);
+		_el.classList.add('hidden');
+		document.getElementById('gameContainer').appendChild(_el);
 	}
 	return _el;
 }
@@ -63,30 +63,34 @@ function getTile(row, col) {
 }
 
 function clearBoard() {
-	$('.gameBoard').remove();
+	document.querySelectorAll('.gameBoard').forEach(function(board) {
+		board.remove();
+	});
 }
 
 function createBoard(rows, cols) {
-	var el = G.make('gameBoard litBorder');
+	var el = element('div', 'gameBoard litBorder');
 	if(GameBoard.options.mobile) {
-		$('body').addClass('portrait');
+		document.body.classList.add('portrait');
 	}
 	// Tiles are bigger on phones
-	var portrait = $('body').hasClass('portrait');
+	var portrait = document.body.classList.contains('portrait');
 	CELL = portrait ? 70 : 60;
-	el.width(CELL * cols);
-	el.height(CELL * rows);
-	var tileContainer = G.make('tileContainer').attr('id', 'tileContainer').appendTo(el);
-	var canvas = G.make('boardCanvas', 'canvas').appendTo(tileContainer);
+	el.style.width = CELL * cols + 'px';
+	el.style.height = CELL * rows + 'px';
+	var canvas = element('canvas', 'boardCanvas');
+	var tileContainer = element('div', 'tileContainer', canvas);
+	tileContainer.id = 'tileContainer';
+	el.appendChild(tileContainer);
 	if(view != null) {
 		view.stop();
 	}
-	view = new BoardView(canvas[0], { rows: rows, columns: cols, cell: CELL, pad: BOARD_PAD, scale: portrait ? 1.15 : 1 });
+	view = new BoardView(canvas, { rows: rows, columns: cols, cell: CELL, pad: BOARD_PAD, scale: portrait ? 1.15 : 1 });
 	view.beforeDraw = followPage;
-	view.setNight($('body').hasClass('night'), false);
+	view.setNight(document.body.classList.contains('night'), false);
 	view.start();
 	makeEffects(el, cols, rows);
-	flights = new ResourceFlights(el[0], CELL);
+	flights = new ResourceFlights(el, CELL);
 	// For debugging from the browser console
 	window.boardView = function() {
 		return view;
@@ -97,17 +101,18 @@ function createBoard(rows, cols) {
 // Effects over the world and the board, on a canvas in front of both; the whole
 // board moves while it shakes
 function makeEffects(board, cols, rows) {
-	var canvas = G.make('effectsCanvas', 'canvas').appendTo(board);
+	var canvas = element('canvas', 'effectsCanvas');
+	board.appendChild(canvas);
 	if(effects != null) {
 		effects.stop();
 	}
-	effects = new EffectsView(canvas[0], {
+	effects = new EffectsView(canvas, {
 		width: CELL * cols + 2 * BOARD_PAD,
 		world: { height: WORLD_HEIGHT },
 		board: { top: WORLD_TOP, rows: rows, columns: cols, cell: CELL, pad: BOARD_PAD }
 	});
 	effects.onShake = function(dx, dy) {
-		board[0].style.translate = dx || dy ? dx + 'px ' + dy + 'px' : '';
+		board.style.translate = dx || dy ? dx + 'px ' + dy + 'px' : '';
 	};
 	// Night falls on the body; the keeper's lantern and the village's windows light it
 	var page = document.body.classList;
@@ -125,7 +130,7 @@ function makeEffects(board, cols, rows) {
 // each kind of tile's level and whether the dragon has changed them (see changeTiles)
 function followPage() {
 	view.setNight(document.body.classList.contains('night'));
-	var classes = _el ? _el[0].className : '';
+	var classes = _el ? _el.className : '';
 	if(classes !== boardClasses) {
 		boardClasses = classes;
 		var levels = {};
@@ -282,19 +287,12 @@ export default {
 		E.bind('drawRemoveEffect', removeTileEffect);
 		E.bind('tileExplode', explode);
 		E.bind('gameLoaded', function() {
-			el().removeClass('hidden');
+			el().classList.remove('hidden');
 		});
 	},
 
+	// The board's element
 	el: el,
-
-	attachHandler: function(event, element, handler) {
-		if(element) {
-			el().on(event, element, handler);
-		} else {
-			el().on(event, handler);
-		}
-	},
 
 	handleDrawRequest: function(requestString, options) {
 		switch(requestString.toLowerCase()) {

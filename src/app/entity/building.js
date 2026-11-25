@@ -1,4 +1,4 @@
-import $ from '../../vendor/jquery.js';
+import Util from '../util.js';
 import WorldEntity from './worldentity.js';
 import Content from '../gamecontent.js';
 import { SPRITES } from '../../content/sprites.ts';
@@ -7,7 +7,7 @@ import { SPRITES } from '../../content/sprites.ts';
 // which Graphics tells as it is raised, lifted for an upgrade or sinks away.
 
 var Building = function(options) {
-	this.options = $.extend({}, this.options, {
+	this.options = Util.extend({}, this.options, {
 		type: Content.BuildingType.Shack,
 		animationFrames: 1,
 	}, options);

@@ -1,4 +1,4 @@
-import $ from '../vendor/jquery.js';
+import Util from './util.js';
 
 var gameOptions = {
 	musicVolume: 1,
@@ -23,7 +23,7 @@ var GameOptions = {
 		try {
 			var savedOptions = JSON.parse(localStorage.gameOptions);
 			if(savedOptions) {
-				$.extend(gameOptions, savedOptions);
+				Util.extend(gameOptions, savedOptions);
 			}
 		} catch(e) {
 			// Nothing

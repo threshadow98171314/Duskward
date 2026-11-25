@@ -84,12 +84,13 @@ export class VolumeSliders {
 
 	constructor(private readonly onChange: (volume: Volume, level: number) => void) {
 		this.element = element('div', 'volumeControls', this.slider('music'), this.slider('effects'));
+		// Heard on the way down, before anything on the page keeps the move to itself
 		const signal = this.listening.signal;
 		for (const type of ['mousemove', 'touchmove']) {
-			document.addEventListener(type, (event) => this.move(event), { signal });
+			document.addEventListener(type, (event) => this.move(event), { signal, capture: true });
 		}
 		for (const type of ['mouseup', 'touchend']) {
-			document.addEventListener(type, () => this.letGo(), { signal });
+			document.addEventListener(type, () => this.letGo(), { signal, capture: true });
 		}
 		window.addEventListener('resize', () => this.volumes.forEach((level, volume) => this.set(volume, level)), { signal });
 	}

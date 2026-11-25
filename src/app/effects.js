@@ -1,12 +1,21 @@
 import E from './eventmanager.js';
 import S from './gamestate.js';
-import { getModule } from './modules.js';
 import { STATE_EFFECTS } from '../content/magic.ts';
+
+// Whether it is night, for the effects that differ by day and by night; the engine
+// says how to tell as it starts (until then, it is day)
+var isNight = function() {
+	return false;
+};
+
+export function watchNight(tell) {
+	isNight = tell;
+}
 
 // Carries out what an item, spell or skill does (see Effect in src/content/types.ts)
 export function use(effects) {
 	if(!Array.isArray(effects)) {
-		effects = getModule('engine').isNight() ? effects.night : effects.day;
+		effects = isNight() ? effects.night : effects.day;
 	}
 	effects.forEach(apply);
 }
@@ -38,7 +47,7 @@ function apply(effect) {
 		E.trigger('refreshBoard');
 		break;
 	case 'phaseChange':
-		E.trigger('phaseChange', [!getModule('engine').isNight()]);
+		E.trigger('phaseChange', [!isNight()]);
 		break;
 	case 'stateEffect':
 		E.trigger('newStateEffect', [STATE_EFFECTS[effect.effect]]);

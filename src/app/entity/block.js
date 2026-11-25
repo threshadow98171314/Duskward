@@ -1,4 +1,4 @@
-import $ from '../../vendor/jquery.js';
+import Util from '../util.js';
 import WorldEntity from './worldentity.js';
 import Content from '../gamecontent.js';
 
@@ -6,7 +6,7 @@ import Content from '../gamecontent.js';
 // wait in the stockpile (src/render/village.ts draws it) for the keeper to carry them.
 
 var Block = function(options) {
-	this.options = $.extend({}, this.options, {
+	this.options = Util.extend({}, this.options, {
 		type: Content.ResourceType.Grain
 	}, options);
 	this._quantity = 0;

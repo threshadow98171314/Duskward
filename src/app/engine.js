@@ -1,4 +1,4 @@
-import $ from '../vendor/jquery.js';
+import Util from './util.js';
 import EventManager from './eventmanager.js';
 import Graphics from './graphics/graphics.js';
 import Content from './gamecontent.js';
@@ -20,14 +20,15 @@ import Skills from './skills.js';
 import Blessings from './blessings.js';
 import Plan from './plan.js';
 import LongNight from './longnight.js';
-import { register } from './modules.js';
+import { watchNight } from './effects.js';
 
 var DRAG_THRESHOLD = 30; // in pixels
+// What a press is: the mouse going down, or a finger touching
+var PRESS = ['mousedown', 'touchstart'];
 var MOBILE_RATIO = 16/10; // height/width
 var activeTile = null;
 var dragging = false;
 var dragStart = {x: 0, y: 0};
-var graphicsCallback = null;
 var loaded = false;
 var silent = true;
 var started = false;
@@ -75,7 +76,7 @@ function isReady(module) {
 }
 
 function canMove() {
-	return graphicsCallback == null && GameBoard.canMove() && World.canMove() && !Engine.paused;
+	return GameBoard.canMove() && World.canMove() && !Engine.paused;
 }
 
 // Tiles are picked up and swapped by cell, { row, column }
@@ -128,21 +129,12 @@ function endDrag(delta) {
 	}
 }
 
-function handleGraphicsComplete() {
-	if(typeof graphicsCallback == 'function') {
-		var cb = graphicsCallback;
-		graphicsCallback = null;
-		cb();
-	}
-}
-
 function startGame(slot) {
 	GameState.load(slot);
-	EventManager.bind('graphicsActionComplete', handleGraphicsComplete);
 	EventManager.trigger('gameLoaded');
 	EventManager.trigger('refreshBoard');
 	EventManager.trigger('launchDude');
-	$('body').removeClass('titleScreen');
+	document.body.classList.remove('titleScreen');
 	started = true;
 }
 
@@ -158,36 +150,144 @@ function isModernBrowser() {
 	return ( location.search.indexOf( 'ignorebrowser' ) >= 0 || ( typeof Storage != 'undefined' ) );
 }
 
+// While the game is paused, a press anywhere on the page carries on with it
 function setPaused(p) {
 	Engine.paused = p;
 	if(p) {
-		Graphics.get('body').one('click touchstart', function() {
-			EventManager.trigger('unpause');
+		['click', 'touchstart'].forEach(function(type) {
+			document.body.addEventListener(type, carryOn, { once: true });
 		});
 	}
+}
+
+function carryOn() {
+	EventManager.trigger('unpause');
+}
+
+// A press the page does nothing else with
+function stop(e) {
+	e.preventDefault();
+	e.stopPropagation();
+}
+
+function pointOf(e) {
+	return e.changedTouches ? e.changedTouches[0] : e;
+}
+
+// The page around the game is there from the start, and listened to once
+var listening = false;
+function listenToPage() {
+	if(listening) {
+		return;
+	}
+	listening = true;
+	var test = document.getElementById('test');
+	if(test) {
+		test.addEventListener('click', function() {
+			EventManager.trigger('phaseChange', [!Engine.isNight()]);
+		});
+	}
+	var pauseIcon = document.getElementById('pauseIcon');
+	['click', 'touchstart'].forEach(function(type) {
+		pauseIcon.addEventListener(type, function(e) {
+			if(!Engine.paused) {
+				EventManager.trigger('pause');
+				stop(e);
+			}
+		});
+	});
+	// A press anywhere else closes the spells; the page does nothing else with it,
+	// unless it is for typing, a link or a button
+	PRESS.forEach(function(type) {
+		document.body.addEventListener(type, function(e) {
+			EventManager.trigger('toggleMenu');
+			var target = e.target;
+			if(!(target.tagName == 'TEXTAREA' || target.tagName == 'A' || target.tagName == 'INPUT' ||
+					(target.hasAttribute && target.hasAttribute('data-clickable')))) {
+				stop(e);
+			}
+		});
+	});
+}
+
+// The board: a tile pressed is picked up, or swapped with the one picked up before;
+// a tile dragged is swapped with the one it is dragged onto
+function listenToBoard(board) {
+	PRESS.forEach(function(type) {
+		board.addEventListener(type, function(e) {
+			if(!(e.target instanceof Element) || e.target.closest('.boardCanvas') == null) {
+				return;
+			}
+			if(!canMove()) {
+				// Tapping the board while a chain plays out fast-forwards it
+				GameBoard.hurry();
+			}
+			if(!dragging) {
+				var point = pointOf(e);
+				var cell = Graphics.tileAt(point.clientX, point.clientY);
+				if(cell) {
+					dragStart.x = point.clientX;
+					dragStart.y = point.clientY;
+					dragging = true;
+					startDrag(cell);
+				}
+			}
+			EventManager.trigger('toggleMenu');
+			stop(e);
+		});
+	});
+	['mouseup', 'touchend'].forEach(function(type) {
+		board.addEventListener(type, function(e) {
+			dragging = false;
+			stop(e);
+		});
+	});
+	['mousemove', 'touchmove'].forEach(function(type) {
+		board.addEventListener(type, function(e) {
+			if(dragging) {
+				var point = pointOf(e);
+				if(endDrag({
+					x: point.clientX - dragStart.x,
+					y: point.clientY - dragStart.y
+				})) {
+					dragging = false;
+				}
+			}
+			stop(e);
+		});
+	});
+}
+
+// The world: a building's bars of materials, or a building lifted for its upgrade,
+// pressed, is seen to first
+function listenToWorld(world) {
+	PRESS.forEach(function(type) {
+		world.addEventListener(type, function(e) {
+			if(e.target instanceof Element && e.target.closest('.villageCanvas') != null) {
+				var point = pointOf(e);
+				var building = Graphics.buildingAt(point.clientX, point.clientY);
+				if(building) {
+					EventManager.trigger('prioritizeBuilding', [building]);
+				}
+			}
+			EventManager.trigger('toggleMenu');
+			stop(e);
+		});
+	});
 }
 
 var Engine = {
 	options: {},
 	init: function(opts) {
-		$.extend(this.options, opts);
+		Util.extend(this.options, opts);
 		holds = 0;
 
 		if(!isModernBrowser()) {
 			window.location = 'browserWarning.html';
 		}
 	
-		$('#test').off().click(function() { 
-			EventManager.trigger('phaseChange', [!Engine.isNight()]);
-		});
-		
-		$('#pauseIcon').off().on('click touchstart', function() {
-			if(!Engine.paused) {
-				EventManager.trigger('pause');
-				return false;
-			}
-		});
-		
+		listenToPage();
+
 		var gOptions = null;
 		// Change the aspect ratio of the gameboard on mobile devices with 16:10 or :9 ratio
 		if (window.screen.height / window.screen.width >= MOBILE_RATIO) {
@@ -198,20 +298,51 @@ var Engine = {
 			};
 		}
 		
+		// The music and sounds, unless the page asks for none
+		var audio = null;
+		if(window.location.search.indexOf('nomusic') >= 0) {
+			audio = [GameAudio, { nomusic: true }];
+			silent = false;
+		} else if(window.location.search.indexOf('silent') < 0) {
+			audio = GameAudio;
+			silent = false;
+		}
+
+		// What the board asks of the game, and what the effects of items, spells and
+		// skills ask: whether the game is paused, whether it is night, whether the
+		// Eclipse is out
+		var board = Util.extend({
+			paused: function() {
+				return Engine.paused;
+			},
+			night: function() {
+				return World.isNight();
+			},
+			eclipseOut: function() {
+				return World.bossOut('eclipse');
+			}
+		}, gOptions);
+		watchNight(function() {
+			return World.isNight();
+		});
+
 		var modules = [EventManager,
 		                Visibility,
-						[GameBoard, gOptions],
-						[Graphics, { ios: isIOS() }],
+						[GameBoard, board],
+						[Graphics, {
+							ios: isIOS(),
+							silent: silent,
+							// Sparks fly from the keeper's blows
+							keeper: function() {
+								return World.getDude();
+							}
+						}],
 						World,
 						Loot,
 						Magic,
 						KeySequencer];
-		if(window.location.search.indexOf('nomusic') >= 0) {
-			modules.push([GameAudio, { nomusic: true }]);
-			silent = false;
-		} else if(window.location.search.indexOf('silent') < 0) {
-			modules.push(GameAudio);
-			silent = false;
+		if(audio != null) {
+			modules.push(audio);
 		}
 		
 		modules.push(Difficulty);
@@ -271,94 +402,26 @@ var Engine = {
 			EventManager.trigger('afterUnpaused');
 		});
 		
-		Graphics.attachHandler("GameBoard", "mousedown touchstart", '.boardCanvas', function(e) {
-			if(!canMove()) {
-				// Tapping the board while a chain plays out fast-forwards it
-				GameBoard.hurry();
-			}
-			if(!dragging) {
-				// Handle wacky touch event objects
-				if(e.originalEvent.changedTouches) {
-					e = e.originalEvent.changedTouches[0];
-				}
-				var cell = Graphics.tileAt(e.clientX, e.clientY);
-				if(cell) {
-					dragStart.x = e.clientX;
-					dragStart.y = e.clientY;
-					dragging = true;
-					startDrag(cell);
-				}
-			}
-			EventManager.trigger('toggleMenu');
-			return false;
-		});
-		Graphics.attachHandler("GameBoard", "mouseup touchend", function(e) {
-			dragging = false;
-			return false;
-		});
-		Graphics.attachHandler("GameBoard", "mousemove touchmove", function(e) {
-			if(dragging) {
-				// Handle wacky touch event objects
-				if(e.originalEvent.changedTouches) {
-					e = e.originalEvent.changedTouches[0];
-				}
-				if(endDrag({ 
-					x: e.clientX - dragStart.x,
-					y: e.clientY - dragStart.y
-				})) {
-					dragging = false;
-				}
-			}
-			return false;
-		});
-		
-		$('body').off().on('mousedown touchstart', function(e) {
-			EventManager.trigger('toggleMenu');
-			return e.target.tagName == 'TEXTAREA' || e.target.tagName == 'A' || e.target.tagName == 'INPUT' || e.target.hasAttribute('data-clickable');
-		});
-		// A building's bars of materials, or a building lifted for its upgrade: see to it first
-		Graphics.attachHandler("World", "mousedown touchstart", '.villageCanvas', function(e) {
-			// Handle wacky touch event objects
-			if(e.originalEvent.changedTouches) {
-				e = e.originalEvent.changedTouches[0];
-			}
-			var building = Graphics.buildingAt(e.clientX, e.clientY);
-			if(building) {
-				EventManager.trigger('prioritizeBuilding', [building]);
-				EventManager.trigger('click', ['building']);
-			}
-		});
-		Graphics.attachHandler("World", "mousedown touchstart", function(e) {
-			// Handle wacky touch event objects
-			if(e.originalEvent.changedTouches) {
-				e = e.originalEvent.changedTouches[0];
-			}
-			EventManager.trigger('toggleMenu');
-			return false;
-		});
+		// The board and the world are made anew as the game starts
+		listenToBoard(Graphics.board());
+		listenToWorld(Graphics.world());
 	},
-	
-	setGraphicsCallback: function(cb) {
-		if(graphicsCallback != null) throw "Already waiting on graphics!";
-		graphicsCallback = cb;
-	},
-	
+
 	isNight: function() {
 		return World.isNight();
 	},
 	
-	isSilent: function() {
-		return silent;
-	},
 
 	isStarted: function() {
 		return started;
 	},
 	
 	_debug: function(text) {
-		$('#debug').text(text);
+		var debug = document.getElementById('debug');
+		if(debug) {
+			debug.textContent = text;
+		}
 	}
 };
 
-register('engine', Engine);
 export default Engine;

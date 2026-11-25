@@ -1,7 +1,7 @@
-import $ from '../vendor/jquery.js';
 import E from './eventmanager.js';
 import State from './gamestate.js';
 import Graphics from './graphics/graphics.js';
+import { offerChoice } from '../ui/choices.ts';
 
 // The morning's building plan: when a new building is ready to be raised and
 // there is more than one to choose from, the keeper is asked which comes first.
@@ -9,7 +9,6 @@ import Graphics from './graphics/graphics.js';
 // the order to their own judgement. The game waits while the keeper chooses.
 
 var MORNING_DELAY = 6000;
-var FADE_TIME = 500;
 
 function G() {
 	return Graphics;
@@ -56,37 +55,20 @@ function ask() {
 	});
 
 	E.trigger('hold');
-	var cards = G().make('choiceCards');
-	buildings.forEach(function(building) {
-		G().make('choiceCard')
-			.data('building', building)
-			.append(G().make('cardName').text(buildingName(building.options.type.className)))
-			.append(G().make('cardGift').text(costText(building)))
-			.appendTo(cards);
-	});
-	var panel = G().make('duskChoice buildPlan hidden')
-		.append(G().make('choiceSpeaker').text(G().getText('SERA')))
-		.append(G().make('choiceText').text(G().getText('BUILD_PLAN')))
-		.append(cards)
-		.append(G().make('choiceSkip').text(G().getText('BUILD_PLAN_SKIP')))
-		.appendTo('#gameContainer');
-	panel.on('click touchstart', '.choiceCard, .choiceSkip', function() {
-		var building = $(this).data('building');
-		panel.off().addClass('hidden');
-		setTimeout(function() {
-			panel.remove();
-		}, FADE_TIME);
-		if(building) {
-			E.trigger('prioritizeBuilding', [building]);
+	offerChoice(document.getElementById('gameContainer'), {
+		className: 'buildPlan',
+		speaker: G().getText('SERA'),
+		text: G().getText('BUILD_PLAN'),
+		cards: buildings.map(function(building) {
+			return { name: buildingName(building.options.type.className), gift: costText(building) };
+		}),
+		skip: G().getText('BUILD_PLAN_SKIP')
+	}, function(chosen) {
+		if(chosen != null) {
+			E.trigger('prioritizeBuilding', [buildings[chosen]]);
 		}
 		E.trigger('letGo');
-		return false;
 	});
-	panel.on('click touchstart', function() {
-		return false;
-	});
-	panel.css('opacity');
-	panel.removeClass('hidden');
 }
 
 export default {

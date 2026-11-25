@@ -24,15 +24,17 @@ export function settle(target: HTMLElement): void {
 export const PRESS = ['mousedown', 'touchstart'];
 
 // Calls back when an element is pressed. A handler that returns false keeps the press
-// to itself: it goes no further, and the page does nothing else with it.
-export function onPress(target: HTMLElement, handler: (event: Event) => boolean | void, events = PRESS): void {
+// to itself: it goes no further, and the page does nothing else with it. A signal
+// stops the listening.
+export function onPress(target: HTMLElement, handler: (event: Event) => boolean | void, events = PRESS,
+	signal?: AbortSignal): void {
 	for (const type of events) {
 		target.addEventListener(type, (event) => {
 			if (handler(event) === false) {
 				event.preventDefault();
 				event.stopPropagation();
 			}
-		});
+		}, { signal });
 	}
 }
 

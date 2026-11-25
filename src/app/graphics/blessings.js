@@ -1,11 +1,9 @@
-import $ from '../../vendor/jquery.js';
 import Graphics from './graphics.js';
+import { offerChoice } from '../../ui/choices.ts';
 
 // The dusk choice: Sera's offer of blessings for the night, as cards with the gift
-// and the price spelled out, and the skills to take into the night. Also the
-// badge in the status that shows the chosen blessing until morning.
-
-var FADE_TIME = 500;
+// and the price spelled out, and the skills to take into the night (src/ui/choices.ts).
+// Also the badge in the status that shows the chosen blessing until morning.
 
 function G() {
 	return Graphics;
@@ -42,13 +40,13 @@ function describe(boon) {
 	return '';
 }
 
+// A blessing's card: what it gives, and what it costs
 function card(id, blessing) {
-	var price = blessing.price.length > 0 ? blessing.price.map(describe).join('、') : G().getText('NO_PRICE');
-	return G().make('choiceCard')
-		.data('blessing', id)
-		.append(G().make('cardName').text(G().getText('BLESSING_NAMES')[id]))
-		.append(G().make('cardGift').text(blessing.gift.map(describe).join('、')))
-		.append(G().make('cardPrice').text(price));
+	return {
+		name: G().getText('BLESSING_NAMES')[id],
+		gift: blessing.gift.map(describe).join('、'),
+		price: blessing.price.length > 0 ? blessing.price.map(describe).join('、') : G().getText('NO_PRICE')
+	};
 }
 
 function showBadge(omen, id) {
@@ -67,71 +65,26 @@ export default {
 		if(omen.effects.length > 0) {
 			omenText += '（' + omen.effects.map(describe).join('、') + '）';
 		}
-		var panel = G().make('duskChoice hidden')
-			.append(G().make('choiceOmen')
-				.append(G().make('omenName').text(G().getText('OMEN', G().getText('OMEN_NAMES')[omen.id])))
-				.append(G().make('omenText').text(omenText)))
-			.append(G().make('choiceSpeaker').text(G().getText('SERA')))
-			.append(G().make('choiceText').text(G().getText('DUSK_CHOICE')));
-
-		var picks = null;
-		if(skills) {
-			picks = G().make('skillPicks').append(G().make('skillPicksTitle').text(G().getText('SKILL_LOADOUT')));
-			skills.unlocked.forEach(function(name) {
-				G().make('skillPick litBorder' + (skills.loadout.indexOf(name) >= 0 ? ' picked' : ''))
-					.data('skill', name)
-					.text(G().getText('SKILL_' + name.toUpperCase()))
-					.appendTo(picks);
-			});
-			panel.append(picks);
-		}
-
-		var cards = G().make('choiceCards');
-		ids.forEach(function(id) {
-			cards.append(card(id, blessings[id]));
-		});
-		panel.append(cards).append(G().make('choiceSkip').text(G().getText('NO_BLESSING')));
-
-		var order = picks ? picks.find('.picked').map(function() { return $(this).data('skill'); }).get() : [];
-		panel.on('click touchstart', '.skillPick', function() {
-			var name = $(this).data('skill');
-			var at = order.indexOf(name);
-			if(at >= 0) {
-				order.splice(at, 1);
-			} else {
-				order.push(name);
-				// Taking a third lets go of the first
-				if(order.length > 2) {
-					order.shift();
-				}
-			}
-			picks.find('.skillPick').each(function() {
-				$(this).toggleClass('picked', order.indexOf($(this).data('skill')) >= 0);
-			});
-			picks.removeClass('needed');
-			return false;
-		});
-		panel.on('click touchstart', '.choiceCard, .choiceSkip', function() {
-			if(picks && order.length != 2) {
-				picks.addClass('needed');
-				return false;
-			}
-			var id = $(this).data('blessing') || null;
-			panel.off().addClass('hidden');
-			setTimeout(function() {
-				panel.remove();
-			}, FADE_TIME);
+		offerChoice(document.getElementById('gameContainer'), {
+			omen: { name: G().getText('OMEN', G().getText('OMEN_NAMES')[omen.id]), text: omenText },
+			speaker: G().getText('SERA'),
+			text: G().getText('DUSK_CHOICE'),
+			skills: skills ? {
+				title: G().getText('SKILL_LOADOUT'),
+				skills: skills.unlocked.map(function(name) {
+					return { name: name, label: G().getText('SKILL_' + name.toUpperCase()) };
+				}),
+				picked: skills.loadout
+			} : undefined,
+			cards: ids.map(function(id) {
+				return card(id, blessings[id]);
+			}),
+			skip: G().getText('NO_BLESSING')
+		}, function(chosen, loadout) {
+			var id = chosen == null ? null : ids[chosen];
 			showBadge(omen.id, id);
-			done(id, picks ? order.slice() : null);
-			return false;
+			done(id, loadout);
 		});
-		// Nothing behind the choice reacts while it is open
-		panel.on('click touchstart', function() {
-			return false;
-		});
-		panel.appendTo('#gameContainer');
-		panel.css('opacity'); // Force a reflow so the transition runs
-		panel.removeClass('hidden');
 	},
 
 	clear: function() {

@@ -119,13 +119,14 @@ body.night {
 	align-items: flex-start;
 }
 
-.portrait {
+.dialoguePortrait {
 	flex: none;
 	width: 48px;
 	height: 48px;
 	border: 2px solid #e2a65a;
 	border-radius: 4px;
-	background: #1d1631 url(../img/portraits.png) no-repeat;
+	background-color: #1d1631;
+	background-repeat: no-repeat;
 }
 
 .dialogueBody {

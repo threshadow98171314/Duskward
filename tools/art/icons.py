@@ -1,4 +1,5 @@
-"""Interface icons: hearts, equipment meters, items, spells, sun and moon, and buttons.
+"""Interface icons: hearts, equipment meters, items, spells and the lasting effects,
+sun and moon, and buttons.
 
 Each function returns a Canvas at 1x; icons.png holds them at 2x in the slots
 the original stylesheet points at.
@@ -133,6 +134,15 @@ def spell(name):
         c.poly([(6, 4), (14, 4), (10, 10)], "c")
         c.poly([(10, 10), (14, 16), (6, 16)], "c")
         c.poly([(8, 13), (12, 13), (13, 16), (7, 16)], "y")
+    elif name == "frozen":  # not a spell: the keeper held in ice, while it lasts
+        c.line(10, 2, 10, 18, "c")
+        c.line(3, 6, 17, 14, "c")
+        c.line(3, 14, 17, 6, "c")
+        for x, y in ((10, 2), (10, 18), (3, 6), (17, 14), (3, 14), (17, 6)):
+            c.set(x, y, "w")
+        for x0, y0, x1, y1 in ((8, 3, 10, 5), (12, 3, 10, 5), (8, 17, 10, 15), (12, 17, 10, 15)):
+            c.line(x0, y0, x1, y1, "c")
+        c.ellipse(10, 10, 1.5, 1.5, "w")
     else:  # phaseChange: half sun, half moon
         c.ellipse(10, 10, 7, 7, "y")
         c.recolor("y", "P", lambda x, y: x > 10)

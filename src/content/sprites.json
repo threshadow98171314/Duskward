@@ -394,6 +394,97 @@
 				"dawnHeart"
 			]
 		},
+		"shield": {
+			"sheet": "icons",
+			"x": 0,
+			"y": 0,
+			"width": 30,
+			"height": 30,
+			"frames": 9,
+			"rows": 2
+		},
+		"buttons": {
+			"sheet": "icons",
+			"x": 0,
+			"y": 60,
+			"width": 28,
+			"height": 28,
+			"frames": 5,
+			"rows": 1,
+			"names": [
+				"confirm",
+				"cancel",
+				"export",
+				"import",
+				"delete"
+			]
+		},
+		"hearts": {
+			"sheet": "icons",
+			"x": 0,
+			"y": 279,
+			"width": 30,
+			"height": 28,
+			"frames": 3,
+			"rows": 2,
+			"names": [
+				"heart",
+				"bigheart",
+				"fill"
+			]
+		},
+		"menu": {
+			"sheet": "icons",
+			"x": 0,
+			"y": 362,
+			"width": 40,
+			"height": 40,
+			"frames": 1,
+			"rows": 2
+		},
+		"volume.music": {
+			"sheet": "icons",
+			"x": 0,
+			"y": 442,
+			"width": 35,
+			"height": 64,
+			"frames": 1,
+			"rows": 2
+		},
+		"volume.effects": {
+			"sheet": "icons",
+			"x": 0,
+			"y": 570,
+			"width": 35,
+			"height": 64,
+			"frames": 1,
+			"rows": 2
+		},
+		"spells": {
+			"sheet": "icons",
+			"x": 0,
+			"y": 794,
+			"width": 40,
+			"height": 40,
+			"frames": 5,
+			"rows": 2,
+			"names": [
+				"resetBoard",
+				"haste",
+				"freezeTime",
+				"phaseChange",
+				"frozen"
+			]
+		},
+		"sword": {
+			"sheet": "icons",
+			"x": 0,
+			"y": 951,
+			"width": 30,
+			"height": 30,
+			"frames": 9,
+			"rows": 2
+		},
 		"tile.grain": {
 			"sheet": "tiles",
 			"x": 0,

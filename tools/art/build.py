@@ -88,8 +88,10 @@ def build_buildings():
 # The items' icons, side by side on icons.png in this order
 ITEMS = ("healthPotion", "manaPotion", "bomb", "equipment", "shard", "callDragon", "dawnHeart")
 
+# The spells' icons in this order, then the lasting effect of being frozen in ice
+SPELL_ICONS = ("resetBoard", "haste", "freezeTime", "phaseChange", "frozen")
+
 # Sprites on icons.png the game draws by name: (x, y, frame width, frame height, frames, rows).
-# The interface's own icons are placed by the style sheets for now.
 ICON_SPRITES = {
     "dragoneffects": (0, 88, 30, 44, 4, 2),  # original art: the ice block, then fire
     "fireball": (0, 175, 16, 7, 2, 1),  # original art: flying left, then right
@@ -99,6 +101,22 @@ ICON_SPRITES = {
     "treasurechest": (0, 1011, 26, 26, 1, 2),  # closed, then open
 }
 
+# The interface's icons on icons.png, which its style sheet places by name (src/ui/icons.ts):
+# (x, y, frame width, frame height, frames, rows, what each frame shows)
+INTERFACE_ICONS = {
+    "shield": (0, 0, 30, 30, 9, 2, None),  # a frame for each level: the meter, then its outline
+    "buttons": (0, 60, 28, 28, 5, 1, ("confirm", "cancel", "export", "import", "delete")),
+    "hearts": (0, 279, 30, 28, 3, 2, ("heart", "bigheart", "fill")),  # by day, then by night
+    "menu": (0, 362, 40, 40, 1, 2, None),  # by day, then by night
+    "volume.music": (0, 442, 35, 64, 1, 2, None),  # original art: by day, then by night
+    "volume.effects": (0, 570, 35, 64, 1, 2, None),
+    "spells": (0, 794, 40, 40, len(SPELL_ICONS), 2, SPELL_ICONS),  # by day, then by night
+    "sword": (0, 951, 30, 30, 9, 2, None),  # a frame for each level: the meter, then its outline
+}
+
+# Original art on icons.png that nothing shows any more: the share and donate buttons, and the logo
+UNUSED_AREAS = [(0, 699, 528, 794), (200, 794, 528, 795)]
+
 # Areas of icons.png that are redrawn; the rest (volume sliders, dragon effects) is still original
 ICON_AREAS = [(0, 0, 270, 60), (0, 60, 140, 88), (0, 183, 48, 279), (0, 279, 90, 335),
               (0, 335, 196, 363), (0, 362, 40, 442), (0, 794, 200, 874), (0, 875, 64, 891),
@@ -107,7 +125,7 @@ ICON_AREAS = [(0, 0, 270, 60), (0, 60, 140, 88), (0, 183, 48, 279), (0, 279, 90,
 
 def build_icons():
     sheet = read_png(LEGACY / "icons.png")
-    for x0, y0, x1, y1 in ICON_AREAS:
+    for x0, y0, x1, y1 in ICON_AREAS + UNUSED_AREAS:
         for y in range(y0, y1):
             sheet[y][x0:x1] = [(0, 0, 0, 0)] * (x1 - x0)
     place = lambda canvas, x, y: paste(sheet, canvas.to_rgba(), x, y)
@@ -129,7 +147,7 @@ def build_icons():
         place(icons.item(name), i * 28, 335)
     place(icons.menu(False), 0, 362)
     place(icons.menu(True), 0, 402)
-    for i, name in enumerate(("resetBoard", "haste", "freezeTime", "phaseChange")):
+    for i, name in enumerate(SPELL_ICONS):
         place(icons.spell(name), i * 40, 794)
         place(icons.spell(name), i * 40, 834)
     for frame in range(4):
@@ -180,6 +198,8 @@ def sprite_list(sizes):
         add(name, "icons", x, y, width, height, frames=frames, rows=rows)
     # Each item's icon is the frame of its name
     add("items", "icons", 0, 335, 28, 28, frames=len(ITEMS), names=ITEMS)
+    for name, (x, y, width, height, frames, rows, names) in INTERFACE_ICONS.items():
+        add(name, "icons", x, y, width, height, frames=frames, rows=rows, names=names)
     for name, x in TILE_COLUMNS.items():
         add("tile." + name, "tiles", x, 0, TILE, TILE, rows=resources.LEVELS[name])
         add("tile." + name + ".night", "tiles", x, NIGHT_TILES, TILE, TILE, rows=resources.LEVELS[name])

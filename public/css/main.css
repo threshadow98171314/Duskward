@@ -266,7 +266,6 @@ body.paused:before {
 	display: inline-block;
 	top: 0px;
 	margin-right: 5px;
-	background-position: 0 -874px;
 }
 
 .saveSlot .infoSide,
@@ -377,29 +376,8 @@ body.paused:before {
 	width: 28px;
 	height: 28px;
 	display: inline-block;
-	background-image: url(../img/icons.png);
 	margin-left: 5px;
 	cursor: pointer;
-}
-
-.confirm {
-	background-position: 0 -60px;
-}
-
-.cancel {
-	background-position: -28px -60px;
-}
-
-.export {
-	background-position: -56px -60px;
-}
-
-.import {
-	background-position: -84px -60px;
-}
-
-.delete {
-	background-position: -112px -60px;
 }
 
 /** Menu Bar **/
@@ -457,7 +435,7 @@ body.paused:before {
 .menuBtn {
 	height: 40px;
 	width: 40px;
-	background: url(../img/icons.png) 0 -362px no-repeat;
+	background-repeat: no-repeat;
 	border-radius: 4px;
 	position: absolute;
 	right: 3px;
@@ -473,7 +451,7 @@ body.paused:before {
 .menuBtn .nightSprite {
 	height: 40px;
 	width: 40px;
-	background: url(../img/icons.png) 0px -402px no-repeat;
+	background-repeat: no-repeat;
 }
 
 .menuBar.open {
@@ -578,29 +556,6 @@ body.paused:before {
 }
 
 /** Save Spinner **/
-
-.logo {
-	position: absolute;
-	left: 5px;
-	top: 1px;
-	background-position: -480px -699px;
-}
-
-.logo,
-.logo .nightSprite {
-	display: block;
-	height: 48px;
-	width: 48px;
-	background-image: url(../img/icons.png);
-}
-
-.logo .nightSprite {
-	background-position: -480px -747px;
-}
-
-.saveSpinner.active + .logo {
-	display: none;
-}
 
 .saveSpinner {
 	width: 40px;
@@ -856,7 +811,7 @@ body.paused:before {
 
 .star {
 	position: absolute;
-	background: url(../img/icons.png) no-repeat;
+	background-repeat: no-repeat;
 	width: 16px;
 	height: 16px;
 	top: 10px;
@@ -1027,27 +982,14 @@ body.paused:before {
 	position: absolute;
 	width: 100%;
 	height: 100%;
-	background: url(../img/icons.png) 0 -279px no-repeat;
+	background-repeat: no-repeat;
 	z-index: 1;
-}
-
-.bigheart .mask {
-	background-position: -30px -279px;
-}
-
-.heart .mask.nightSprite {
-	background-position: left -307px;
-}
-
-.bigheart .mask.nightSprite {
-	background-position: -30px -307px;
 }
 
 .heart .bar,
 .bigheart .bar {
 	position: absolute;
 	height: 100%;
-	background: url(../img/icons.png) -60px -279px;
 	transition: width 300ms linear;
 	-webkit-transition: width 300ms linear;
 	-ms-transition: width 300ms linear;
@@ -1055,17 +997,12 @@ body.paused:before {
 	-o-transition: width 300ms linear;
 }
 
-.heart.full,
-.bigheart.full {
-	background: url(../img/icons.png) -60px -279px;
-}
-
 .shield {
 	position: absolute;
 	top: -35px;
 	width: 30px;
 	height: 30px;
-	background: url(../img/icons.png) no-repeat 0px -30px;
+	background-repeat: no-repeat;
 	transition: opacity 300ms linear;
 	-webkit-transition: opacity 300ms linear;
 	-ms-transition: opacity 300ms linear;
@@ -1075,7 +1012,7 @@ body.paused:before {
 
 .shield > div {
 	height: 100%;
-	background: url(../img/icons.png) 0 0 no-repeat;
+	background-repeat: no-repeat;
 	transition: width 300ms linear;
 	-webkit-transition: width 300ms linear;
 	-ms-transition: width 300ms linear;
@@ -1083,74 +1020,10 @@ body.paused:before {
 	-o-transition: width 300ms linear;
 }
 
-.wood2 .shield {
-	background-position: -30px -30px;
-}
-
-.wood2 .shield > div {
-	background-position: -30px 0;
-}
-
-.wood3 .shield {
-	background-position: -60px -30px;
-}
-
-.wood3 .shield > div {
-	background-position: -60px 0;
-}
-
-.wood4 .shield {
-	background-position: -90px -30px;
-}
-
-.wood4 .shield > div {
-	background-position: -90px 0;
-}
-
-.wood5 .shield {
-	background-position: -120px -30px;
-}
-
-.wood5 .shield > div {
-	background-position: -120px 0;
-}
-
-.wood6 .shield {
-	background-position: -150px -30px;
-}
-
-.wood6 .shield > div {
-	background-position: -150px 0;
-}
-
-.wood7 .shield {
-	background-position: -180px -30px;
-}
-
-.wood7 .shield > div {
-	background-position: -180px 0;
-}
-
-.wood8 .shield {
-	background-position: -210px -30px;
-}
-
-.wood8 .shield > div {
-	background-position: -210px 0;
-}
-
-.wood9 .shield {
-	background-position: -240px -30px;
-}
-
-.wood9 .shield > div {
-	background-position: -240px 0;
-}
-
 .sword {
 	width: 30px;
 	height: 30px;
-	background: url(../img/icons.png) no-repeat 0px -981px;
+	background-repeat: no-repeat;
 	transition: opacity 300ms linear;
 	-webkit-transition: opacity 300ms linear;
 	-ms-transition: opacity 300ms linear;
@@ -1160,76 +1033,12 @@ body.paused:before {
 
 .sword > div {
 	height: 100%;
-	background: url(../img/icons.png) no-repeat 0 -951px;
+	background-repeat: no-repeat;
 	transition: width 300ms linear;
 	-webkit-transition: width 300ms linear;
 	-ms-transition: width 300ms linear;
 	-moz-transition: width 300ms linear;
 	-o-transition: width 300ms linear;
-}
-
-.stone2 .sword {
-	background-position: -30px -981px;
-}
-
-.stone2 .sword > div {
-	background-position: -30px -951px;
-}
-
-.stone3 .sword {
-	background-position: -60px -981px;
-}
-
-.stone3 .sword > div {
-	background-position: -60px -951px;
-}
-
-.stone4 .sword {
-	background-position: -90px -981px;
-}
-
-.stone4 .sword > div {
-	background-position: -90px -951px;
-}
-
-.stone5 .sword {
-	background-position: -120px -981px;
-}
-
-.stone5 .sword > div {
-	background-position: -120px -951px;
-}
-
-.stone6 .sword {
-	background-position: -150px -981px;
-}
-
-.stone6 .sword > div {
-	background-position: -150px -951px;
-}
-
-.stone7 .sword {
-	background-position: -180px -981px;
-}
-
-.stone7 .sword > div {
-	background-position: -180px -951px;
-}
-
-.stone8 .sword {
-	background-position: -210px -981px;
-}
-
-.stone8 .sword > div {
-	background-position: -210px -951px;
-}
-
-.stone9 .sword {
-	background-position: -240px -981px;
-}
-
-.stone9 .sword > div {
-	background-position: -240px -951px;
 }
 
 .xpBar {
@@ -1375,33 +1184,12 @@ body.paused:before {
 	position: absolute;
 	width: 28px;
 	height: 28px;
-	background-image: url(../img/icons.png);
 }
 
 .inventory .button div:nth-child(1) {
 	border: none;
 	bottom: 7px;
 	left: 6px;
-}
-
-.button.healthPotion div:nth-child(1) {
-	background-position: 0 -335px;
-}
-
-.button.manaPotion div:nth-child(1) {
-	background-position: -28px -335px;
-}
-
-.button.bomb div:nth-child(1) {
-	background-position: -56px -335px;
-}
-
-.button.equipment div:nth-child(1) {
-	background-position: -84px -335px;
-}
-
-.button.callDragon div:nth-child(1) {
-	background-position: -140px -335px;
 }
 
 /** Magic **/
@@ -1634,48 +1422,7 @@ body.paused:before {
 
 .spell,
 .states > div {
-	background-image: url(../img/icons.png);
 	background-repeat: no-repeat;
-}
-
-.resetBoard {
-	background-position: 0 -794px;
-}
-
-.night .resetBoard {
-	background-position: 0 -834px;
-}
-
-.haste {
-	background-position: -40px -794px;
-}
-
-.night .haste {
-	background-position: -40px -834px;
-}
-
-.freezeTime {
-	background-position: -80px -794px;
-}
-
-.night .freezeTime {
-	background-position: -80px -834px;
-}
-
-.phaseChange {
-	background-position: -120px -794px;
-}
-
-.night .phaseChange {
-	background-position: -120px -834px;
-}
-
-.frozen {
-	background-position: -160px -794px;
-}
-
-.night .frozen {
-	background-position: -160px -834px;
 }
 
 .states {
@@ -1737,7 +1484,7 @@ body.paused:before {
 	right: 0px;
 	height: 64px;
 	padding-left: 42px;
-	background: url(../img/icons.png) 0 -442px no-repeat;
+	background-repeat: no-repeat;
 	margin-bottom: 20px;
 }
 
@@ -1747,15 +1494,7 @@ body.paused:before {
 	position: absolute;
 	top: 0px;
 	left: 0px;
-	background: url(../img/icons.png) 0 -506px no-repeat;
-}
-
-.effectsVolume.volumeSlider {
-	background-position: 0 -570px;
-}
-
-.effectsVolume.volumeSlider .nightSprite {
-	background-position: 0 -634px;
+	background-repeat: no-repeat;
 }
 
 .sliderTrack {
@@ -1823,136 +1562,6 @@ body.paused:before {
 	border-style: solid;
 	border-radius: 4px;
 	position: relative;
-}
-
-/** Social buttons **/
-
-.social a, .social div {
-	display: block;
-	width: 48px;
-	height: 48px;
-	background-image: url(../img/icons.png);
-}
-
-.social .nightSprite {
-	position:absolute;
-	top: 0;
-	left: 0;
-}
-
-.twitter {
-	background-position: 0 -699px;
-}
-
-.twitter.nightSprite {
-	background-position: 0 -747px;
-}
-
-.reddit {
-	background-position: -48px -699px;
-}
-
-.reddit.nightSprite {
-	background-position: -48px -747px;
-}
-
-.gplus {
-	background-position: -96px -699px;
-}
-
-.gplus.nightSprite {
-	background-position: -96px -747px;
-}
-
-.tumblr {
-	background-position: -144px -699px;
-}
-
-.tumblr.nightSprite {
-	background-position: -144px -747px;
-}
-
-.stumbleupon {
-	background-position: -192px -699px;
-}
-
-.stumbleupon.nightSprite {
-	background-position: -192px -747px;
-}
-
-.facebook {
-	background-position: -240px -699px;
-}
-
-.facebook.nightSprite {
-	background-position: -240px -747px;
-}
-
-/** Donate buttons **/
-
-.donate a, .donate input[type="image"] {
-	display: block;
-	width: 48px;
-	height: 48px;
-	background-image: url(../img/icons.png);
-}
-
-.donate .nightSprite {
-	position: absolute;
-	top: 0px;
-	left: 0px;
-}
-
-.paypal {
-	background-position: -288px -699px;
-}
-
-.paypal.nightSprite {
-	background-position: -288px -747px;
-}
-
-.bitcoin-button {
-	background-position: -336px -699px;
-}
-
-.bitcoin-button.nightSprite {
-	background-position: -336px -747px;
-}
-
-.flattr {
-	background-position: -384px -699px;
-}
-
-.flattr.nightSprite {
-	background-position: -384px -747px;
-}
-
-.gittip {
-	background-position: -432px -699px;
-}
-
-.gittip.nightSprite {
-	background-position: -432px -747px;
-}
-
-.bitcoin-bubble {
-    background-color: #FFFFFF;
-    border: 2px solid #000;
-    border-radius: 4px;
-    bottom: 52px;
-    color: #000000;
-    display: none;
-    font-family: "Helvetica",sans-serif;
-    font-size: 9pt;
-    left: -2px;
-    padding: 10px;
-    position: absolute;
-    text-align: center;
-    z-index: 1000;
-}
-
-.bitcoin:hover .bitcoin-bubble {
-	display: block;
 }
 
 .bossHealth {

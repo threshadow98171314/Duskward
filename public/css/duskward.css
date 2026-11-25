@@ -308,7 +308,7 @@ body.night {
 }
 
 .recordsSprite {
-	background: url(../img/monsters.png) no-repeat;
+	background-repeat: no-repeat;
 	transform-origin: top left;
 }
 

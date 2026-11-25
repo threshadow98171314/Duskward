@@ -1,34 +1,18 @@
 import O from '../gameoptions.js';
 import Graphics from './graphics.js';
+import { languageMenu } from '../../ui/menu.ts';
+
+// The languages in the menu (src/ui/menu.ts)
 
 var LANGUAGES = [
 	{ code: 'zh-TW', name: '繁體中文' },
 	{ code: 'en', name: 'English' }
 ];
 
-var G = null, _el = null;
-
-function el() {
-	if(_el == null) {
-		G.addStyleRule('.language:before', 'content:"- ' + G.getText('LANGUAGE') + ' -";');
-		_el = G.make('language submenu', 'ul');
-		LANGUAGES.forEach(function(lang) {
-			G.make('litBorder', 'li')
-				.text(lang.name)
-				.toggleClass('selected', lang.code == G.getLocale())
-				.on('click touchstart', function() {
-					chooseLanguage(lang.code);
-					return false;
-				})
-				.appendTo(_el);
-		});
-		G.addToMenu(_el);
-	}
-	return _el;
-}
+var _el = null;
 
 function chooseLanguage(code) {
-	if(code != G.getLocale()) {
+	if(code != Graphics.getLocale()) {
 		O.set('language', code);
 		// Text is drawn once at startup, so reload to apply the new language
 		window.location.reload();
@@ -37,11 +21,10 @@ function chooseLanguage(code) {
 
 export default {
 	init: function() {
-		G = Graphics;
 		if(_el) {
 			_el.remove();
 		}
-		_el = null;
-		el();
+		_el = languageMenu(Graphics.getText('LANGUAGE'), LANGUAGES, Graphics.getLocale(), chooseLanguage);
+		Graphics.addToMenu(_el);
 	}
 };

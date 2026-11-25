@@ -247,6 +247,7 @@ var GameAudio = {
 		E.bind('unpause', function() { toggleMute(false); });
 		
 		E.bind('tileDrop', GameAudio.play.bind(this, 'TileClick'));
+		E.bind('slotChosen', GameAudio.play.bind(this, 'Click'));
 		E.bind('setMusicVolume', GameAudio.setMusicVolume);
 		E.bind('setEffectsVolume', GameAudio.setEffectsVolume);
 		E.bind('phaseChange', changeMusic);

@@ -11,6 +11,9 @@ import Sprites from './sprites.js';
 import { register, getModule } from '../modules.js';
 import { StatusBar, heartsFor } from '../../ui/status.ts';
 import { Notices } from '../../ui/notices.ts';
+import { TitleScreen } from '../../ui/title.ts';
+import { EndScreen } from '../../ui/ending.ts';
+import { MenuBar } from '../../ui/menu.ts';
 import State from '../gamestate.js';
 import GameBoard from '../gameboard.js';
 
@@ -95,70 +98,53 @@ function changeTiles(tileTypes, classToAdd, classToRemove) {
 	}, 300);
 }
 
-var getStats = (function() {
-	var _stats = null;
-	return function(counts) {
-		var list;
-		if(_stats == null) {
-			_stats = Graphics.make().attr('id', 'endGame');
-			_stats.append($('<h2>').text(textStore.get('CLEAR')));
-			_stats.append($('<ul>').addClass('menu')
-				.append($('<li>').text(textStore.get('CONTINUE')).on('click touchstart', continueGame))
-				.append($('<li>').text(textStore.get('NEWGAMEPLUS')).on('click touchstart', newGamePlus)));
-			list = $('<ul>').addClass('counts').appendTo(_stats);
-			Graphics.get('body').append(_stats);
-			_stats.css('left');
-		} else {
-			list = $('ul.list', _stats);
-			if(counts) {
-				list.empty();
-			}
-		}
-		
-		if(counts) {
-			for(var key in counts) {
-				list.append($('<li>')
-					.append($('<span>').text(textStore.get(key) || 0))
-					.append($('<span>').text(counts[key]))
-				);
-			}
-		}
-		
-		return _stats;
-	};
-})();
+// The end screen (src/ui/ending.ts), made the first time it comes down
+var endScreen = null;
+function ending() {
+	if(endScreen == null) {
+		endScreen = new EndScreen(document.body, {
+			clear: Graphics.getText('CLEAR'),
+			continue: Graphics.getText('CONTINUE'),
+			newGamePlus: Graphics.getText('NEWGAMEPLUS')
+		}, continueGame, newGamePlus);
+	}
+	return endScreen;
+}
 
+// The world blows up in light, and the counts of the game come down
 function gameOver(counts) {
-	Graphics.get('body').addClass('bigExplosion');
+	document.body.classList.add('bigExplosion');
 	setTimeout(function() {
-		getStats(counts).addClass('down');
+		ending().show(Object.keys(counts || {}).map(function(key) {
+			return [Graphics.getText(key) || 0, counts[key]];
+		}));
 	}, 2000);
 }
 
 function continueGame() {
 	EventManager.trigger('phaseChange', [false]);
-	getStats().removeClass('down');
-	BoardGraphics.el().removeClass('dragonFight');
-	var b = Graphics.get('body');
+	ending().hide();
+	BoardGraphics.el()[0].classList.remove('dragonFight');
+	var page = document.body.classList;
 	setTimeout(function() {
-		b.addClass('fadeOut');
+		page.add('fadeOut');
 	}, 1400);
 	setTimeout(function() {
-		b.removeClass('bigExplosion fadeOut');
+		page.remove('bigExplosion', 'fadeOut');
 	}, 2800);
 }
 
 function newGamePlus() {
-	getStats().removeClass('down');
-	BoardGraphics.el().removeClass('dragonFight');
-	var b = Graphics.get('body');
-	b.removeClass('night');
+	ending().hide();
+	BoardGraphics.el()[0].classList.remove('dragonFight');
+	var page = document.body.classList;
+	page.remove('night');
 	setTimeout(function() {
-		b.addClass('fadeOut');
+		page.add('fadeOut');
 		EventManager.trigger('prestige');
 	}, 1400);
 	setTimeout(function() {
-		b.removeClass('bigExplosion fadeOut');
+		page.remove('bigExplosion', 'fadeOut');
 	}, 2800);
 }
 
@@ -166,144 +152,49 @@ function dropBlock(block, building) {
 	Graphics.updateCosts(building);
 }
 
-function drawSlot(slotInfo, slotIndex) {
-	var slot = Graphics.make('saveSlot').data('slotIndex', slotIndex);
-	var buttons = [];
-	var slotSide = Graphics.make('slotSide').appendTo(slot);
-	if(slotInfo === 'empty') {
-		slot.addClass('empty');
-		slotSide.text(Graphics.getText('NEWGAME'));
-		buttons.push({
-			className: 'import',
-			text: 'IMPORT',
-			click: drawImport.bind(slot, slot)
-		});
-	} else { 
-		var heartInfo = heartsFor(slotInfo.maxHealth);
-		for(var heartNum = 0; heartNum < heartInfo.total; heartNum++) {
-			Graphics.make('full ' + (heartNum < heartInfo.big ? 'bigheart' : 'heart'))
-				.append(Graphics.make('mask'))
-				.appendTo(slotSide);
-		}
-		buttons = buttons.concat([
-			{
-				className: 'export',
-				text: 'EXPORT',
-				click: drawExport.bind(slot, slot)
-			}, {
-				className: 'delete',
-				text: 'DELETE',
-				click: drawDelete.bind(slot, slot)
+// The title screen (src/ui/title.ts), with a slot for each saved game
+var titleScreen = null;
+function title() {
+	if(titleScreen == null) {
+		titleScreen = new TitleScreen(document.getElementById('loadingScreen'), {
+			newGame: Graphics.getText('NEWGAME'),
+			import: Graphics.getText('IMPORT'),
+			export: Graphics.getText('EXPORT'),
+			delete: Graphics.getText('DELETE'),
+			confirm: Graphics.getText('CONFIRM'),
+			cancel: Graphics.getText('CANCEL'),
+			importCode: Graphics.getText('IMPORT_CODE'),
+			exportCode: Graphics.getText('EXPORT_CODE'),
+			areYouSure: Graphics.getText('ARE_YOU_SURE'),
+			importInvalid: Graphics.getText('IMPORT_INVALID'),
+			day: function(day) {
+				return Graphics.getText('DAY_N', day);
 			}
-		]);
-		var day = Graphics.make('day').text(Graphics.getText('DAY_N', slotInfo.day));
-		if(slotInfo.prestiged) {
-			day.prepend(Graphics.make('star'));
-		}
-		slotSide.append(day);
+		}, {
+			choose: function(slot) {
+				EventManager.trigger('slotChosen', [slot]);
+			},
+			exportCode: function(slot) {
+				return State.getExportCode(slot);
+			},
+			importCode: function(slot, code) {
+				EventManager.trigger('importSlot', [slot, code]);
+			},
+			remove: function(slot) {
+				EventManager.trigger('deleteSlot', [slot]);
+			}
+		});
 	}
-	slot.append(Graphics.make('infoSide').click(function() {return false;}));
-	drawSlotButtons(slotSide, buttons);
-	
-	slot.on("click touchstart", function(e) {
-		if(e.target.tagName != 'TEXTAREA') {
-			getModule('audio/audio').play('Click');
-			EventManager.trigger('slotChosen', [slotIndex]);
-			$('#loadingScreen').addClass('hidden');
-			setTimeout(function() {
-				$('#loadingScreen').remove();
-			}, 1000);
-		}
-	});
-	
-	return slot;
+	return titleScreen;
 }
 
-function drawSlotButtons(slot, buttons) {
-	var buttonList = Graphics.make('buttons', 'ul');
-	for(var i in buttons) {
-		var buttonInfo = buttons[i];
-		buttonList.append(Graphics.make(buttonInfo.className, 'li')
-			.on('click touchstart', buttonInfo.click).attr('title', Graphics.getText(buttonInfo.text)));
-	}
-	buttonList.appendTo(slot);
+// A save slot's game, as the title screen shows it; null for an empty slot
+function savedGame(slotInfo) {
+	return slotInfo === 'empty' ? null : slotInfo;
 }
 
-function drawImport(slot) {
-	EventManager.trigger('click', ['import']);
-	slot.addClass('bigView flipped');
-	var infoSide = slot.find('.infoSide');
-	infoSide.append(Graphics.make('labelText').text(Graphics.getText('IMPORT_CODE')));
-	infoSide.append(Graphics.make('exportCode', 'textarea'));
-	drawSlotButtons(infoSide, [{
-		className: 'confirm',
-		text: 'CONFIRM',
-		click: doImport.bind(slot, slot)
-	}, {
-		className: 'cancel',
-		text: 'CANCEL',
-		click: cancelSlotAction.bind(slot, slot)
-	}]);
-	return false;
-}
-
-function drawExport(slot) {
-	EventManager.trigger('click', ['export']);
-	slot.addClass('bigView flipped');
-	var infoSide = slot.find('.infoSide');
-	infoSide.append(Graphics.make('labelText').text(Graphics.getText('EXPORT_CODE')));
-	infoSide.append(Graphics.make('exportCode', 'textarea').text(
-		State.getExportCode(slot.data('slotIndex'))
-	).attr('readonly', true));
-	drawSlotButtons(infoSide, [{
-		className: 'confirm',
-		text: 'CONFIRM',
-		click: cancelSlotAction.bind(slot, slot)
-	}]);
-	return false;
-}
-
-function drawDelete(slot) {
-	EventManager.trigger('click', ['delete']);
-	slot.addClass('confirmDelete flipped');
-	var infoSide = slot.find('.infoSide');
-	infoSide.append(Graphics.make('confirmText').text(Graphics.getText('ARE_YOU_SURE')));
-	drawSlotButtons(infoSide, [{
-		className: 'confirm',
-		text: 'CONFIRM',
-		click: doDelete.bind(slot, slot)
-	}, {
-		className: 'cancel',
-		text: 'CANCEL',
-		click: cancelSlotAction.bind(slot, slot)
-	}]);
-	return false;
-}
-
-function doDelete(slot) {
-	var slotIndex = slot.data('slotIndex');
-	EventManager.trigger('deleteSlot', [slotIndex]);
-	Graphics.get('.saveSlot:nth-child(' + (slotIndex + 1) + ')').before(drawSlot('empty', slotIndex));
-	slot.remove();
-	return false;
-}
-
-function doImport(slot) {
-	var slotIndex = slot.data('slotIndex');
-	var importCode = slot.find('textarea').val();
-	EventManager.trigger('importSlot', [slotIndex, importCode]);
-	return false;
-}
-
-function cancelSlotAction(slot) {
-	var wasEmpty = slot.hasClass('empty');
-	slot.removeClass('flipped');
-	setTimeout(function() {
-		slot.find('.infoSide').empty();
-		slot.attr('class', 'saveSlot' + (wasEmpty ? ' empty' : ''));
-	}, 500);
-	return false;
-}
+// The menu bar along the bottom of the page (src/ui/menu.ts); there is only the one
+var menuBar = null;
 
 var scaleSheet = null;
 function scaleToViewport() {
@@ -393,16 +284,13 @@ var Graphics = {
 		EventManager.bind('blockDown', dropBlock);
 		EventManager.bind('keySequenceComplete', activateHyperspace);
 		EventManager.bind('longLoad', function() {
-			Graphics.get('#loadingScreen').append(
-				Graphics.make('longload').text(Graphics.getText('LONG_LOAD')).append
-				(
-					Graphics.make('nomusic', 'a')
-						.text(Graphics.getText('NO_MUSIC'))
-						.attr('href', window.location + (window.location.search.length > 0 ? '&' : '?') + 'nomusic')
-				)
-			);
+			title().longLoad(Graphics.getText('LONG_LOAD'), Graphics.getText('NO_MUSIC'),
+				window.location + (window.location.search.length > 0 ? '&' : '?') + 'nomusic');
 		});
-		
+		if(menuBar == null) {
+			menuBar = new MenuBar(document.querySelector('.menuBar'));
+		}
+
 		BoardGraphics.init();
 		WorldGraphics.init();
 		status = new StatusBar(BoardGraphics.el()[0], WorldGraphics.element());
@@ -486,8 +374,9 @@ var Graphics = {
 		$('.gameBoard').append(entity.el ? entity.el() : entity);
 	},
 	
-	addToMenu: function(entity) {
-		$('.menuBar').append(entity.el ? entity.el() : entity);
+	// Adds a part to the menu bar
+	addToMenu: function(part) {
+		menuBar.add(part);
 	},
 	
 	// The sun or moon climbs to the middle of the sky and sinks again as the day goes on
@@ -707,10 +596,16 @@ var Graphics = {
 		}
 	},
 	
+	// The spinners turn for a moment as the game is saved
 	notifySave: function() {
-		$('.saveSpinner').addClass('active');
-		setTimeout(function(){
-			$('.saveSpinner').removeClass('active');
+		var spinners = document.querySelectorAll('.saveSpinner');
+		spinners.forEach(function(spinner) {
+			spinner.classList.add('active');
+		});
+		setTimeout(function() {
+			spinners.forEach(function(spinner) {
+				spinner.classList.remove('active');
+			});
 		}, 1500);
 	},
 	
@@ -737,13 +632,12 @@ var Graphics = {
 		Graphics.effects().smoke(monster.p());
 	},
 	
+	// The game is ready to play: the title screen shows the saved games
 	enablePlayButton: function() {
-		$('#loadingScreen .saveSpinner').addClass('hidden');
 		document.title = Graphics.getText('TITLE');
-		if($('#loadingScreen .subtitle').length == 0) {
-			$('#loadingScreen').append(Graphics.make('subtitle').text(Graphics.getText('SUBTITLE')));
-		}
-		Graphics.drawSaveSlots();
+		title().show(Graphics.getText('SUBTITLE'), [0, 1, 2].map(function(slot) {
+			return savedGame(State.getSlotInfo(slot));
+		}));
 	},
 	
 	// The board goes back to normal once the dragon is beaten, or day breaks
@@ -806,29 +700,15 @@ var Graphics = {
 		}
 	},
 	
-	drawSaveSlots: function() {
-		var saveSlots = Graphics.make('saveSlots', 'ul');
-		for(var i = 0; i < 3; i++) {
-			var slotInfo = State.getSlotInfo(i);
-			var slot = drawSlot(slotInfo, i);
-			saveSlots.append(slot);
-		}
-		Graphics.get('#loadingScreen').append(saveSlots);
-	},
-	
+	// A code was brought into a slot: it shows the game it held
 	replaceSlot: function(slotIndex, slotInfo) {
-		var newSlot = drawSlot(slotInfo, slotIndex);
-		var oldSlot = Graphics.get('.saveSlot:nth-child(' + (slotIndex + 1) + ')');
-		oldSlot.before(newSlot);
-		oldSlot.remove();
+		title().replace(slotIndex, savedGame(slotInfo));
 	},
 
-	// Keeps the import form open, so the code can be fixed
+	// The code held no save: the slot keeps it, to be fixed
 	rejectImport: function(slotIndex) {
-		$('.saveSlot:nth-child(' + (slotIndex + 1) + ') .labelText').text(Graphics.getText('IMPORT_INVALID'));
-	},
-
-	drawSlot: drawSlot
+		title().rejectImport(slotIndex);
+	}
 };
 
 register('graphics/graphics', Graphics);

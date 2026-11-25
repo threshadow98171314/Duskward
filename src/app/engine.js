@@ -181,15 +181,6 @@ var Engine = {
 			EventManager.trigger('phaseChange', [!Engine.isNight()]);
 		});
 		
-		$('.menuBtn').off().on("click touchstart", function() {
-			var menuBar = $('.menuBar');
-			menuBar.toggleClass('open').addClass('closing');
-			setTimeout(function() {
-				menuBar.removeClass('closing');
-			}, 200);
-			EventManager.trigger('click', ['menubutton']);
-		});
-
 		$('#pauseIcon').off().on('click touchstart', function() {
 			if(!Engine.paused) {
 				EventManager.trigger('pause');

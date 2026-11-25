@@ -1427,6 +1427,10 @@ body.paused:before {
 	color: #FFF;
 }
 
+.submenu[data-heading]:before {
+	content: "- " attr(data-heading) " -";
+}
+
 .submenu li {
 	display: inline-block;
 	margin: 0 2px;

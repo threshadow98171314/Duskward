@@ -177,9 +177,6 @@ body.night {
 }
 
 /** Lantern resource **/
-.block.lantern div {
-	background-color: #f29a3a;
-}
 
 @keyframes powerPulse {
 	0%, 100% { opacity: 0.55; }

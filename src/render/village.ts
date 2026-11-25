@@ -2,8 +2,9 @@
 // ground as the keeper raises them, lifted a little while an upgrade waits for its
 // materials and sinking away once the upgrade rises, the bars of materials
 // delivered to buildings yet to be raised, and the star over the building the
-// keeper sees to first. By night the buildings fade into the dark. The game says
-// what happens to each building; the view animates it.
+// keeper sees to first; also the stockpile of materials at the left, and the
+// duskshards gathered in the tower. By night the buildings and the stockpile fade
+// into the dark. The game says what happens to each building; the view animates it.
 
 import { SHEETS, SPRITES } from '../content/sprites.ts';
 
@@ -16,6 +17,22 @@ export interface VillageSize {
 export interface Cost {
 	kind: string;
 	share: number;
+}
+
+// A block in the stockpile: what it holds, and how full it is (from 0 to 1)
+export interface StoredBlock {
+	key: object;
+	kind: string;
+	share: number;
+}
+
+// The frame of the stockpile: its left, how far its bottom is off the ground, and
+// the size of the inside
+interface PileBox {
+	left: number;
+	bottom: number;
+	width: number;
+	height: number;
 }
 
 interface Motion {
@@ -53,6 +70,23 @@ const BARS_HEIGHT = 18;
 const BARS_BORDER = 2;
 const STAR_TOP = 10;
 const STAR_FRAME_MS = 200;
+// A block in the stockpile, with its border; it fills or empties over a moment
+const BLOCK = 10;
+const FILL_MS = 300;
+// The stockpile grows with the level of the grain, from three blocks across and down
+// to five across and four down; its frame takes a moment to grow
+const PILES: PileBox[] = [
+	{ left: 14, bottom: 3, width: 3 * BLOCK, height: 3 * BLOCK },
+	{ left: 14, bottom: 3, width: 3 * BLOCK, height: 4 * BLOCK },
+	{ left: 9, bottom: 3, width: 4 * BLOCK, height: 4 * BLOCK },
+	{ left: 4, bottom: 1, width: 5 * BLOCK, height: 4 * BLOCK },
+];
+const PILE_GROW_MS = 200;
+// It comes into view slowly, and goes quickly while a building is raised over it
+const PILE_HIDE_MS = 200;
+// The duskshards float this far below the top of the world, in the tower's lantern room
+const SHARDS_TOP = 35;
+const SHARD_FRAME_MS = 200;
 // The colour of each kind of material, by the level its tiles have reached
 const MATERIALS: Record<string, [number, string][]> = {
 	grain: [[1, '#ffe97f']],
@@ -78,6 +112,33 @@ function still(value: number): Motion {
 	return { from: value, to: value, start: 0, duration: 0 };
 }
 
+// Where each block goes in the stockpile, from the inside of its frame. As the page
+// once laid them out, upside down: the rows fill from the bottom up, each from right
+// to left, and a row that is not full yet keeps to the left.
+export function pileLayout(count: number, width: number, height: number): { left: number; top: number }[] {
+	const columns = Math.max(1, Math.floor(width / BLOCK + 1e-6));
+	const places: { left: number; top: number }[] = [];
+	for (let i = 0; i < count; i++) {
+		const row = Math.floor(i / columns);
+		const inRow = Math.min(columns, count - row * columns);
+		places.push({ left: (inRow - 1 - (i % columns)) * BLOCK, top: height - (row + 1) * BLOCK });
+	}
+	return places;
+}
+
+// The frame of the stockpile for a level of the grain
+function pileFor(level: number): PileBox {
+	return PILES[Math.min(Math.max(Math.floor(level), 1), PILES.length) - 1];
+}
+
+// A one pixel border just inside a box, in the current colour
+function border(ctx: CanvasRenderingContext2D, left: number, top: number, width: number, height: number): void {
+	ctx.fillRect(left, top, width, 1);
+	ctx.fillRect(left, top + height - 1, width, 1);
+	ctx.fillRect(left, top + 1, 1, height - 2);
+	ctx.fillRect(left + width - 1, top + 1, 1, height - 2);
+}
+
 // The colour of a kind of material for the level its tiles are at
 export function materialColour(kind: string, level: number): string {
 	let colour = '#999999';
@@ -92,6 +153,8 @@ export function materialColour(kind: string, level: number): string {
 export class VillageView {
 	// The level of each kind of tile, for the colours of the materials
 	levels: Record<string, number> = {};
+	// The blocks in the stockpile, oldest first; null while the village has none
+	stockpile: StoredBlock[] | null = null;
 	// Called before every frame, to catch up with the page
 	beforeDraw: (() => void) | null = null;
 
@@ -103,6 +166,14 @@ export class VillageView {
 	private night = false;
 	private nightSince = -Infinity;
 	private frame = 0;
+	private pileThere = false;
+	private pileHidden = false;
+	private pileShown: Motion = still(0);
+	private pileFrom: PileBox = PILES[0];
+	private pileTo: PileBox = PILES[0];
+	private pileSince = -Infinity;
+	private readonly fills = new WeakMap<object, Motion>();
+	private shards = { count: 0, x: 0 };
 
 	constructor(
 		private readonly canvas: HTMLCanvasElement,
@@ -200,6 +271,65 @@ export class VillageView {
 		this.priority = key;
 	}
 
+	// The stockpile goes while a building is raised over it, and comes back once it stands
+	hidePile(hidden: boolean): void {
+		if (hidden !== this.pileHidden) {
+			this.pileHidden = hidden;
+			const now = this.now();
+			this.pileShown = { from: at(this.pileShown, now), to: hidden ? 0 : 1, start: now, duration: hidden ? PILE_HIDE_MS : FADE_MS };
+		}
+	}
+
+	// The duskshards found so far, gathered in the tower that stands at x
+	setShards(count: number, x: number): void {
+		this.shards = { count, x };
+		if (count > 0) {
+			this.sheet(SPRITES.gem?.sheet);
+		}
+	}
+
+	// How the shards show now: which row of their sprite (one for each number of
+	// shards) and which frame as they bob, and where; null without any
+	shardsAt(now = this.now()): { row: number; frame: number; left: number; top: number } | null {
+		const sprite = SPRITES.gem;
+		if (this.shards.count <= 0 || sprite === undefined) {
+			return null;
+		}
+		return {
+			row: Math.min(this.shards.count, sprite.rows) - 1,
+			frame: Math.floor(now / SHARD_FRAME_MS) % sprite.frames,
+			left: Math.round(this.shards.x - sprite.width / 2),
+			top: SHARDS_TOP,
+		};
+	}
+
+	// The frame of the stockpile now, from its outside left and top (its border is a
+	// pixel wide), and the size of its inside
+	pileFrame(now = this.now()): { left: number; top: number; width: number; height: number } {
+		const t = clamp((now - this.pileSince) / PILE_GROW_MS);
+		const mix = (key: keyof PileBox) => this.pileFrom[key] + (this.pileTo[key] - this.pileFrom[key]) * t;
+		const height = mix('height');
+		return { left: mix('left'), top: this.size.height - mix('bottom') - height - 2, width: mix('width'), height };
+	}
+
+	// How visible the stockpile is, from 0 to 1, before night falls on it
+	pileShownAt(now = this.now()): number {
+		return this.stockpile === null ? 0 : clamp(at(this.pileShown, now));
+	}
+
+	// How full a block shows: a change in what it holds fills or empties it over a moment
+	fillOf(block: StoredBlock, now = this.now()): number {
+		let fill = this.fills.get(block.key);
+		if (fill === undefined) {
+			fill = still(block.share);
+			this.fills.set(block.key, fill);
+		} else if (fill.to !== block.share) {
+			fill = { from: at(fill, now), to: block.share, start: now, duration: FILL_MS };
+			this.fills.set(block.key, fill);
+		}
+		return clamp(at(fill, now));
+	}
+
 	setNight(night: boolean, fade = true): void {
 		if (night !== this.night) {
 			this.night = night;
@@ -280,28 +410,82 @@ export class VillageView {
 
 	draw(): void {
 		this.beforeDraw?.();
+		const now = this.now();
+		this.followPile(now);
 		const ctx = this.ctx;
 		if (ctx === null) {
 			return;
 		}
-		const now = this.now();
 		const day = 1 - this.nightness();
 		ctx.setTransform(this.ratio, 0, 0, this.ratio, 0, 0);
 		ctx.clearRect(0, 0, this.size.width, this.size.height);
 		ctx.imageSmoothingEnabled = false;
-		if (day <= 0) {
+		if (day > 0) {
+			ctx.globalAlpha = day;
+			for (const [key, building] of this.buildings) {
+				this.drawBuilding(ctx, key, building);
+			}
+			this.drawPile(ctx, now, day);
+			for (const [key, building] of this.buildings) {
+				this.drawBars(ctx, key, building, now, day);
+			}
+			ctx.globalAlpha = day;
+			this.drawStar(ctx, now);
+		}
+		// The shards stay in sight when the tower fades into the night
+		ctx.globalAlpha = 1;
+		this.drawShards(ctx, now);
+	}
+
+	// The stockpile fades in when the village first has one, and its frame grows to
+	// the size the level of the grain gives it
+	private followPile(now: number): void {
+		const there = this.stockpile !== null;
+		if (there && !this.pileThere) {
+			this.pileShown = { from: 0, to: this.pileHidden ? 0 : 1, start: now, duration: FADE_MS };
+		}
+		this.pileThere = there;
+		const to = pileFor(this.levels.grain ?? 1);
+		if (to !== this.pileTo) {
+			const frame = this.pileFrame(now);
+			this.pileFrom = { left: frame.left, bottom: this.size.height - frame.top - frame.height - 2, width: frame.width, height: frame.height };
+			this.pileTo = to;
+			this.pileSince = now;
+		}
+	}
+
+	// The frame of the stockpile, and each block in it filled as far as it holds
+	private drawPile(ctx: CanvasRenderingContext2D, now: number, day: number): void {
+		const blocks = this.stockpile;
+		const alpha = day * this.pileShownAt(now);
+		if (blocks === null || alpha <= 0) {
 			return;
 		}
-		ctx.globalAlpha = day;
-		for (const [key, building] of this.buildings) {
-			this.drawBuilding(ctx, key, building);
+		ctx.globalAlpha = alpha;
+		const frame = this.pileFrame(now);
+		ctx.fillStyle = 'black';
+		border(ctx, frame.left, frame.top, frame.width + 2, frame.height + 2);
+		const places = pileLayout(blocks.length, frame.width, frame.height);
+		blocks.forEach((block, i) => {
+			const left = frame.left + 1 + places[i].left;
+			const top = frame.top + 1 + places[i].top;
+			ctx.fillStyle = 'black';
+			border(ctx, left, top, BLOCK, BLOCK);
+			ctx.fillStyle = materialColour(block.kind, this.levels[block.kind] ?? 1);
+			ctx.fillRect(left + 1, top + 1, (BLOCK - 2) * this.fillOf(block, now), BLOCK - 2);
+		});
+	}
+
+	// The shards gathered in the tower, bobbing
+	private drawShards(ctx: CanvasRenderingContext2D, now: number): void {
+		const shards = this.shardsAt(now);
+		const sprite = SPRITES.gem;
+		const sheet = this.ready(sprite?.sheet);
+		if (shards === null || sprite === undefined || sheet === null) {
+			return;
 		}
-		for (const [key, building] of this.buildings) {
-			this.drawBars(ctx, key, building, now, day);
-		}
-		ctx.globalAlpha = day;
-		this.drawStar(ctx, now);
-		ctx.globalAlpha = 1;
+		ctx.drawImage(sheet, sprite.x + shards.frame * sprite.width, sprite.y + shards.row * sprite.height,
+			sprite.width, sprite.height, shards.left, shards.top, sprite.width, sprite.height);
 	}
 
 	private drawBuilding(ctx: CanvasRenderingContext2D, key: object, building: Drawn): void {

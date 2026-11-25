@@ -1,7 +1,9 @@
 import $ from '../../vendor/jquery.js';
 import WorldEntity from './worldentity.js';
 import Content from '../gamecontent.js';
-import G from '../graphics/graphics.js';
+
+// A block of one kind of material, filling up as the board yields it. Full blocks
+// wait in the stockpile (src/render/village.ts draws it) for the keeper to carry them.
 
 var Block = function(options) {
 	this.options = $.extend({}, this.options, {
@@ -21,13 +23,6 @@ Block.makeBlock = function(savedBlock) {
 	return block;
 };
 
-Block.prototype.el = function() {
-	if(this._el == null) {
-		this._el = WorldEntity.prototype.el.call(this).addClass(this.options.type.className).append(G.make());
-	}
-	return this._el;
-};
-
 Block.prototype.max = 30;
 
 Block.prototype.spaceLeft = function() {
@@ -37,7 +32,6 @@ Block.prototype.spaceLeft = function() {
 Block.prototype.quantity = function(value) {
 	if(value != null) {
 		this._quantity = value > this.max ? this.max : value;
-		G.updateBlock(this);
 	}
 	return this._quantity;
 };

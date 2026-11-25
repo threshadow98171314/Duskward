@@ -1,6 +1,5 @@
 import $ from '../../../vendor/jquery.js';
 import WorldEntity from '../worldentity.js';
-import Graphics from '../../graphics/graphics.js';
 import Options from '../../gameoptions.js';
 import { monsterStat } from '../../../core/combat.ts';
 
@@ -13,15 +12,6 @@ var Monster = function(options) {
 Monster.prototype = new WorldEntity({
 	className: 'monster'
 });
-
-Monster.prototype.el = function() {
-	if(this._el == null) {
-		this._el = WorldEntity.prototype.el.call(this)
-			.addClass(this.options.monsterClass)
-			.append(Graphics.make('healthBar').append(Graphics.make()));
-	}
-	return this._el;
-};
 
 Monster.prototype.makeIdle = function() {
 	// Nothing. Monsters have no idle animation.

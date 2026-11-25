@@ -6,7 +6,6 @@ import Content from './gamecontent.js';
 import GameState from './gamestate.js';
 import MonsterFactory from './entity/monster/monsterfactory.js';
 import Block from './entity/block.js';
-import Gem from './entity/gem.js';
 import Resources from './resources.js';
 import Celestial from './entity/celestial.js';
 import Dude from './entity/dude.js';
@@ -35,7 +34,6 @@ var dude = null;
 // Where the keeper and the monsters are and what they are doing (src/core/field.ts)
 var field = null;
 var celestial = null;
-var gem = null;
 var effects = {};
 var clock = Day.createClock();
 // How the dragon looks while it is on the field
@@ -71,7 +69,6 @@ var World = {
 		dude = null;
 		field = null;
 		celestial = null;
-		gem = null;
 		stuff.length = 0;
 		effects = {};
 		clock = Day.createClock();
@@ -92,8 +89,6 @@ var World = {
 		EventManager.bind('damageAll', damageAllMonsters);
 		EventManager.bind('healDude', healDude);
 		EventManager.bind('hurtDude', hurtDude);
-		EventManager.bind('newEntity', handleNewEntity);
-		EventManager.bind('removeEntity', handleRemoveEntity);
 		EventManager.bind('buildingComplete', handleNewEntity);
 		EventManager.bind('buildingComplete', clearPriorityIfNeeded);
 		EventManager.bind('tilesCleared', handleTileClear);
@@ -404,15 +399,9 @@ function buildTask(building) {
 	return { type: 'build', at: building.dudeSpot(), building: building };
 }
 
+// The duskshards found so far gather in the tower
 function updateGem() {
-	if(GameState.gem > 0) {
-		if(gem == null) {
-			gem = new Gem();
-			gem.p(Content.BuildingType.Tower.position);
-			EventManager.trigger('newEntity', [gem]);
-		}
-		gem.animation(GameState.gem - 1);
-	}
+	Graphics.setShards(GameState.gem || 0, Content.BuildingType.Tower.position);
 }
 
 function addStateEffect(effect) {
@@ -668,7 +657,6 @@ function handleFieldEvents(events) {
 			break;
 		case 'pickedUp':
 			EventManager.trigger('blockUp');
-			Graphics.pickUpBlock(event.task.block);
 			GameState.removeBlock(event.task.block);
 			dude.carrying = event.task.block;
 			break;
@@ -876,7 +864,7 @@ function launchDude() {
 }
 
 function launchCelestial() {
-	celestial = new Celestial();
+	celestial = new Celestial(Graphics.updateSun);
 	stuff.push(celestial);
 	celestial.animation(0);
 	Graphics.raiseCelestial(celestial);

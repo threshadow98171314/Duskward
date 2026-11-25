@@ -61,7 +61,6 @@ var Resources = {
 			 var oldBlocks = GameState.stores.splice(0, GameState.stores.length - this.max());
 				 for(var i in oldBlocks) {
 				 oldBlocks[i].gone = true;
-				 oldBlocks[i].el().remove();
 			 }
 		 }
 	 },

@@ -1,6 +1,8 @@
 import $ from '../../vendor/jquery.js';
-import { getModule } from '../modules.js';
 
+// Something in the world that animates. The views under src/render draw it; this
+// keeps the frame and row of its animation, and lets an animation do something on
+// each of its frames.
 var entity = function(options) {
 	
 	this.options = $.extend({
@@ -26,31 +28,6 @@ entity.prototype.guid = function() {
 };
 
 /**
- * Gets the html element for this Entity, creating it if necessary
- */
-entity.prototype.el = function() {
-	if(this._el == null) {
-		var G = getModule('graphics/graphics');
-		this._el = G.make(this.options.className);
-	}
-	return this._el;
-};
-
-entity.prototype.width = function() {
-	if(!this._width) {
-		this._width = this.el().width();
-	}
-	return this._width;
-};
-
-entity.prototype.height = function() {
-	if(!this._height) {
-		this._height = this.el().height();
-	}
-	return this._height;
-};
-
-/**
  * Gets or sets the position
  */
 entity.prototype.p = function(param) {
@@ -60,6 +37,7 @@ entity.prototype.p = function(param) {
 	return this._position;
 };
 
+// The next frame; a one-off animation gives way to the usual one once it is over
 entity.prototype.animate = function() {
 	if(++this.frame >= this.options.animationFrames) {
 		this.frame = 0;
@@ -68,8 +46,14 @@ entity.prototype.animate = function() {
 			this.stepFunction = null;
 		}
 	}
-	var G = getModule('graphics/graphics');
-	G.updateSprite(this);
+	this.step();
+};
+
+// Whatever goes with the animation happens on its frame
+entity.prototype.step = function() {
+	if(this.stepFunction) {
+		this.stepFunction(this.frame);
+	}
 };
 
 entity.prototype.animation = function(row, stopTempAnimations, stepFunction) {
@@ -82,16 +66,14 @@ entity.prototype.animation = function(row, stopTempAnimations, stepFunction) {
 	}
 	this.animationRow = row;
 	this.frame = 0;
-	var G = getModule('graphics/graphics');
-	G.updateSprite(this);
+	this.step();
 };
 
 entity.prototype.animationOnce = function(row, stepFunction) {
 	this.tempAnimation = row;
 	this.frame = 0;
-	var G = getModule('graphics/graphics');
 	this.stepFunction = stepFunction || null;
-	G.updateSprite(this);
+	this.step();
 };
 
 entity.prototype.speed = function() {

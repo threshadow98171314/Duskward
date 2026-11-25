@@ -1,11 +1,13 @@
 import G from './graphics.js';
 import BoardGraphics from './gameboard.js';
+import GameState from '../gamestate.js';
+import Resources from '../resources.js';
 import { SkyView } from '../../render/sky.ts';
 import { VillageView } from '../../render/village.ts';
 import { ActorsView } from '../../render/actors.ts';
 
 // The world above the board, drawn on canvases: the sky behind everything else
-// (src/render/sky.ts), the village's buildings in front of it (src/render/village.ts),
+// (src/render/sky.ts), the village's buildings and stockpile in front of it (src/render/village.ts),
 // and the keeper, the monsters, the chests and what flies between them in front of
 // the buildings (src/render/actors.ts), and behind them the dragon or the Eclipse
 // while it is out (src/render/dragon.ts, src/render/eclipse.ts).
@@ -43,18 +45,25 @@ function makeSky() {
 	sky.start();
 }
 
+// A block in the stockpile, as the village draws it
+function stored(block) {
+	return { key: block, kind: block.options.type.className, share: block.quantity() / block.max };
+}
+
 function makeVillage() {
 	var canvas = G.make('villageCanvas', 'canvas').insertAfter(_el.children('.skyCanvas'));
 	if(village != null) {
 		village.stop();
 	}
 	village = new VillageView(canvas[0], { width: _el.width(), height: _el.height() });
-	// Buildings fade into the night; the colours of the materials follow the tiles' levels
+	// Buildings fade into the night; the colours of the materials follow the tiles' levels.
+	// The stockpile shows the stores once the village has them.
 	var page = document.body.classList;
 	village.setNight(page.contains('night'), false);
 	village.beforeDraw = function() {
 		village.setNight(page.contains('night'));
 		village.levels = BoardGraphics.levels();
+		village.stockpile = Resources.loaded ? GameState.stores.map(stored) : null;
 	};
 	village.start();
 }

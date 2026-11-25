@@ -4,7 +4,6 @@ import TextStore from '../textStore.js';
 import Options from '../gameoptions.js';
 import BoardGraphics from './gameboard.js';
 import WorldGraphics from './world.js';
-import ResourceGraphics from './resources.js';
 import LootGraphics from './loot.js';
 import MagicGraphics from './magic.js';
 import AudioGraphics from './audio.js';
@@ -26,74 +25,6 @@ var heartInfo = { total: 0, big: 0 };
 var imageLoaded = false;
 var isDragon = false;
 
-// I hate that I have to do this.
-var fallbackAnimationFrame = function(callback, element) {
-	window.setTimeout(callback, 1000 / 60);
-};
-
-var requestAnimationFrame = (function() {
-	return window.requestAnimationFrame ||
-		window.webkitRequestAnimationFrame ||
-		window.mozRequestAnimationFrame ||
-		window.onRequestAnimationFrame ||
-		window.msRequestAnimationFrame ||
-		fallbackAnimationFrame
-	})();
-
-var lastTime = null;
-var animations = {};
-/**
- * Animations have the following properties:
- *	speed: number, How many pixels per millisecond
- *	destination: number, Where to move to
- *	callback: function, What to do when you get there
- *	stopShort: function, When to stop early
- *  entity: object, The entity to animate
- */
-function doEntityAnimation(timestamp) {
-	requestAnimationFrame(doEntityAnimation);
-	timestamp = timestamp || Date.now();
-	if(!lastTime) {
-		lastTime = timestamp;
-		return;
-	}
-	// Easy hack to pause the world
-	if(!getModule('engine').paused) {
-		var delta = timestamp - lastTime;
-		for(var guid in animations) {
-			var animation = animations[guid];
-			var entity = animation.entity;
-			var remaining = animation.destination - entity.p();
-			var dir = remaining / Math.abs(remaining);
-			var toMove = delta / animation.speed; // speed is actually px/ms for weird legacy reasons
-			if(remaining * dir < toMove) {
-				toMove = remaining * dir;
-			}
-
-			entity.p(entity.p() + (toMove * dir));
-			setEntityPosition(entity, entity.p());
-
-			if(entity.p() == animation.destination || (animation.stopShort && animation.stopShort())) {
-				delete animations[entity.guid()];
-				animation.callback && animation.callback();
-			}
-		}
-	}
-	lastTime = timestamp;
-}
-
-function setEntityPosition(entity, pos) {
-	var el = entity.el ? entity.el() : entity;
-	var val = 'translateX(' + (pos - (entity.width() / 2)) + 'px)';
-	el.css({
-		'transform': val,
-		'-webkit-transform': val,
-		'-moz-transform': val,
-		'-ms-transform': val,
-		'-o-transform': val
-	});
-}
-
 function handleDrawRequest(requestString, options) {
 	var moduleString = requestString.substring(0, requestString.indexOf('.'));
 	requestString = requestString.substring(requestString.indexOf('.') + 1);
@@ -105,9 +36,6 @@ function handleDrawRequest(requestString, options) {
 			break;
 		case 'world':
 			module = WorldGraphics;
-			break;
-		case 'resource':
-			module = ResourceGraphics;
 			break;
 		case 'loot':
 			module = LootGraphics;
@@ -234,7 +162,6 @@ function newGamePlus() {
 }
 
 function dropBlock(block, building) {
-	block.el().remove();
 	Graphics.updateCosts(building);
 }
 
@@ -459,13 +386,6 @@ var Graphics = {
 		_bossHealth = null
 		$('body').removeClass('night').toggleClass('ios', opts.ios);
 
-		// iOS doesn't give enough priority to requestAnimationFrame
-		// CSS animations totally lock out the animation loop
-		// I hate you, Apple. I hope you know this.
-		if(opts.ios) {
-			requestAnimationFrame = fallbackAnimationFrame;
-		}
-		
 		textStore = new TextStore(Options.get('language') || TextStore.detectLocale());
 		$('html').attr('lang', textStore.localeName == 'zh-TW' ? 'zh-Hant-TW' : 'en');
 
@@ -481,8 +401,6 @@ var Graphics = {
 		EventManager.bind('sharpHit', keeperHit);
 		EventManager.bind('bluntHit', keeperHit);
 		EventManager.bind('buildingComplete', buildingStands);
-		EventManager.bind('newEntity', this.addToWorld);
-		EventManager.bind('removeEntity', this.removeFromWorld);
 		EventManager.bind('healthChanged', this.updateHealthBar);
 		EventManager.bind('dayBreak', this.handleDayBreak);
 		EventManager.bind('gameOver', gameOver);
@@ -501,14 +419,11 @@ var Graphics = {
 		
 		BoardGraphics.init();
 		WorldGraphics.init();
-		ResourceGraphics.init();
 		LootGraphics.init();
 		MagicGraphics.init();
 		if(!getModule('engine').isSilent()) {
 			AudioGraphics.init();
 		}
-
-		requestAnimationFrame(doEntityAnimation);
 	},
 	
 	isScaled: function() {
@@ -556,31 +471,9 @@ var Graphics = {
 		styleSheet.deleteRule(index);
 	},
 	
-	remove: function(thing) {
-		var el = thing.el ? thing.el() : thing;
-		thing.remove();
-	},
-	
 	make: function(className, tagName) {
 		tagName = tagName || 'div';
 		return $('<' + tagName + '>').addClass(className);
-	},
-	
-	addToWorld: function(entity) {
-		if(entity.el == null) {
-			WorldGraphics.add(entity);
-		} else {
-			var g = Graphics;
-			WorldGraphics.add(entity.el());
-			if(entity.p) {
-				g.setPosition(entity, entity.p());
-			}
-			g.updateSprite(entity);
-		}
-	},
-	
-	removeFromWorld: function(entity) {
-		WorldGraphics.remove(entity.el ? entity.el() : entity);
 	},
 	
 	worldWidth: function() {
@@ -609,14 +502,6 @@ var Graphics = {
 		$('.menuBar').append(entity.el ? entity.el() : entity);
 	},
 	
-	hide: function(entity) {
-		(entity.el ? entity.el() : entity).addClass('hidden');
-	},
-	
-	show: function(entity) {
-		(entity.el ? entity.el() : entity).removeClass('hidden');
-	},
-	
 	// The sun or moon climbs to the middle of the sky and sinks again as the day goes on
 	moveCelestial: function(entity) {
 		var pos = entity.p();
@@ -636,6 +521,11 @@ var Graphics = {
 	// Where the village's buildings stand, each keeping a light burning at night
 	setVillageLights: function(xs) {
 		WorldGraphics.sky().setLights(xs);
+	},
+
+	// The duskshards found so far, gathered in the tower that stands at x
+	setShards: function(count, x) {
+		WorldGraphics.village().setShards(count, x);
 	},
 	
 	setNight: function(night) {
@@ -714,36 +604,6 @@ var Graphics = {
 		WorldGraphics.village().setPriority(building);
 	},
 	
-	updateSprite: function(entity) {
-		var el = entity.el();
-		var spriteRow = (entity.tempAnimation == null ? entity.animationRow : entity.tempAnimation) || 0;
-		Graphics.updateSpritePos(el, entity.frame * entity.width(), spriteRow * entity.height() + Sprites.getOffset(entity.options.spriteName));
-		var nightSprite = $('.animationLayer', el);
-		if(nightSprite) {
-			Graphics.updateSpritePos(nightSprite, entity.frame * entity.width(), spriteRow * entity.height() + Sprites.getOffset(entity.options.nightSpriteName));
-		}
-		if(entity.stepFunction) {
-			entity.stepFunction(entity.frame);
-		}
-	},
-	
-	updateSpritePos: function(el, x, y) {
-		el.css('background-position', -(x) + "px " + -(y) + 'px');
-	},
-	
-	setPosition: function(entity, pos) {
-		// Don't spawn chests off-screen
-		if(entity.lootable && pos <= 20) {
-			pos = 20;
-			entity.p(pos);
-		}
-		if(entity.lootable && pos >= this.worldWidth() - 20) {
-			pos = this.worldWidth() - 20;
-			entity.p(pos);
-		}
-		setEntityPosition(entity, pos);
-	},
-	
 	// The cell of the board under a point on the screen, or null
 	tileAt: function(clientX, clientY) {
 		return BoardGraphics.cellAt(clientX, clientY);
@@ -767,17 +627,6 @@ var Graphics = {
 		BoardGraphics.select(null);
 	},
 
-	animateMove: function(entity, pos, callback, stopShort, speedOverride) {
-		var el = entity.el();
-		animations[entity.guid()] = {
-			speed: speedOverride || entity.speed(),
-			destination: pos,
-			callback: callback,
-			stopShort: stopShort,
-			entity: entity
-		};
-	},
-	
 	// A building lifts while its upgrade gathers materials, and can be clicked for it
 	markUpgrading: function(building, upgrade) {
 		WorldGraphics.village().setUpgrade(building, upgrade || null);
@@ -787,7 +636,7 @@ var Graphics = {
 	raiseBuilding: function(building, callback) {
 		var village = WorldGraphics.village();
 		if(building.options.type.isBase) {
-			$('.resources').addClass('hidden');
+			village.hidePile(true);
 		}
 		var replaces = building.getReplaces(State);
 		if(replaces) {
@@ -798,7 +647,7 @@ var Graphics = {
 		raising.set(building, setTimeout(function() {
 			raising.delete(building);
 			if(building.options.type.isBase) {
-				$('.resources').removeClass('hidden');
+				village.hidePile(false);
 			}
 			village.raised(building);
 			if(building.options.type.tileMod) {
@@ -823,17 +672,8 @@ var Graphics = {
 		}
 	},
 
-	// The keeper carries the block now (src/render/actors.ts draws it over their shoulder)
-	pickUpBlock: function(block) {
-		block.el().detach();
-	},
-
 	openChest: function(chest) {
 		WorldGraphics.actors().openChest(chest);
-	},
-	
-	updateBlock: function(block) {
-		$('div', block.el()).width((block.quantity() / block.max * 100) + '%');
 	},
 	
 	getStatusContainer: function() {
@@ -945,10 +785,6 @@ var Graphics = {
 				el.addClass('prepop').removeClass('hidden');
 			}, 300);
 		}
-	},
-	
-	stop: function(entity) {
-		delete animations[entity.guid()];
 	},
 	
 	fadeOut: function(callback) {

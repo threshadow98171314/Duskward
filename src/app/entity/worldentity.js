@@ -45,15 +45,6 @@ worldEntity.prototype.isIdle = function() {
 	return this.action == null;
 };
 
-worldEntity.prototype.attackRange = function(target) {
-	return Math.abs(this.p() - target.p()) <= (this.getHitboxWidth() / 2) + (target.getHitboxWidth() / 2);
-};
-
-worldEntity.prototype.distanceFrom = function(target) {
-	if(Math.abs(this.p() - target.p()) < (this.getHitboxWidth() + target.getHitboxWidth()) / 2) return 0;
-	return Math.abs(Math.abs(this.p() - target.p()) - this.getHitboxWidth() / 2 - target.getHitboxWidth() / 2);
-};
-
 worldEntity.prototype.getMaxHealth = function() {
 	return 0;
 };
@@ -80,10 +71,6 @@ worldEntity.prototype.die = function() {
 
 worldEntity.prototype.isAlive = function() {
 	return this.hp() > 0;
-};
-
-worldEntity.prototype.getHitboxWidth = function() {
-	return this.width();
 };
 
 worldEntity.prototype.hasSword = function() {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { materialColour, VillageView } from '../src/render/village.ts';
+import { materialColour, pileLayout, VillageView } from '../src/render/village.ts';
 
 // The village, without a canvas to draw on (as in these tests) and on a clock the test moves
 function village() {
@@ -63,5 +63,64 @@ describe('the village', () => {
 		expect(materialColour('wood', 9)).toBe('#ffd800');
 		expect(materialColour('cloth', 3)).toBe('#853aff');
 		expect(materialColour('lantern', 2)).toBe('#f29a3a');
+	});
+
+	it('stacks the stockpile as the page did: the bottom row from the right, rows not yet full at the left', () => {
+		const places = (count: number, width: number, height: number) =>
+			pileLayout(count, width, height).map((place) => [place.left, place.top]);
+		expect(places(4, 30, 30)).toEqual([[20, 20], [10, 20], [0, 20], [0, 10]]);
+		expect(places(5, 30, 30)).toEqual([[20, 20], [10, 20], [0, 20], [10, 10], [0, 10]]);
+		expect(places(7, 50, 40)).toEqual([[40, 30], [30, 30], [20, 30], [10, 30], [0, 30], [10, 20], [0, 20]]);
+	});
+
+	it('grows the stockpile with the level of the grain', () => {
+		const { view, clock } = village();
+		expect(view.pileFrame()).toEqual({ left: 14, top: 75, width: 30, height: 30 });
+		view.levels = { grain: 4 };
+		view.draw();
+		clock.now = 100;
+		expect(view.pileFrame()).toEqual({ left: 9, top: 71, width: 40, height: 35 });
+		clock.now = 200;
+		expect(view.pileFrame()).toEqual({ left: 4, top: 67, width: 50, height: 40 });
+	});
+
+	it('brings the stockpile in slowly once there is one, and takes it away quickly while a building rises over it', () => {
+		const { view, clock } = village();
+		expect(view.pileShownAt()).toBe(0);
+		view.stockpile = [];
+		view.draw();
+		clock.now = 700;
+		expect(view.pileShownAt()).toBeCloseTo(0.5);
+		clock.now = 1400;
+		view.hidePile(true);
+		clock.now = 1500;
+		expect(view.pileShownAt()).toBeCloseTo(0.5);
+		clock.now = 1600;
+		expect(view.pileShownAt()).toBe(0);
+		view.hidePile(false);
+		clock.now = 3000;
+		expect(view.pileShownAt()).toBe(1);
+	});
+
+	it('fills a block as it gets more, over a moment', () => {
+		const { view, clock } = village();
+		const block = { key: {}, kind: 'wood', share: 0.5 };
+		expect(view.fillOf(block)).toBe(0.5);
+		clock.now = 1000;
+		expect(view.fillOf({ ...block, share: 1 })).toBe(0.5);
+		clock.now = 1150;
+		expect(view.fillOf({ ...block, share: 1 })).toBeCloseTo(0.75);
+		clock.now = 1300;
+		expect(view.fillOf({ ...block, share: 1 })).toBe(1);
+	});
+
+	it('gathers the duskshards in the tower, one row of the sprite for each number of them', () => {
+		const { view, clock } = village();
+		expect(view.shardsAt()).toBeNull();
+		view.setShards(3, 330);
+		clock.now = 450;
+		expect(view.shardsAt()).toEqual({ row: 2, frame: 2, left: 324, top: 35 });
+		view.setShards(6, 330);
+		expect(view.shardsAt()?.row).toBe(3);
 	});
 });

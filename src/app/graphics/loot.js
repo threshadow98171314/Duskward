@@ -3,11 +3,12 @@ import State from '../gamestate.js';
 import Content from '../gamecontent.js';
 import { getModule } from '../modules.js';
 import Graphics from './graphics.js';
+import WorldGraphics from './world.js';
 
 var G = null;
 
 function openChest(chest) {
-	chest.animation(1);
+	WorldGraphics.actors().openChest(chest);
 }
 
 // What the chest held shows above it for a moment

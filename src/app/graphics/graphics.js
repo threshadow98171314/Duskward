@@ -9,19 +9,20 @@ import MagicGraphics from './magic.js';
 import AudioGraphics from './audio.js';
 import Sprites from './sprites.js';
 import { register, getModule } from '../modules.js';
+import { StatusBar, heartsFor } from '../../ui/status.ts';
+import { Notices } from '../../ui/notices.ts';
 import State from '../gamestate.js';
 import GameBoard from '../gameboard.js';
 
-var MAX_HEARTS = 14;
-var HEALTH_PER_HEART = 10;
 var MIN_SCREEN_WIDTH = 600, MIN_SCREEN_HEIGHT = 650, PORTRAIT_HEIGHT = 725;
 
 var textStore;
 var _ww = null, _wh = null;
-var _bossHealth = null;
 var styleSheet = null;
 var currentScale = null;
-var heartInfo = { total: 0, big: 0 };
+// The keeper's status beside the board, and the words that come up over it (src/ui)
+var status = null;
+var notices = null;
 var imageLoaded = false;
 var isDragon = false;
 
@@ -165,20 +166,6 @@ function dropBlock(block, building) {
 	Graphics.updateCosts(building);
 }
 
-function getNumHearts(health) {
-	var numHearts = Math.ceil(health / HEALTH_PER_HEART);
-	var numBigHearts = 0;
-	if(numHearts > MAX_HEARTS) {
-		numBigHearts = numHearts - MAX_HEARTS;
-		numHearts = MAX_HEARTS;
-	}
-	
-	return {
-		total: numHearts,
-		big: numBigHearts
-	};
-}
-
 function drawSlot(slotInfo, slotIndex) {
 	var slot = Graphics.make('saveSlot').data('slotIndex', slotIndex);
 	var buttons = [];
@@ -192,7 +179,7 @@ function drawSlot(slotInfo, slotIndex) {
 			click: drawImport.bind(slot, slot)
 		});
 	} else { 
-		var heartInfo = getNumHearts(slotInfo.maxHealth);
+		var heartInfo = heartsFor(slotInfo.maxHealth);
 		for(var heartNum = 0; heartNum < heartInfo.total; heartNum++) {
 			Graphics.make('full ' + (heartNum < heartInfo.big ? 'bigheart' : 'heart'))
 				.append(Graphics.make('mask'))
@@ -383,7 +370,6 @@ function setPaused(p) {
 var Graphics = {
 	init: function(opts) {
 		isDragon = false;
-		_bossHealth = null
 		$('body').removeClass('night').toggleClass('ios', opts.ios);
 
 		textStore = new TextStore(Options.get('language') || TextStore.detectLocale());
@@ -419,6 +405,8 @@ var Graphics = {
 		
 		BoardGraphics.init();
 		WorldGraphics.init();
+		status = new StatusBar(BoardGraphics.el()[0], WorldGraphics.element());
+		notices = new Notices(WorldGraphics.element(), BoardGraphics.el()[0]);
 		LootGraphics.init();
 		MagicGraphics.init();
 		if(!getModule('engine').isSilent()) {
@@ -676,117 +664,37 @@ var Graphics = {
 		WorldGraphics.actors().openChest(chest);
 	},
 	
-	getStatusContainer: function() {
-		var healthContainer = $('.statusContainer');
-		if(healthContainer.length == 0) {
-			healthContainer =  $('<div>').addClass('statusContainer')
-				.append($('<div>').addClass('hearts')).appendTo('.gameBoard');
-		}
-		return healthContainer;
+	// The keeper's status: hearts, shield, sword, experience, the ward and tonight's
+	// blessing (src/ui/status.ts)
+	status: function() {
+		return status;
 	},
-	
-	updateExperience: function(xp, toLevel) {
-		var xpBar = $('.xpBar');
-		if(xpBar.length == 0) {
-			xpBar = $('<div>').addClass('xpBar').addClass('litBorder')
-				.addClass('hidden').append($('<div>').addClass('mask'))
-				.append($('<div>').addClass('nightSprite'))
-				.append($('<div>').addClass('fill').addClass('hidden')).appendTo('.gameBoard');
-		}
-		xpBar.find('.fill').css('height', (xp / toLevel * 100) + "%");
-		setTimeout(function() {
-			$('.xpBar, .fill').removeClass('hidden');
-		}, 100);
-	},
-	
-	numHearts: function() {
-		return heartInfo.total;
-	},
-	
-	updateHealth: function(health, maxHealth) {
 
-		heartInfo = getNumHearts(maxHealth);
-		
-		var statusContainer = $('.hearts', this.getStatusContainer());
-		for(var i = 0, n = heartInfo.total - statusContainer.children().length; i < n; i++) {
-			$('<div>').addClass('heart').addClass('prepop').append($('<div>')
-					.addClass('mask')).append($('<div>').addClass('mask')
-					.addClass('nightSprite')).append($('<div>')
-					.addClass('bar')).appendTo(statusContainer);
-		}
-		for(var i = heartInfo.total; i > 0; i--) {
-			var heart = $(statusContainer.children()[i - 1]);
-			var heartHealth = HEALTH_PER_HEART;
-			if(i <= heartInfo.big) {
-				heartHealth *= 2;
-				heart.removeClass('heart').addClass('bigheart');
-			}
-			if(health >= heartHealth) {
-				heart.removeClass('empty');
-				$('.bar', heart).css('width', '100%');
-				health -= heartHealth;
-			} else if(health > 0) {
-				heart.removeClass('empty');
-				$('.bar', heart).css('width', (health / heartHealth * 100) + '%');
-				health = 0;
-			} else {
-				heart.addClass('empty');
-				$('.bar', heart).css('width', '0%');
-			}
-		}
-		$('.prepop', statusContainer).each(function(idx, heartEl) {
-			setTimeout(function() {
-				$(heartEl).detach().appendTo(statusContainer).removeClass('prepop');
-			}, idx * 100);
-		});
+	// Words that come up over the world and the board (src/ui/notices.ts)
+	notices: function() {
+		return notices;
 	},
-	
+
+	updateExperience: function(xp, toLevel) {
+		status.setExperience(xp, toLevel);
+	},
+
+	numHearts: function() {
+		return status.numHearts();
+	},
+
+	updateHealth: function(health, maxHealth) {
+		status.setHealth(health, maxHealth);
+	},
+
 	updateShield: function(shield, maxShield) {
-		var container = this.getStatusContainer();
-		var el = $('.shield', container);
-		if(el.length == 0) {
-			el = $('<div>').addClass('shield').addClass('prepop')
-				.append($('<div>')).insertAfter('.hearts', container);
-		}
-		if(shield > 0) {
-			if(el.hasClass('prepop')) {
-				setTimeout(function() {
-					el.detach().insertAfter('.hearts', container).removeClass('prepop');
-				}, 100);
-			}
-			$('div', el).width((shield / maxShield * 100) + "%");
-		} else {
-			$('div', el).width("0%");
-			el.addClass('hidden');
-			setTimeout(function() {
-				el.addClass('prepop').removeClass('hidden');
-			}, 300);
-		}
+		status.setShield(shield, maxShield);
 	},
-	
+
 	updateSword: function(sword, maxSword) {
-		var container = this.getStatusContainer();
-		var el = $('.sword', container);
-		if(el.length == 0) {
-			el = $('<div>').addClass('sword').addClass('prepop')
-				.append($('<div>')).insertAfter('.hearts', container);
-		}
-		if(sword > 0) {
-			if(el.hasClass('prepop')) {
-				setTimeout(function() {
-					el.detach().insertAfter('.hearts', container).removeClass('prepop');
-				}, 100);
-			}
-			$('div', el).width((sword / maxSword * 100) + "%");
-		} else {
-			$('div', el).width("0%");
-			el.addClass('hidden');
-			setTimeout(function() {
-				el.addClass('prepop').removeClass('hidden');
-			}, 300);
-		}
+		status.setSword(sword, maxSword);
 	},
-	
+
 	fadeOut: function(callback) {
 		$('.gameBoard').addClass('hidden');
 		if(callback) {
@@ -814,18 +722,8 @@ var Graphics = {
 	},
 	
 	handleDayBreak: function(dayNumber) {
-		var txt = Graphics.getText('DAY_N', dayNumber);
-		var notifier;
 		Graphics.endDragonFight();
-		setTimeout(function() {
-			notifier = $('<div>').addClass('dayNotifier').text(txt).appendTo('.world');
-		}, 1400);
-		setTimeout(function() {
-			notifier.addClass('hidden');
-		}, 3000);
-		setTimeout(function() {
-			notifier.remove();
-		}, 3500);
+		notices.dayBreak(Graphics.getText('DAY_N', dayNumber));
 	},
 	
 	// A monster falls: its health bar goes, and a breath of shadow leaves it
@@ -853,22 +751,7 @@ var Graphics = {
 	},
 
 	setBossHealth: function(hp, max) {
-		if(_bossHealth == null) {
-			_bossHealth = Graphics.make('bossHealth noshow').append(Graphics.make());
-			WorldGraphics.add(_bossHealth)
-			_bossHealth.css('left');
-			_bossHealth.removeClass('noshow');
-		}
-		
-		_bossHealth.find('div').css('width', (hp / max * 100) + '%');
-		
-		if(hp <= 0) {
-			_bossHealth.addClass('noshow');
-			setTimeout(function() {
-				_bossHealth.remove();
-				_bossHealth = null;
-			}, 1000);
-		}
+		status.setBossHealth(hp, max);
 	},
 	
 	// The dragon flies down onto the field, the board tilting under it, and roars

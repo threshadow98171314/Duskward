@@ -90,6 +90,11 @@ export default {
 		el();
 	},
 
+	// The world's element
+	element: function() {
+		return el()[0];
+	},
+
 	attachHandler: function(event, element, handler) {
 		if(element) {
 			el().on(event, element, handler);

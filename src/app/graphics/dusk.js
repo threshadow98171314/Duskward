@@ -1,71 +1,33 @@
-import $ from '../../vendor/jquery.js';
 import E from '../eventmanager.js';
-import State from '../gamestate.js';
 import Graphics from './graphics.js';
 
-
-var _ward = null;
-var _chainPopup = null;
+// Dusk and what comes with it: the word that it has fallen, the ward raised against
+// the night, and the pop-ups of chains and bounties over the board; also the bursts
+// of the lantern and sun tiles. The status and the notices are drawn by src/ui.
 
 function G() {
 	return Graphics;
 }
 
-function ward() {
-	if(_ward == null) {
-		_ward = G().make('ward hidden')
-			.append(G().make('fill'))
-			.append(G().make('wardValue'));
-		G().getStatusContainer().append(_ward);
-	}
-	return _ward;
-}
-
 function updateWard(current, max) {
-	var el = ward();
-	el.find('.fill').css('height', (max > 0 ? current / max * 100 : 0) + '%');
-	el.find('.wardValue').text(current);
-	el.toggleClass('hidden', !(current > 0));
-}
-
-function notice(text, className) {
-	var el = $('<div>').addClass('dayNotifier ' + className).text(text).appendTo('.world');
-	setTimeout(function() {
-		el.addClass('hidden');
-	}, 2000);
-	setTimeout(function() {
-		el.remove();
-	}, 2500);
+	G().status().setWard(current, max);
 }
 
 function duskFall() {
-	$('body').addClass('dusk');
-	notice(G().getText('DUSK'), 'duskNotifier');
+	document.body.classList.add('dusk');
+	G().notices().dusk(G().getText('DUSK'));
 }
 
 function duskLift() {
-	$('body').removeClass('dusk');
+	document.body.classList.remove('dusk');
 }
 
 function chainCombo(chain) {
-	// One popup at a time, so fast chains do not pile them up
-	if(_chainPopup != null) {
-		_chainPopup.remove();
-	}
-	var popup = _chainPopup = G().make('chainPopup').text(G().getText('CHAIN_N', chain)).appendTo('.gameBoard');
-	setTimeout(function() {
-		popup.remove();
-		if(_chainPopup == popup) {
-			_chainPopup = null;
-		}
-	}, 1200);
+	G().notices().chainCombo(G().getText('CHAIN_N', chain));
 }
 
 function bounty(kinds, percent) {
-	var popup = G().make('bountyPopup').text(G().getText('BOUNTY_N', kinds, percent)).appendTo('.gameBoard');
-	setTimeout(function() {
-		popup.remove();
-	}, 2000);
+	G().notices().bounty(G().getText('BOUNTY_N', kinds, percent));
 }
 
 // Light runs along a burst lantern tile's row and down its column
@@ -81,9 +43,7 @@ function sunBurst() {
 
 export default {
 	init: function() {
-		_ward = null;
-		_chainPopup = null;
-		$('body').removeClass('dusk');
+		document.body.classList.remove('dusk');
 		E.bind('wardChanged', updateWard);
 		E.bind('duskFall', duskFall);
 		E.bind('duskLift', duskLift);

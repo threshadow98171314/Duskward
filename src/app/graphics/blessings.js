@@ -3,11 +3,9 @@ import Graphics from './graphics.js';
 
 // The dusk choice: Sera's offer of blessings for the night, as cards with the gift
 // and the price spelled out, and the skills to take into the night. Also the
-// badge that shows the chosen blessing until morning.
+// badge in the status that shows the chosen blessing until morning.
 
 var FADE_TIME = 500;
-
-var badge = null;
 
 function G() {
 	return Graphics;
@@ -54,19 +52,12 @@ function card(id, blessing) {
 }
 
 function showBadge(omen, id) {
-	if(badge == null) {
-		badge = G().make('blessingBadge');
-		G().getStatusContainer().append(badge);
-	}
-	badge.empty().append(G().make('badgeOmen').text(G().getText('OMEN_NAMES')[omen]));
-	if(id) {
-		badge.append(G().make('badgeBlessing').text(G().getText('TONIGHT', G().getText('BLESSING_NAMES')[id])));
-	}
+	G().status().showBadge(G().getText('OMEN_NAMES')[omen],
+		id ? G().getText('TONIGHT', G().getText('BLESSING_NAMES')[id]) : null);
 }
 
 export default {
 	init: function() {
-		badge = null;
 	},
 
 	// Shows tonight's omen and the choice; done(blessing or null, skills or null) once the keeper has chosen
@@ -144,10 +135,7 @@ export default {
 	},
 
 	clear: function() {
-		if(badge != null) {
-			badge.remove();
-			badge = null;
-		}
+		G().status().clearBadge();
 	},
 
 	describe: describe

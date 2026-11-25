@@ -6,16 +6,18 @@ import Graphics from './graphics.js';
 import WorldGraphics from './world.js';
 import { BoardView } from '../../render/board.ts';
 import { EffectsView } from '../../render/effects.ts';
+import { ResourceFlights } from '../../ui/flights.ts';
 
 // The board on screen. The tiles are drawn on a canvas (src/render/board.ts); this
 // module turns the board's draw requests into the view's animations, with the
-// timing the rest of the game waits on, and keeps the grid of tiles as drawn. The
-// resources flying off the board, and the bursts and pop-ups over it, are HTML.
+// timing the rest of the game waits on, and keeps the grid of tiles as drawn. What
+// a match gathers flies off the board as HTML (src/ui/flights.ts).
 
 var G = null;
 var _el = null;
 var view = null;
 var effects = null;
+var flights = null;
 // The world sits this far above the board, and is this tall (see .world)
 var WORLD_TOP = 112;
 var WORLD_HEIGHT = 110;
@@ -84,6 +86,7 @@ function createBoard(rows, cols) {
 	view.setNight($('body').hasClass('night'), false);
 	view.start();
 	makeEffects(el, cols, rows);
+	flights = new ResourceFlights(el[0], CELL);
 	// For debugging from the browser console
 	window.boardView = function() {
 		return view;
@@ -174,53 +177,17 @@ function drawFillBoard(tileString) {
 	return mTime + 200;
 }
 
-var effectPool = [];
-function getEffectEl(pos, type) {
-	var e;
-	if(effectPool.length == 0) {
-		e = G.make('resourceEffect').appendTo(el());
-	} else {
-		e = effectPool.pop();
-	}
-	var left = (pos.col * CELL) + (CELL / 2),
-		top = (pos.row * CELL) + (CELL / 2);
-	e.addClass(type.className).css({
-		'transform': 'translate3d(' + left + 'px, ' + top + 'px, 0px) scale(1)',
-		'-webkit-transform': 'translate3d(' + left + 'px, ' + top + 'px, 0px) scale(1)',
-		'-moz-transform': 'translate3d(' + left + 'px, ' + top + 'px, 0px) scale(1)',
-		'-ms-transform': 'translate3d(' + left + 'px, ' + top + 'px, 0px) scale(1)',
-		'-o-transform': 'translate3d(' + left + 'px, ' + top + 'px, 0px) scale(1)'
-	}).removeClass('pooled');
-	return e;
-}
-
-function removeEffectEl(el) {
-	el.attr('class', 'resourceEffect pooled');
-	effectPool.push(el);
-}
-
+// What a matched tile gathers flies off to where it goes: by day, to the stockpile
+// or the village; by night, to the keeper's sword or off one side of the world
 function drawMatchEffect(pos, type, isNight, side) {
 	if(type != null && GameBoard.shouldDrawResourceEffect(type)) {
-		// Create the effect at the tile position
-		var e = getEffectEl(pos, type);
-		// Move it to the destination
-		e.css('left');
 		var dest = type.effectDest[isNight ? 'night' : 'day'];
 		if(dest == 'side') {
 			dest = [ side == 'left' ? 0 : G.worldWidth(), -20];
 		} else if(dest == 'sword') {
 			dest = [-20, 28 * G.numHearts() + 14];
 		}
-		e.css({
-			'transform': 'translate3d(' + dest[0] + 'px, ' + dest[1] + 'px, 0px) scale(0.2)',
-			'-webkit-transform': 'translate3d(' + dest[0] + 'px, ' + dest[1] + 'px, 0px) scale(0.2)',
-			'-moz-transform': 'translate3d(' + dest[0] + 'px, ' + dest[1] + 'px, 0px) scale(0.2)',
-			'-ms-transform': 'translate3d(' + dest[0] + 'px, ' + dest[1] + 'px, 0px) scale(0.2)',
-			'-o-transform': 'translate3d(' + dest[0] + 'px, ' + dest[1] + 'px, 0px) scale(0.2)'
-		});
-		setTimeout(function() {
-			removeEffectEl(e);
-		}, 700);
+		flights.send(pos.row, pos.col, type.className, dest);
 	}
 }
 
@@ -311,7 +278,6 @@ export default {
 		boardClasses = null;
 		el();
 
-		effectPool.length = 0;
 		E.bind('drawEffect', drawTileEffect);
 		E.bind('drawRemoveEffect', removeTileEffect);
 		E.bind('tileExplode', explode);

@@ -49,13 +49,13 @@ npm run dev
 | 路徑 | 內容 |
 |---|---|
 | `index.html` | 遊戲頁面，也是 Vite 的進入點 |
-| `src/app/` | 遊戲邏輯（ES 模組）。`engine` 是主流程，`gameboard` 是三消盤面，`world` 管世界與建築，`gamecontent` 存放資源和建築的資料，`story` 負責劇情 |
+| `src/app/` | 遊戲邏輯（ES 模組）。`engine` 是主流程，`gameboard` 是三消盤面，`world` 管世界與建築，`gamecontent` 存放資源和建築的資料，`story` 負責劇情，`tutorial` 是第一天的教學，`hints` 是閒置提示 |
 | `src/app/locale/` | 語系檔（`zh-TW`、`en`），介面文字和劇情文字都在這裡 |
 | `src/core/` | 規則核心（TypeScript）：盤面、時間、收穫、成長、戰鬥數值、戰場（主角與怪物的移動和戰鬥）、可指定種子的亂數和模擬，不碰畫面 |
 | `src/content/` | 遊戲內容的資料：資源、建築、道具、法術與暮光技、怪物，以及美術工具寫出的精靈圖清單，載入時會檢查 |
 | `src/render/` | 新的繪製層（TypeScript、canvas）：盤面、天空、建築、角色、特效與兩個魔王 |
 | `src/platform/` | 用 TypeScript 新寫的平台層，目前有存檔版本與升級 |
-| `src/ui/` | 新的介面元件（TypeScript）：狀態列、道具與法術按鈕、標題畫面、選單、劇情與抉擇、錯誤復原畫面，以及照精靈圖清單產生的介面圖示樣式 |
+| `src/ui/` | 新的介面元件（TypeScript）：狀態列、道具與法術按鈕、標題畫面、選單、劇情與抉擇、教學的光圈、滑鼠提示、錯誤復原畫面，以及照精靈圖清單產生的介面圖示樣式 |
 | `src/vendor/` | 沿用的第三方程式：Base64 |
 | `public/` | 原樣發布的 CSS、圖片和音效 |
 | `tests/` | Vitest 測試 |

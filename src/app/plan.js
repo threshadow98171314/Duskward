@@ -1,12 +1,15 @@
 import E from './eventmanager.js';
 import State from './gamestate.js';
 import Graphics from './graphics/graphics.js';
+import Content from './gamecontent.js';
 import { offerChoice } from '../ui/choices.ts';
 
 // The morning's building plan: when a new building is ready to be raised and
 // there is more than one to choose from, the keeper is asked which comes first.
 // The answer marks that building, as clicking it would; the keeper can also leave
-// the order to their own judgement. The game waits while the keeper chooses.
+// the order to their own judgement. The game waits while the keeper chooses. On
+// the very first morning nobody asks yet: the keeper has not gathered anything,
+// and works towards the first building the village needs.
 
 var MORNING_DELAY = 6000;
 
@@ -27,18 +30,34 @@ function buildingName(className) {
 	return match[2] ? name + G().getText('LEVEL_N', match[2]) : name;
 }
 
+// The building that brings a material's tiles onto the board, while it does not stand yet
+function comesWith(resource) {
+	var type = Content.getResourceType(resource);
+	var building = type && type.unlockedBy;
+	return building && !State.hasBuilding(Content.getBuildingType(building)) ? building : null;
+}
+
+// What a building still needs; a material not on the board yet says what brings it
 function costText(building) {
 	var names = G().getText('RESOURCE_NAMES');
 	var parts = [];
 	for(var resource in building.requiredResources) {
 		if(building.requiredResources[resource] > 0) {
-			parts.push(names[resource] + ' ×' + building.requiredResources[resource]);
+			var part = names[resource] + ' ×' + building.requiredResources[resource];
+			var source = comesWith(resource);
+			if(source) {
+				part += G().getText('NEEDS_BUILDING', buildingName(source));
+			}
+			parts.push(part);
 		}
 	}
 	return parts.length > 0 ? parts.join('、') : G().getText('NO_COST');
 }
 
 function ask() {
+	if(State.dayNumber <= 1) {
+		return;
+	}
 	var buildings = waiting();
 	State.plannedSeen = State.plannedSeen || [];
 	var fresh = buildings.some(function(building) {
@@ -78,5 +97,6 @@ export default {
 		});
 	},
 
-	buildingName: buildingName
+	buildingName: buildingName,
+	costText: costText
 };

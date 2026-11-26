@@ -57,6 +57,40 @@ function stored(block) {
 	return { key: block, kind: block.options.type.className, share: block.quantity() / block.max };
 }
 
+// Asks the game what the keeper works towards next (see World.plan)
+var plan = null;
+var shownNext = null;
+
+// Whether any materials have been delivered to a building
+function delivered(building) {
+	var cost = building.options.type.cost;
+	return Object.keys(cost).some(function(kind) {
+		return building.requiredResources[kind] < cost[kind];
+	});
+}
+
+// The building the keeper works towards next shows from the start: its bars, with
+// what is on its way to it, and its outline where it will stand; or, for an
+// upgrade, the building it upgrades lifts for it, and settles again if the keeper
+// turns to something else before anything is delivered
+function follow(next, bars) {
+	if(next !== shownNext) {
+		var before = shownNext && shownNext.getReplaces(GameState);
+		if(before && !delivered(shownNext)) {
+			village.setUpgrade(before, null);
+		}
+		var replaces = next && next.getReplaces(GameState);
+		if(replaces) {
+			village.setUpgrade(replaces, next);
+		}
+		shownNext = next;
+	}
+	village.setNext(next, next != null && next.getReplaces(GameState) == null);
+	if(next != null) {
+		village.setCosts(next, bars);
+	}
+}
+
 function makeVillage() {
 	var canvas = element('canvas', 'villageCanvas');
 	_el.querySelector(':scope > .skyCanvas').after(canvas);
@@ -72,6 +106,8 @@ function makeVillage() {
 		village.setNight(page.contains('night'));
 		village.levels = BoardGraphics.levels();
 		village.stockpile = Resources.loaded ? GameState.stores.map(stored) : null;
+		var next = plan ? plan() : null;
+		follow(next && next.next, next && next.bars);
 	};
 	village.start();
 }
@@ -94,7 +130,10 @@ function makeActors() {
 }
 
 export default {
-	init: function() {
+	// Options: plan, which asks what the keeper works towards next
+	init: function(opts) {
+		plan = (opts && opts.plan) || null;
+		shownNext = null;
 		_el = null;
 		el();
 	},

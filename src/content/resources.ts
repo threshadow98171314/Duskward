@@ -70,6 +70,7 @@ export const RESOURCES = {
 	Clay: {
 		char: 'c',
 		className: 'clay',
+		unlockedBy: 'bricklayer',
 		provokes: { dragon: 'iceBeam', eclipse: 'eclipseLight' },
 		nightEffect: {
 			'bricklayer4': 'spawn:imp',
@@ -91,6 +92,7 @@ export const RESOURCES = {
 	Cloth: {
 		char: 'l',
 		className: 'cloth',
+		unlockedBy: 'weaver',
 		provokes: { dragon: 'fireBlast', eclipse: 'eclipse' },
 		nightEffect: {
 			'weaver4': 'spawn:warlock',
@@ -124,6 +126,7 @@ export const RESOURCES = {
 	Lantern: {
 		char: 'f',
 		className: 'lantern',
+		unlockedBy: 'lighthouse',
 		nightEffect: {
 			'default': 'dawn'
 		},

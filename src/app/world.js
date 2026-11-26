@@ -23,7 +23,7 @@ import { chainCalls, nightfallCalls } from '../core/night.ts';
 import * as Field from '../core/field.ts';
 import * as Day from '../core/day.ts';
 import { attracted, bounty, duskWard, harvestResource } from '../core/harvest.ts';
-import { canBuild as canBuildIn } from '../core/progress.ts';
+import { canBuild as canBuildIn, nextSite, siteBars } from '../core/progress.ts';
 import { dragonMultiplier, monsterMultiplier, WARD_BITE } from '../core/combat.ts';
 import { CONSEQUENCES } from '../content/story.ts';
 import { consequences } from '../core/story.ts';
@@ -219,6 +219,35 @@ var World = {
 		return moveAction;
 	},
 
+	// The building the keeper works towards next, chosen the way the keeper chooses
+	// their work, and the bars of its materials: delivered, and on their way in the
+	// stockpile or on the keeper's back (src/core/progress.ts); null before the game
+	// has any buildings
+	plan: function() {
+		if(!GameState.buildings) {
+			return null;
+		}
+		var sites = [];
+		var asked = null;
+		for(var t in Content.BuildingType) {
+			var building = GameState.getBuilding(Content.BuildingType[t]);
+			if(building != null && !building.built && !building.obsolete) {
+				var site = {
+					building: building,
+					priority: building.options.type.priority,
+					cost: building.options.type.cost,
+					missing: building.requiredResources
+				};
+				sites.push(site);
+				if(building == prioritizedBuilding) {
+					asked = site;
+				}
+			}
+		}
+		var next = nextSite(sites, asked);
+		return next == null ? null : { next: next.building, bars: siteBars(next, onItsWay()) };
+	},
+
 	// The keeper stops what they are doing, e.g. on levelling up
 	interruptKeeper: function() {
 		if(field != null) {
@@ -388,6 +417,21 @@ function dropChest(x, forceLoot) {
 		return;
 	}
 	FieldView.addChest(Field.addChest(field, x), forceLoot);
+}
+
+// The materials on their way to the buildings, in blocks of each kind: in the
+// stockpile, a block part full counting in part, and on the keeper's back
+function onItsWay() {
+	var blocks = {};
+	var add = function(block) {
+		var kind = block.options.type.className;
+		blocks[kind] = (blocks[kind] || 0) + block.quantity() / block.max;
+	};
+	(GameState.stores || []).forEach(add);
+	if(dude != null && dude.carrying) {
+		add(dude.carrying);
+	}
+	return blocks;
 }
 
 function carryTask(block, building) {

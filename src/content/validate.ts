@@ -66,6 +66,9 @@ export function validateContent(content: Content): string[] {
 		if (resource.attracts !== undefined && !monsters.has(resource.attracts)) {
 			problem(where, 'draws unknown monster ' + resource.attracts);
 		}
+		if (resource.unlockedBy !== undefined && !buildingNames.has(resource.unlockedBy)) {
+			problem(where, 'comes with unknown building ' + resource.unlockedBy);
+		}
 		for (const [boss, strike] of Object.entries(resource.provokes ?? {})) {
 			if (content.bosses[boss]?.strikes[strike] === undefined) {
 				problem(where, `provokes unknown attack ${strike} of ${boss}`);

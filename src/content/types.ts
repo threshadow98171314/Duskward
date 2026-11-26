@@ -18,6 +18,8 @@ export interface ResourceDef {
 	wounds?: Record<string, number>;
 	// A monster that gathering it at night draws in, besides its night effect
 	attracts?: string;
+	// The building that brings its tiles onto the board; without one, they are there from the start
+	unlockedBy?: string;
 	// Store multipliers, by building
 	multipliers: Record<string, number>;
 	effectDest: { day: EffectDestination; night: EffectDestination };

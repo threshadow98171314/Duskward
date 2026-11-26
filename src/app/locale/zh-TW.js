@@ -82,6 +82,8 @@ export default {
 	BUILD_PLAN: '今天先蓋哪一棟？我會讓守暮人先把材料送過去。',
 	BUILD_PLAN_SKIP: '交給守暮人決定',
 	NO_COST: '材料已經備齊',
+	// A material not on the board yet, and the building that brings it
+	NEEDS_BUILDING: '（要先蓋{0}）',
 	LEVEL_N: '（{0} 級）',
 	BUILDING_NAMES: {
 		shack: '小屋',

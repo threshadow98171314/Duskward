@@ -335,6 +335,10 @@ var Engine = {
 							// Sparks fly from the keeper's blows
 							keeper: function() {
 								return World.getDude();
+							},
+							// The village shows what the keeper works towards next
+							plan: function() {
+								return World.plan();
 							}
 						}],
 						World,

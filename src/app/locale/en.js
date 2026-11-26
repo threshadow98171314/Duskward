@@ -82,6 +82,8 @@ export default {
 	BUILD_PLAN: 'What should we raise first today? I will have the keeper carry the materials there first.',
 	BUILD_PLAN_SKIP: 'Leave it to the keeper',
 	NO_COST: 'Everything is ready',
+	// A material not on the board yet, and the building that brings it
+	NEEDS_BUILDING: ' (needs the {0} first)',
 	LEVEL_N: ' (level {0})',
 	BUILDING_NAMES: {
 		shack: 'Shack',

@@ -1,7 +1,8 @@
 // The village, drawn on a canvas in the world: its buildings rising out of the
 // ground as the keeper raises them, lifted a little while an upgrade waits for its
 // materials and sinking away once the upgrade rises, the bars of materials
-// delivered to buildings yet to be raised, and the star over the building the
+// delivered to buildings yet to be raised, the outline of the building the keeper
+// works towards next where it will stand, and the star over the building the
 // keeper sees to first; also the stockpile of materials at the left, and the
 // duskshards gathered in the tower. By night the buildings and the stockpile fade
 // into the dark. The game says what happens to each building; the view animates it.
@@ -13,10 +14,13 @@ export interface VillageSize {
 	height: number;
 }
 
-// One kind of material a building needs, and the share of it delivered so far
+// One kind of material a building needs, and the share of it delivered so far. A bar
+// can be split into the blocks it takes, and show a share more that is on its way.
 export interface Cost {
 	kind: string;
 	share: number;
+	blocks?: number;
+	waiting?: number;
 }
 
 // A block in the stockpile: what it holds, and how full it is (from 0 to 1)
@@ -64,10 +68,20 @@ const LIFT = 20;
 const LIFT_MS = 500;
 const SINK_MS = 2500;
 const BARS_SINK_MS = 1800;
-// The bars panel: just above the ground once something is delivered
+// The bars panel: just above the ground once something is delivered, or from the
+// start for the building the keeper works towards next. What is on its way to a
+// building shows in between what is delivered and what is still missing.
 const BARS_SHOW = 20;
 const BARS_HEIGHT = 18;
 const BARS_BORDER = 2;
+// The bars sit on a light panel, like the tiles on the board, so that what is
+// missing shows against it as well as what is there
+const BARS_PANEL = '#fffaf0';
+const PANEL_ALPHA = 0.85;
+const MISSING_ALPHA = 0.18;
+const WAITING_ALPHA = 0.65;
+// The building the keeper works towards next shows faintly where it will stand
+const OUTLINE_ALPHA = 0.4;
 const STAR_TOP = 10;
 const STAR_FRAME_MS = 200;
 // A block in the stockpile, with its border; it fills or empties over a moment
@@ -126,6 +140,20 @@ export function pileLayout(count: number, width: number, height: number): { left
 	return places;
 }
 
+// Where each segment of a bar goes, one for each block it takes, a gap between
+// them; a bar with too many blocks to tell apart is left whole
+export function segments(width: number, blocks: number, gap = 1): { left: number; width: number }[] {
+	const count = Math.max(1, Math.floor(blocks));
+	const step = (width + gap) / count;
+	if (count === 1 || step - gap < 2) {
+		return [{ left: 0, width }];
+	}
+	return Array.from({ length: count }, (_, i) => {
+		const left = Math.round(i * step);
+		return { left, width: Math.round((i + 1) * step) - gap - left };
+	});
+}
+
 // The frame of the stockpile for a level of the grain
 function pileFor(level: number): PileBox {
 	return PILES[Math.min(Math.max(Math.floor(level), 1), PILES.length) - 1];
@@ -163,6 +191,8 @@ export class VillageView {
 	private readonly images: Record<string, HTMLImageElement> = {};
 	private readonly buildings = new Map<object, Drawn>();
 	private priority: object | null = null;
+	private next: object | null = null;
+	private nextOutlined = false;
 	private night = false;
 	private nightSince = -Infinity;
 	private frame = 0;
@@ -206,6 +236,9 @@ export class VillageView {
 		if (this.priority === key) {
 			this.priority = null;
 		}
+		if (this.next === key) {
+			this.next = null;
+		}
 	}
 
 	// The materials delivered so far; the bars come up once there are any
@@ -220,10 +253,42 @@ export class VillageView {
 		}
 	}
 
+	// The building the keeper works towards next: its bars are up from the start, and
+	// while it waits underground its outline shows where it will stand, unless the
+	// building it upgrades stands there. The bars of one no longer next go down again
+	// if nothing has been delivered to it.
+	setNext(key: object | null, outline = true): void {
+		this.nextOutlined = outline;
+		if (key === this.next) {
+			return;
+		}
+		const before = this.next === null ? undefined : this.buildings.get(this.next);
+		if (before !== undefined && before.costs !== null && !before.costs.some((cost) => cost.share > 0)) {
+			before.barsShownSince = null;
+		}
+		this.next = key;
+		const building = key === null ? undefined : this.buildings.get(key);
+		if (building !== undefined && building.costs !== null && building.barsShownSince === null) {
+			building.barsShownSince = this.now();
+		}
+	}
+
+	// Where the outline of the building the keeper works towards next is drawn: where
+	// it will stand, while it waits underground; null for any other building
+	outlineOf(key: object): { left: number; top: number; width: number; height: number } | null {
+		const building = this.buildings.get(key);
+		const sprite = building === undefined ? undefined : SPRITES[building.sprite];
+		if (key !== this.next || !this.nextOutlined || building === undefined || sprite === undefined ||
+				building.costs === null || building.rise.to > 0 || building.sunk) {
+			return null;
+		}
+		return { left: building.x - sprite.width / 2, top: this.size.height - sprite.height, width: sprite.width, height: sprite.height };
+	}
+
 	// A building lifts while the one that will replace it gathers its materials
 	setUpgrade(key: object, upgrade: object | null): void {
 		const building = this.buildings.get(key);
-		if (building !== undefined) {
+		if (building !== undefined && building.upgrade !== upgrade) {
 			building.upgrade = upgrade;
 			this.settle(building);
 		}
@@ -425,6 +490,7 @@ export class VillageView {
 			for (const [key, building] of this.buildings) {
 				this.drawBuilding(ctx, key, building);
 			}
+			this.drawOutline(ctx, now, day);
 			this.drawPile(ctx, now, day);
 			for (const [key, building] of this.buildings) {
 				this.drawBars(ctx, key, building, now, day);
@@ -500,7 +566,24 @@ export class VillageView {
 			place.left, place.top, sprite.width, sprite.height);
 	}
 
-	// One bar for each kind of material, the delivered share filled in its colour
+	// The building the keeper works towards next, faintly where it will stand; it comes
+	// into view with its bars
+	private drawOutline(ctx: CanvasRenderingContext2D, now: number, day: number): void {
+		const building = this.next === null ? undefined : this.buildings.get(this.next);
+		const place = this.next === null ? null : this.outlineOf(this.next);
+		const sprite = building === undefined ? undefined : SPRITES[building.sprite];
+		const sheet = this.ready(sprite?.sheet);
+		if (building === undefined || place === null || sprite === undefined || sheet === null) {
+			return;
+		}
+		const row = Math.min(building.row, sprite.rows - 1);
+		ctx.globalAlpha = day * OUTLINE_ALPHA * clamp((now - (building.barsShownSince ?? now)) / FADE_MS);
+		ctx.drawImage(sheet, sprite.x, sprite.y + row * sprite.height, sprite.width, sprite.height,
+			place.left, place.top, sprite.width, sprite.height);
+	}
+
+	// One bar for each kind of material, split into the blocks it takes: what is
+	// delivered filled in its colour, and what is on its way less strongly
 	private drawBars(ctx: CanvasRenderingContext2D, key: object, building: Drawn, now: number, day: number): void {
 		const bars = this.barsOf(key);
 		if (bars === null || building.costs === null || building.costs.length === 0 || building.barsShownSince === null) {
@@ -514,16 +597,43 @@ export class VillageView {
 		ctx.fillRect(bars.left, bars.top, BARS_BORDER, bars.height);
 		ctx.fillRect(bars.left + bars.width - BARS_BORDER, bars.top, BARS_BORDER, bars.height);
 		const inner = { left: bars.left + BARS_BORDER, top: bars.top + BARS_BORDER, width: bars.width - 2 * BARS_BORDER };
+		ctx.fillStyle = BARS_PANEL;
+		ctx.globalAlpha = alpha * PANEL_ALPHA;
+		ctx.fillRect(inner.left, inner.top, inner.width, BARS_HEIGHT);
 		const height = BARS_HEIGHT / building.costs.length;
 		building.costs.forEach((cost, i) => {
 			const colour = materialColour(cost.kind, this.levels[cost.kind] ?? 1);
-			const top = inner.top + i * height;
-			// What is still missing shows faintly in the same colour
-			ctx.fillStyle = colour;
-			ctx.globalAlpha = alpha * 0.2;
-			ctx.fillRect(inner.left, top, inner.width, height);
-			ctx.globalAlpha = alpha;
-			ctx.fillRect(inner.left, top, inner.width * clamp(cost.share), height);
+			let top = Math.round(inner.top + i * height);
+			const bottom = Math.round(inner.top + (i + 1) * height);
+			// A line between one material and the next, as dark as the border
+			if (i > 0) {
+				ctx.fillStyle = 'black';
+				ctx.globalAlpha = alpha;
+				ctx.fillRect(inner.left, top, inner.width, 1);
+				top++;
+			}
+			const parts = segments(inner.width, cost.blocks ?? 1);
+			const delivered = clamp(cost.share);
+			const coming = clamp(delivered + (cost.waiting ?? 0));
+			parts.forEach((part, j) => {
+				const left = inner.left + part.left;
+				const full = clamp(delivered * parts.length - j);
+				const reached = clamp(coming * parts.length - j);
+				ctx.fillStyle = colour;
+				ctx.globalAlpha = alpha * MISSING_ALPHA;
+				ctx.fillRect(left, top, part.width, bottom - top);
+				if (reached > full) {
+					ctx.globalAlpha = alpha * WAITING_ALPHA;
+					ctx.fillRect(left + part.width * full, top, part.width * (reached - full), bottom - top);
+				}
+				ctx.globalAlpha = alpha;
+				ctx.fillRect(left, top, part.width * full, bottom - top);
+				// A line between one block and the next, as dark as the border
+				if (j > 0) {
+					ctx.fillStyle = 'black';
+					ctx.fillRect(left - 1, top, 1, bottom - top);
+				}
+			});
 		});
 	}
 

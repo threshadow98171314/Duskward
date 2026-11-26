@@ -285,7 +285,7 @@ var Graphics = {
 		}
 
 		BoardGraphics.init();
-		WorldGraphics.init();
+		WorldGraphics.init({ plan: opts.plan });
 		status = new StatusBar(BoardGraphics.el(), WorldGraphics.element());
 		notices = new Notices(WorldGraphics.element(), BoardGraphics.el());
 		LootGraphics.init();
@@ -400,8 +400,8 @@ var Graphics = {
 		WorldGraphics.village().remove(building);
 	},
 
-	// The bars of materials delivered to a building; once there are any, the building
-	// it will replace lifts for it
+	// The bars of materials delivered to a building, split into the blocks each takes;
+	// once there are any, the building it will replace lifts for it
 	updateCosts: function(building) {
 		var show = false;
 		var costs = [];
@@ -409,7 +409,7 @@ var Graphics = {
 			var total = building.options.type.cost[r];
 			var has = total - building.requiredResources[r];
 			if(has > 0) show = true;
-			costs.push({ kind: r, share: has / total });
+			costs.push({ kind: r, share: has / total, blocks: total });
 		}
 		WorldGraphics.village().setCosts(building, costs);
 		if(show) {

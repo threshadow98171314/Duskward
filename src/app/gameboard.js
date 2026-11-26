@@ -143,6 +143,11 @@ var GameBoard = {
 	}
 };
 
+// Whether the building that brings a kind of tile onto the board stands
+function unlocked(resourceType) {
+	return State.hasBuilding(Content.getBuildingType(resourceType.unlockedBy));
+}
+
 // How likely each kind of tile is to appear; buildings unlock more kinds
 function tileMap() {
 	var map = {
@@ -151,13 +156,13 @@ function tileMap() {
 		's' : 2
 	};
 
-	if(State.hasBuilding(Content.BuildingType.BrickLayer)) {
+	if(unlocked(Content.ResourceType.Clay)) {
 		map.c = 2;
 	}
-	if(State.hasBuilding(Content.BuildingType.Weaver)) {
+	if(unlocked(Content.ResourceType.Cloth)) {
 		map.l = 2;
 	}
-	if(State.hasBuilding(Content.BuildingType.Lighthouse)) {
+	if(unlocked(Content.ResourceType.Lantern)) {
 		map.f = 1;
 	}
 	// Lantern light is the one thing that hurts the Eclipse

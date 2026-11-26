@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { materialColour, pileLayout, VillageView } from '../src/render/village.ts';
+import { materialColour, pileLayout, segments, VillageView } from '../src/render/village.ts';
 
 // The village, without a canvas to draw on (as in these tests) and on a clock the test moves
 function village() {
@@ -39,6 +39,50 @@ describe('the village', () => {
 		clock.now = 1800;
 		expect(view.barsOf(smithy)?.top).toBeGreaterThan(110);
 		expect(view.buildingAt(200, 95)).toBeNull();
+	});
+
+	it('shows the building the keeper works towards next from the start: its bars, and its outline where it will stand', () => {
+		const { view, clock } = village();
+		const bricklayer = {}, weaver = {};
+		view.add(bricklayer, { sprite: 'bricklayer', row: 0, x: 90, standing: false });
+		view.add(weaver, { sprite: 'weaver', row: 0, x: 150, standing: false });
+		view.setCosts(bricklayer, [{ kind: 'stone', share: 0, blocks: 5 }, { kind: 'wood', share: 0, blocks: 5 }]);
+		view.setCosts(weaver, [{ kind: 'stone', share: 0, blocks: 5 }, { kind: 'wood', share: 0, blocks: 5 }]);
+		view.setNext(bricklayer);
+		expect(view.barsOf(bricklayer)).toEqual({ left: 59, top: 90, width: 62, height: 22 });
+		expect(view.buildingAt(90, 95)).toBe(bricklayer);
+		expect(view.outlineOf(bricklayer)).toEqual({ left: 60, top: 110 - 80, width: 60, height: 80 });
+		expect(view.barsOf(weaver)).toBeNull();
+		expect(view.outlineOf(weaver)).toBeNull();
+		// Once the weaver is next, the bricklayer, with nothing delivered, goes back under
+		view.setNext(weaver);
+		expect(view.barsOf(bricklayer)).toBeNull();
+		expect(view.outlineOf(bricklayer)).toBeNull();
+		expect(view.buildingAt(150, 95)).toBe(weaver);
+		// One with something delivered keeps its bars
+		view.setCosts(weaver, [{ kind: 'stone', share: 0.2, blocks: 5 }, { kind: 'wood', share: 0, blocks: 5 }]);
+		view.setNext(bricklayer);
+		expect(view.barsOf(weaver)).not.toBeNull();
+		// The outline goes as the building rises, and comes back if it drops back
+		view.raise(bricklayer, 5000);
+		expect(view.outlineOf(bricklayer)).toBeNull();
+		clock.now = 1000;
+		view.sink(bricklayer);
+		expect(view.outlineOf(bricklayer)).not.toBeNull();
+		// An upgrade has no outline: the building it upgrades stands there
+		view.setNext(bricklayer, false);
+		expect(view.outlineOf(bricklayer)).toBeNull();
+		expect(view.barsOf(bricklayer)).not.toBeNull();
+	});
+
+	it('splits a bar into the blocks it takes, unless there are too many to tell apart', () => {
+		const widths = (width: number, blocks: number) => segments(width, blocks).map((part) => [part.left, part.width]);
+		expect(widths(58, 1)).toEqual([[0, 58]]);
+		expect(widths(58, 5)).toEqual([[0, 11], [12, 11], [24, 10], [35, 11], [47, 11]]);
+		const ten = segments(58, 10);
+		expect(ten).toHaveLength(10);
+		expect(ten[9].left + ten[9].width).toBe(58);
+		expect(segments(20, 10)).toEqual([{ left: 0, width: 20 }]);
 	});
 
 	it('lifts a building for its upgrade, which a click asks for, and sinks it as the upgrade rises', () => {

@@ -4,7 +4,7 @@ import { absorb, dragonMultiplier, heroDamage, maxShield, maxSword, monsterMulti
 	from '../src/core/combat.ts';
 import { advanceClock, createClock, extendDay, startPhase, sunBite } from '../src/core/day.ts';
 import { attracted, bounty, harvest, type HarvestSituation, type ResourceRule } from '../src/core/harvest.ts';
-import { canBuild, gainXp, MAX_LEVEL, maxHealth, xpToLevel } from '../src/core/progress.ts';
+import { canBuild, gainXp, MAX_LEVEL, maxHealth, nextSite, siteBars, xpToLevel } from '../src/core/progress.ts';
 
 const lengths = { dayMoves: 20, nightMoves: 15 };
 
@@ -193,6 +193,37 @@ describe('progress', () => {
 		// The tower waits for all four dusk crystal shards
 		expect(canBuild({ requiredGems: 4 }, { ...village(9, 0), gems: 3 })).toBe(false);
 		expect(canBuild({ requiredGems: 4 }, { ...village(1, 0), gems: 4 })).toBe(true);
+	});
+
+	it('works towards a building with everything it needs, then the one asked for, then the first by priority', () => {
+		const site = (priority: number, missing: Record<string, number>) => ({ priority, cost: { stone: 5, wood: 5 }, missing });
+		const bricklayer = site(1, { stone: 5, wood: 5 });
+		const weaver = site(2, { stone: 5, wood: 5 });
+		const smithy = site(3, { wood: 2, clay: 2 });
+		const sawmill = site(3, { stone: 2, cloth: 2 });
+		expect(nextSite([bricklayer, weaver, smithy, sawmill])).toBe(bricklayer);
+		expect(nextSite([weaver, smithy, sawmill])).toBe(weaver);
+		// Of two that come first, the first listed
+		expect(nextSite([smithy, sawmill])).toBe(smithy);
+		expect(nextSite([bricklayer, weaver, smithy], smithy)).toBe(smithy);
+		// One that is no longer waiting is not asked for any more
+		expect(nextSite([bricklayer, weaver], smithy)).toBe(bricklayer);
+		const ready = site(4, { stone: 0, wood: 0 });
+		expect(nextSite([bricklayer, ready], weaver)).toBe(ready);
+		expect(nextSite([])).toBeNull();
+	});
+
+	it('fills a bar for each material: blocks delivered, and blocks on their way up to what is missing', () => {
+		const smithy = { priority: 3, cost: { wood: 2, clay: 4 }, missing: { wood: 1, clay: 4 } };
+		expect(siteBars(smithy)).toEqual([
+			{ kind: 'wood', blocks: 2, share: 0.5, waiting: 0 },
+			{ kind: 'clay', blocks: 4, share: 0, waiting: 0 },
+		]);
+		expect(siteBars(smithy, { wood: 1.6, clay: 1, stone: 3 })).toEqual([
+			{ kind: 'wood', blocks: 2, share: 0.5, waiting: 0.5 },
+			{ kind: 'clay', blocks: 4, share: 0, waiting: 0.25 },
+		]);
+		expect(siteBars({ priority: 1, cost: {}, missing: {} })).toEqual([]);
 	});
 });
 

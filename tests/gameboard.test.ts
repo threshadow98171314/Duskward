@@ -196,3 +196,23 @@ it('fast-forwards the rest of a chain once hurried, until the move is over', () 
 	}
 	expect(checked).toBe(3);
 });
+
+it('brings clay, cloth and lanterns onto the board once the buildings that make them stand', () => {
+	EventManager.init();
+	GameState.create();
+	GameBoard.init({ random: createRandom(1) });
+	const tiles = () => GameBoard.availableTiles().sort().join('');
+	expect(tiles()).toBe('gsw');
+	const { buildings } = GameState as unknown as { buildings: object[] };
+	const stand = (className: string) => buildings.push({ options: { type: Content.getBuildingType(className) }, built: true });
+	stand('bricklayer');
+	expect(tiles()).toBe('cgsw');
+	stand('weaver');
+	stand('lighthouse');
+	expect(tiles()).toBe('cfglsw');
+	for (const [name, resource] of Object.entries(Content.ResourceType)) {
+		if (resource.unlockedBy !== undefined) {
+			expect(Content.getBuildingType(resource.unlockedBy), name).not.toBeNull();
+		}
+	}
+});

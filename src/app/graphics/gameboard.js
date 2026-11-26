@@ -331,6 +331,13 @@ export default {
 		view.select(cell ? getTile(cell.row, cell.column) : null);
 	},
 
+	// Points out a move, two cells as { row, column }; null takes the hint away
+	hint: function(a, b) {
+		if(view) {
+			view.hint(a || null, b || null);
+		}
+	},
+
 	// Tiles of these kinds fade out while their pictures change, then back in
 	hideKinds: function(kinds) {
 		view.hideKinds(kinds);

@@ -453,6 +453,11 @@ var Graphics = {
 		BoardGraphics.select(null);
 	},
 
+	// Points out a move on the board: its two cells nudge towards each other; null stops
+	hintMove: function(a, b) {
+		BoardGraphics.hint(a, b);
+	},
+
 	// A building lifts while its upgrade gathers materials, and can be clicked for it
 	markUpgrading: function(building, upgrade) {
 		WorldGraphics.village().setUpgrade(building, upgrade || null);

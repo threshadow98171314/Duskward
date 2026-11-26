@@ -218,6 +218,25 @@ export function validMoves(board: Board, limit = Infinity): [Position, Position]
 	return moves;
 }
 
+// The move to point out to a player who has stopped: of the swaps that make a match
+// without setting off a powder keg, the one that clears the most tiles (the first
+// found, of those that clear as many); null if there is none
+export function hintMove(board: Board): [Position, Position] | null {
+	let best: [Position, Position] | null = null;
+	let most = 0;
+	for (const [a, b] of validMoves(board)) {
+		swapTiles(board, a, b);
+		const cleared = new Set([...findLines(board, true), ...findLines(board, false)].flatMap((line) => line.cells));
+		const keg = [...cleared].some((i) => board.effects[i]?.type === 'explosive');
+		swapTiles(board, a, b);
+		if (!keg && cleared.size > most) {
+			best = [a, b];
+			most = cleared.size;
+		}
+	}
+	return best;
+}
+
 // Settles one wave: places pending power tiles, clears every line of three or more,
 // sets off effects on the cleared tiles, and drops new tiles in from the top.
 export function resolveWave(board: Board, context: WaveContext, random: Random): Wave {

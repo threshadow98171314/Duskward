@@ -65,6 +65,34 @@ describe('the board view', () => {
 		expect(view.picture('stone', true)?.sprite.y).toBe(467);
 	});
 
+	it('nudges the two tiles of a move pointed out towards each other, twice, then rests', () => {
+		const { view, clock } = boardView();
+		const left = view.add('grain', 2, 3), right = view.add('wood', 2, 4), other = view.add('stone', 5, 5);
+		view.hint({ row: 2, column: 3 }, { row: 2, column: 4 });
+		expect(view.isHinted(left) && view.isHinted(right)).toBe(true);
+		expect(view.isHinted(other)).toBe(false);
+		// A quarter of the way into a nudge it is furthest out: 0.12 of a cell
+		clock.now = 200;
+		expect(view.nudgeOf(left).x).toBeCloseTo(0.12);
+		expect(view.nudgeOf(right).x).toBeCloseTo(-0.12);
+		expect(view.nudgeOf(left).y).toBe(0);
+		expect(view.nudgeOf(other)).toEqual({ x: 0, y: 0 });
+		clock.now = 400;
+		expect(view.nudgeOf(left).x).toBeCloseTo(0);
+		clock.now = 600;
+		expect(view.nudgeOf(left).x).toBeCloseTo(0.12);
+		// Then it rests until the next round
+		clock.now = 1000;
+		expect(view.nudgeOf(left).x).toBe(0);
+		clock.now = 1800;
+		expect(view.nudgeOf(left).x).toBeCloseTo(0.12);
+		// A tile fading away is no longer part of it, and the hint can be taken away
+		view.fade(right, 200);
+		expect(view.isHinted(right)).toBe(false);
+		view.hint(null);
+		expect(view.nudgeOf(left)).toEqual({ x: 0, y: 0 });
+	});
+
 	it('finds the cell under the pointer', () => {
 		const { view } = boardView();
 		expect(view.cellAt(2, 2)).toEqual({ row: 0, column: 0 });

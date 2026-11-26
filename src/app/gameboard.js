@@ -132,6 +132,11 @@ var GameBoard = {
 		return board == null ? null : Board.effectAt(board, row, col);
 	},
 
+	// A move to point out to a player who has stopped, as two cells, or null
+	hint: function() {
+		return board == null ? null : Board.hintMove(board);
+	},
+
 	availableTiles: function() {
 		return Object.keys(tileMap());
 	},

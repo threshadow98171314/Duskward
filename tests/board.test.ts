@@ -7,6 +7,7 @@ import {
 	expireEffects,
 	fillBoard,
 	GEM,
+	hintMove,
 	isBound,
 	movesAvailable,
 	releaseAllBinds,
@@ -324,5 +325,33 @@ describe('movesAvailable', () => {
 		expect(movesAvailable(board)).toBe(true);
 		addEffect(board, { row: 0, column: 3 }, 'shadowBind');
 		expect(movesAvailable(board)).toBe(false);
+	});
+});
+
+describe('hintMove', () => {
+	it('points out the move that clears the most tiles', () => {
+		// Swapping the a at the top down into the second row makes five in a row; moving
+		// the b in that row sideways makes only three
+		const board = boardOf([
+			'cdaec',
+			'aabaa',
+			'edfgb',
+			'gfcbb',
+		]);
+		expect(hintMove(board)).toEqual([{ row: 0, column: 2 }, { row: 1, column: 2 }]);
+		// The board is as it was
+		expect(rowsOf(board)[1]).toBe('aabaa');
+	});
+
+	it('does not point at a move that sets off a powder keg, nor at none at all', () => {
+		const board = boardOf([
+			'aaba',
+			'cdef',
+			'ghci',
+		]);
+		expect(hintMove(board)).toEqual([{ row: 0, column: 2 }, { row: 0, column: 3 }]);
+		addEffect(board, { row: 0, column: 0 }, 'explosive');
+		expect(hintMove(board)).toBeNull();
+		expect(hintMove(boardOf(['abcd', 'cdab', 'abcd', 'cdab']))).toBeNull();
 	});
 });

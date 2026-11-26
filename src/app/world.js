@@ -281,8 +281,10 @@ var World = {
 		return dude;
 	},
 	
+	// Whether the world lets the player move: not while day turns to night or back,
+	// nor before the keeper is out or once they have fallen
 	canMove: function() {
-		return !inTransition && dude.isAlive();
+		return !inTransition && dude != null && dude.isAlive();
 	},
 	
 	isNight: function() {

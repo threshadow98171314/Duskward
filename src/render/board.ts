@@ -2,7 +2,8 @@
 // placed, slides to another cell, fades away, gains or loses a power) and the view
 // animates it, so it knows nothing of the rules. Tiles are drawn from the sprite
 // list with their day or night side up, and flip over when night falls or the day
-// breaks; power tiles, shadow binds and the selected tile are drawn over them.
+// breaks; power tiles, shadow binds and the selected tile are drawn over them. A
+// move the game points out nudges its two tiles towards each other.
 
 import { SHEETS, SPRITES, type Sprite } from '../content/sprites.ts';
 
@@ -50,6 +51,11 @@ const FLIP_MS = 500;
 const BORDER_MS = 1400;
 const KIND_FADE_MS = 200;
 const EXPLOSION_MS = 400;
+// A move pointed out: its two tiles nudge towards each other twice, then rest, over
+// and over, with a light rim pulsing around them
+const NUDGE_MS = 1600;
+const NUDGE = 0.12;
+const HINT_RIM = '#e0862a';
 // The kinds whose night side changes while the dragon is out
 const DRAGON_KINDS = new Set(['grain', 'clay', 'cloth']);
 const SELECT_BORDER = 'img/select-border.png';
@@ -102,6 +108,7 @@ export class BoardView {
 	private nightSince = -Infinity;
 	private readonly kindAlpha: Record<string, Motion> = {};
 	private selected: DrawnTile | null = null;
+	private hinted: { a: Cell; b: Cell; since: number } | null = null;
 	private readonly explosions: { cell: Cell; start: number }[] = [];
 	private frame = 0;
 
@@ -161,6 +168,35 @@ export class BoardView {
 
 	select(tile: DrawnTile | null): void {
 		this.selected = tile;
+	}
+
+	// Points out a move: the tiles in these two cells nudge towards each other until
+	// the hint is taken away (with null)
+	hint(a: Cell | null, b: Cell | null = null): void {
+		this.hinted = a !== null && b !== null ? { a: { ...a }, b: { ...b }, since: this.now() } : null;
+	}
+
+	// How far a tile is nudged now, in cells, by the move pointed out
+	nudgeOf(tile: DrawnTile, now = this.now()): { x: number; y: number } {
+		const hint = this.hinted;
+		if (hint === null || tile.fade !== null) {
+			return { x: 0, y: 0 };
+		}
+		const at = (cell: Cell) => tile.row === cell.row && tile.column === cell.column;
+		const towards = at(hint.a) ? hint.b : at(hint.b) ? hint.a : null;
+		if (towards === null) {
+			return { x: 0, y: 0 };
+		}
+		// Two quick nudges in the first half of each round, then a rest
+		const t = ((now - hint.since) % NUDGE_MS) / NUDGE_MS;
+		const amount = t < 0.5 ? NUDGE * Math.abs(Math.sin(t * 4 * Math.PI)) : 0;
+		return { x: (towards.column - tile.column) * amount, y: (towards.row - tile.row) * amount };
+	}
+
+	// Whether a tile is part of the move pointed out
+	isHinted(tile: DrawnTile): boolean {
+		const hint = this.hinted;
+		return hint !== null && tile.fade === null && [hint.a, hint.b].some((cell) => cell.row === tile.row && cell.column === tile.column);
 	}
 
 	// Tiles of these kinds fade out (while their pictures change), or back in
@@ -274,7 +310,8 @@ export class BoardView {
 		if (alpha <= 0) {
 			return;
 		}
-		const left = pad + at(tile.x, now) * cell, top = pad + at(tile.y, now) * cell;
+		const nudge = this.nudgeOf(tile, now);
+		const left = pad + (at(tile.x, now) + nudge.x) * cell, top = pad + (at(tile.y, now) + nudge.y) * cell;
 		ctx.globalAlpha = alpha;
 
 		// The tile itself turns over at nightfall and daybreak
@@ -320,6 +357,14 @@ export class BoardView {
 		}
 		if (tile.effects.has('sunPower')) {
 			this.drawSun(ctx, x, y, size, alpha * pulse(now, 800));
+		}
+		if (this.isHinted(tile)) {
+			const box = BOX * scale;
+			ctx.globalAlpha = alpha * pulse(now, 800);
+			ctx.strokeStyle = HINT_RIM;
+			ctx.lineWidth = 3;
+			roundedRect(ctx, left + (cell - box) / 2 - 1.5, top + (cell - box) / 2 - 1.5, box + 3, box + 3, 6);
+			ctx.stroke();
 		}
 		const select = this.images.select;
 		if (tile === this.selected && select !== undefined && select.complete && select.naturalWidth > 0) {

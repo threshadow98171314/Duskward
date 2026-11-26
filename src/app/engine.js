@@ -21,6 +21,7 @@ import Blessings from './blessings.js';
 import Plan from './plan.js';
 import LongNight from './longnight.js';
 import Tips from './graphics/tips.js';
+import Hints from './hints.js';
 import { watchNight } from './effects.js';
 
 var DRAG_THRESHOLD = 30; // in pixels
@@ -219,6 +220,8 @@ function listenToBoard(board) {
 			if(!(e.target instanceof Element) || e.target.closest('.boardCanvas') == null) {
 				return;
 			}
+			// Whatever the player does on the board, a move pointed out goes
+			Hints.rest();
 			if(!canMove()) {
 				// Tapping the board while a chain plays out fast-forwards it
 				GameBoard.hurry();
@@ -368,7 +371,9 @@ var Engine = {
 				return World.plan();
 			}
 		}]);
-		
+		// A move is pointed out to a player who stops while they could move
+		modules.push([Hints, { canMove: canMove }]);
+
 		// Start the game
 		GameOptions.load();
 		initializeModules(modules, function() {

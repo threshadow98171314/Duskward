@@ -82,6 +82,9 @@ export default {
 	BUILD_PLAN: 'What should we raise first today? I will have the keeper carry the materials there first.',
 	BUILD_PLAN_SKIP: 'Leave it to the keeper',
 	NO_COST: 'Everything is ready',
+	// Between the items of a list, and around the effects of tonight's omen
+	LIST_JOIN: ', ',
+	OMEN_EFFECTS: ' ({0})',
 	// A material not on the board yet, and the building that brings it
 	NEEDS_BUILDING: ' (needs the {0} first)',
 	LEVEL_N: ' (level {0})',
@@ -194,6 +197,123 @@ export default {
 	SKILL_DAWNLIGHT: 'Dawnlight',
 	SKILL_WARDCRAFT: 'Wardcraft',
 	SKILL_TIMELAMP: 'Time Lamp',
+	// What items, spells and skills are called and what they do. {0}, {1}... are the
+	// numbers of their effects, in the order they come (by night before by day).
+	ITEM_NAMES: {
+		healthPotion: 'Healing Potion',
+		manaPotion: 'Crystal Potion',
+		bomb: 'Powder Keg',
+		equipment: 'Arms Chest',
+		callDragon: "The Hierophant's Horn",
+		dawnHeart: 'Dawn Heart'
+	},
+	ITEM_TEXTS: {
+		healthPotion: 'Restores {0}% of your health.',
+		manaPotion: 'Restores {0}% of your dusk crystals.',
+		bomb: 'Blasts every monster for {0} damage.',
+		equipment: 'Fills your shield and your sword.',
+		callDragon: 'Blow it, and the Fallen Dawnwyrm comes down.',
+		dawnHeart: 'Raise it at night to call the Eclipse down from the sky.'
+	},
+	SPELL_NAMES: {
+		resetBoard: 'Reshuffle',
+		haste: 'Haste',
+		freezeTime: 'Time Stop',
+		phaseChange: 'Turn of Day'
+	},
+	SPELL_TEXTS: {
+		resetBoard: 'Swaps the whole board for new tiles.',
+		haste: 'For {0} seconds, the keeper moves much faster.',
+		freezeTime: 'For {0} seconds, monsters stand still and your moves do not pass time.',
+		phaseChange: 'Turns day to night, or night to day, at once.'
+	},
+	SKILL_TEXTS: {
+		dawnlight: 'At night: deals {0} damage to every monster. By day: gathers {1} of every kind of tile on the board.',
+		wardcraft: 'Fills the ward and restores {0}% of your health.',
+		timelamp: 'At night: stops time for {0} seconds. By day: adds {1} moves to the day.'
+	},
+	// The lasting effects beside the spells, by their class
+	EFFECT_NAMES: {
+		haste: 'Haste',
+		freezeTime: 'Time Stop',
+		frozen: 'Frozen'
+	},
+	EFFECT_TEXTS: {
+		haste: 'The keeper moves much faster.',
+		freezeTime: 'Monsters stand still, and your moves do not pass time.',
+		frozen: "Locked in the dragon's ice: you cannot act for a while, and blows land at half strength."
+	},
+	// What each kind of building does, by its sprite
+	BUILDING_TEXTS: {
+		shack: "The keeper's home, where the stockpile is kept. Upgraded, it holds more, and grain feeds you better.",
+		bricklayer: 'Brings clay onto the board. Upgraded, each clay tile gives more, and draws worse things at night.',
+		weaver: 'Brings cloth onto the board. Upgraded, each cloth tile gives more, and draws worse things at night.',
+		blacksmith: 'A sharper sword: more charges, and harder blows. Upgraded, each stone tile gives more.',
+		sawmill: 'A stronger shield that soaks up more damage. Upgraded, each wood tile gives more.',
+		tower: 'Clearing four or more tiles at once drops dusk crystals onto the board; gather them to cast spells.',
+		lighthouse: 'Brings lanterns onto the board, and lets the ward hold more. Lighting lanterns at night brings the dawn sooner.',
+		altar: 'Chains and big clears fill the Afterglow gauge; once it is full, cast a dusk skill. Each level adds a skill.'
+	},
+	// The tips under the mouse (src/app/graphics/tips.js)
+	TIP_HEALTH: 'Health {0}/{1}',
+	TIP_HEALTH_TEXT: 'Every move by day makes you a little hungrier; clear grain to recover. At zero you fall, and the day starts over from the morning.',
+	TIP_SHIELD: 'Shield {0}/{1}',
+	TIP_SHIELD_TEXT: 'Clearing wood at night fills it. Once the ward is spent, the shield takes the damage. Put away at dawn.',
+	TIP_SWORD: 'Sword {0}/{1}',
+	TIP_SWORD_TEXT: 'Clearing stone at night fills it. Each blow uses a charge and hits harder. Put away at dawn.',
+	TIP_LEVEL: 'Level {0}',
+	TIP_LEVEL_TEXT: 'Experience {0}/{1}. Defeat monsters at night to gain it; each level raises your health and unlocks better buildings.',
+	TIP_WARD: 'Ward {0}/{1}',
+	TIP_WARD_TEXT: 'Tiles cleared at dusk become the ward. At night, it takes the damage before anything else.',
+	TIP_PRICE: 'Price: {0}',
+	TIP_MAGIC: 'Dusk crystals {0}/{1}',
+	TIP_MAGIC_TEXT: 'Once full, click to pick a spell to cast.',
+	TIP_SPELL_COST: 'Uses {0} dusk crystals.',
+	TIP_GAUGE: 'Afterglow {0}/{1}',
+	TIP_GAUGE_TEXT: 'Chains and big clears fill it; once it is full, click a dusk skill to cast it.',
+	TIP_KEEPER: 'The keeper',
+	TIP_KEEPER_TEXT: 'Level {0} · Health {1}/{2}',
+	TIP_MONSTER_TEXT: 'Health {0}/{1}',
+	TIP_STOCKPILE: 'Stockpile',
+	TIP_STOCKPILE_EMPTY: 'Empty for now. Clear wood, stone and the like by day, and it comes here.',
+	TIP_STOCKPILE_TEXT: 'A block holds {0}; once it is full, the keeper carries it off to build. There is room for {1} blocks; more pushes out the oldest.',
+	TIP_BLOCKS: '{0} {1} blocks',
+	TIP_NEXT: '{0} (next)',
+	TIP_HAS: '{0} {1}/{2}',
+	TIP_COMING: 'On its way: {0}',
+	TIP_ASK: 'Click its bars to have the keeper build it first.',
+	TIP_ASKED: 'To be built first; click again to undo.',
+	TIP_ASK_UPGRADE: 'Click to have the keeper upgrade it first.',
+	TIP_DAY: '{0} moves left today',
+	TIP_DAY_TEXT: 'Every swap is a move; the last {0} are dusk.',
+	TIP_DUSK: 'Dusk: {0} moves left today',
+	TIP_DUSK_TEXT: 'Every tile cleared now strengthens the ward for the night.',
+	TIP_NIGHT: '{0} moves left tonight',
+	TIP_NIGHT_TEXT: 'Defeating monsters and lighting lanterns bring the dawn sooner.',
+	TIP_HELD: 'No dawn',
+	TIP_HELD_TEXT: 'While the Eclipse is out, the dawn will not come. Only lantern light pierces it.',
+	TIP_WITH: '{0} · {1}',
+	TIP_TILE_DAY: 'By day: {0}',
+	TIP_TILE_NIGHT: 'At night: {0}',
+	TIP_HEAL: 'restores health',
+	TIP_STORE: 'goes to the stockpile, for building',
+	TIP_MANA: 'gathered to cast spells',
+	TIP_SPAWN: 'calls up the {0}',
+	TIP_FILL_SHIELD: 'fills the shield',
+	TIP_FILL_SWORD: 'fills the sword',
+	TIP_DAWN: 'brings the dawn sooner, but draws lampmoths',
+	TIP_EXPLOSIVE: 'Clearing it sets it off: it destroys the tiles around it and deals you {0} damage. It goes out in {1} moves.',
+	TILE_EFFECT_NAMES: {
+		lanternPower: 'lantern tile',
+		sunPower: 'sun tile',
+		shadowBind: 'shadow-bound',
+		explosive: 'powder keg'
+	},
+	TILE_EFFECT_TEXTS: {
+		lanternPower: 'Cleared, it gathers its whole row and column.',
+		sunPower: 'Cleared, it gathers every tile of its kind on the board.',
+		shadowBind: 'Bound by a shadow: it cannot move until a tile next to it is cleared, or the dawn comes.'
+	},
 
 	// The endings, by what became of the Dawn Heart (see the heartChoice chapters)
 	STORY_ENDINGS: {

@@ -82,6 +82,9 @@ export default {
 	BUILD_PLAN: '今天先蓋哪一棟？我會讓守暮人先把材料送過去。',
 	BUILD_PLAN_SKIP: '交給守暮人決定',
 	NO_COST: '材料已經備齊',
+	// Between the items of a list, and around the effects of tonight's omen
+	LIST_JOIN: '、',
+	OMEN_EFFECTS: '（{0}）',
 	// A material not on the board yet, and the building that brings it
 	NEEDS_BUILDING: '（要先蓋{0}）',
 	LEVEL_N: '（{0} 級）',
@@ -194,6 +197,123 @@ export default {
 	SKILL_DAWNLIGHT: '曙光',
 	SKILL_WARDCRAFT: '結界術',
 	SKILL_TIMELAMP: '時之燈',
+	// What items, spells and skills are called and what they do. {0}, {1}... are the
+	// numbers of their effects, in the order they come (by night before by day).
+	ITEM_NAMES: {
+		healthPotion: '回復藥水',
+		manaPotion: '暮晶藥水',
+		bomb: '火藥桶',
+		equipment: '武具箱',
+		callDragon: '祭司的號角',
+		dawnHeart: '晨光之心'
+	},
+	ITEM_TEXTS: {
+		healthPotion: '回復 {0}% 的生命。',
+		manaPotion: '補回 {0}% 的暮晶。',
+		bomb: '炸向所有怪物，每隻受到 {0} 點傷害。',
+		equipment: '把盾和劍一起補滿。',
+		callDragon: '吹響號角，墮落晨龍就會降臨。',
+		dawnHeart: '在夜裡舉起它，就能把蝕日者從天上引下來。'
+	},
+	SPELL_NAMES: {
+		resetBoard: '重排',
+		haste: '疾行',
+		freezeTime: '時停',
+		phaseChange: '晝夜輪轉'
+	},
+	SPELL_TEXTS: {
+		resetBoard: '把整個盤面換成新的方塊。',
+		haste: '{0} 秒內，守暮人的動作快上許多。',
+		freezeTime: '{0} 秒內，怪物停在原地，走的步數也不算時間。',
+		phaseChange: '馬上讓白天變成夜晚，或讓夜晚變成白天。'
+	},
+	SKILL_TEXTS: {
+		dawnlight: '夜裡：所有怪物受到 {0} 點傷害。白天：盤面上每種方塊各收集 {1} 份。',
+		wardcraft: '結界補滿，並回復 {0}% 的生命。',
+		timelamp: '夜裡：時間停止 {0} 秒。白天：白天多 {1} 步。'
+	},
+	// The lasting effects beside the spells, by their class
+	EFFECT_NAMES: {
+		haste: '疾行',
+		freezeTime: '時停',
+		frozen: '冰封'
+	},
+	EFFECT_TEXTS: {
+		haste: '守暮人的動作快上許多。',
+		freezeTime: '怪物停在原地，走的步數也不算時間。',
+		frozen: '被晨龍的冰息凍住了：暫時不能動，受到的傷害減半。'
+	},
+	// What each kind of building does, by its sprite
+	BUILDING_TEXTS: {
+		shack: '守暮人的家，材料堆就放在這裡。升級後材料堆更大，麥穗也更能填飽肚子。',
+		bricklayer: '盤面上會出現陶土。升級後，每塊陶土收得更多，夜裡引來的怪物也更強。',
+		weaver: '盤面上會出現布匹。升級後，每塊布匹收得更多，夜裡引來的怪物也更強。',
+		blacksmith: '劍更利：能裝的格數更多，每一擊也更痛。升級後每塊石材收得更多。',
+		sawmill: '盾更厚，能擋下更多傷害。升級後每塊木材收得更多。',
+		tower: '一次消掉四塊以上，盤面就會落下暮晶；集滿暮晶就能施放法術。',
+		lighthouse: '盤面上會出現燈火，結界也能存得更多。夜裡點亮燈火，天會亮得更快。',
+		altar: '連鎖消除會累積暮光槽，槽滿就能施放暮光技；每升一級，多一種暮光技。'
+	},
+	// The tips under the mouse (src/app/graphics/tips.js)
+	TIP_HEALTH: '生命 {0}／{1}',
+	TIP_HEALTH_TEXT: '白天每走一步都會餓一點，消掉麥穗可以回復。生命歸零就會倒下，這一天要從早上重來。',
+	TIP_SHIELD: '盾 {0}／{1}',
+	TIP_SHIELD_TEXT: '夜裡消掉木材就會補滿。結界用完之後，傷害先由盾擋下。天亮時收起來。',
+	TIP_SWORD: '劍 {0}／{1}',
+	TIP_SWORD_TEXT: '夜裡消掉石材就會補滿。每一擊用掉一格，打得更痛。天亮時收起來。',
+	TIP_LEVEL: '等級 {0}',
+	TIP_LEVEL_TEXT: '經驗 {0}／{1}。夜裡打倒怪物可以得到經驗；升級後生命上限更高，也能蓋更好的房子。',
+	TIP_WARD: '結界 {0}／{1}',
+	TIP_WARD_TEXT: '黃昏時消掉的方塊會化成結界。入夜後，傷害先由結界擋下。',
+	TIP_PRICE: '代價：{0}',
+	TIP_MAGIC: '暮晶 {0}／{1}',
+	TIP_MAGIC_TEXT: '集滿之後點一下，選一個法術施放。',
+	TIP_SPELL_COST: '用掉 {0} 顆暮晶。',
+	TIP_GAUGE: '暮光槽 {0}／{1}',
+	TIP_GAUGE_TEXT: '連鎖消除、一次消掉很多塊都會累積；槽滿之後，點一下暮光技就能施放。',
+	TIP_KEEPER: '守暮人',
+	TIP_KEEPER_TEXT: '等級 {0}・生命 {1}／{2}',
+	TIP_MONSTER_TEXT: '生命 {0}／{1}',
+	TIP_STOCKPILE: '材料堆',
+	TIP_STOCKPILE_EMPTY: '還是空的。白天消掉木材、石材這些方塊，就會送進這裡。',
+	TIP_STOCKPILE_TEXT: '一格裝滿 {0} 份，守暮人就會搬去蓋房子。最多放 {1} 格，再多就會擠掉最舊的一格。',
+	TIP_BLOCKS: '{0} {1} 格',
+	TIP_NEXT: '{0}（下一棟）',
+	TIP_HAS: '{0} {1}／{2}',
+	TIP_COMING: '正在送來：{0}',
+	TIP_ASK: '點一下進度條，可以指定先蓋它。',
+	TIP_ASKED: '已指定先蓋；再點一下就取消。',
+	TIP_ASK_UPGRADE: '點一下，可以指定先升級它。',
+	TIP_DAY: '白天還剩 {0} 步',
+	TIP_DAY_TEXT: '每交換一次方塊走一步；最後 {0} 步是黃昏。',
+	TIP_DUSK: '黃昏：白天還剩 {0} 步',
+	TIP_DUSK_TEXT: '這時消掉的方塊都會化成結界，入夜後先替你擋下傷害。',
+	TIP_NIGHT: '夜晚還剩 {0} 步',
+	TIP_NIGHT_TEXT: '打倒怪物、點亮燈火，天都會亮得更快。',
+	TIP_HELD: '天亮不了',
+	TIP_HELD_TEXT: '蝕日者在的時候，天不會亮。只有燈火的光能刺穿它。',
+	TIP_WITH: '{0}・{1}',
+	TIP_TILE_DAY: '白天：{0}',
+	TIP_TILE_NIGHT: '夜裡：{0}',
+	TIP_HEAL: '回復生命',
+	TIP_STORE: '送進材料堆，用來蓋房子',
+	TIP_MANA: '收集起來，就能施放法術',
+	TIP_SPAWN: '引來{0}',
+	TIP_FILL_SHIELD: '把盾補滿',
+	TIP_FILL_SWORD: '把劍補滿',
+	TIP_DAWN: '讓天亮得更快，但會引來燈蛾',
+	TIP_EXPLOSIVE: '消掉它會爆炸，炸毀周圍的方塊，你也會受到 {0} 點傷害。再走 {1} 步就會熄掉。',
+	TILE_EFFECT_NAMES: {
+		lanternPower: '燈籠方塊',
+		sunPower: '日輪方塊',
+		shadowBind: '影縛',
+		explosive: '火藥桶'
+	},
+	TILE_EFFECT_TEXTS: {
+		lanternPower: '消掉時，同一排和同一列的方塊一起收集。',
+		sunPower: '消掉時，盤面上同一種的方塊全部收集。',
+		shadowBind: '被影子綁住，不能移動；消掉旁邊的方塊就會鬆開，天亮時也會鬆開。'
+	},
 
 	// The endings, by what became of the Dawn Heart (see the heartChoice chapters)
 	STORY_ENDINGS: {

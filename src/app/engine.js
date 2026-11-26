@@ -20,6 +20,7 @@ import Skills from './skills.js';
 import Blessings from './blessings.js';
 import Plan from './plan.js';
 import LongNight from './longnight.js';
+import Tips from './graphics/tips.js';
 import { watchNight } from './effects.js';
 
 var DRAG_THRESHOLD = 30; // in pixels
@@ -358,6 +359,15 @@ var Engine = {
 		modules.push(Blessings);
 		modules.push(Plan);
 		modules.push(LongNight);
+		// The tips under the mouse ask the time of day, and what the keeper works towards next
+		modules.push([Tips, {
+			clock: function() {
+				return World.clock();
+			},
+			plan: function() {
+				return World.plan();
+			}
+		}]);
 		
 		// Start the game
 		GameOptions.load();

@@ -75,4 +75,25 @@ describe('the field as drawn', () => {
 		expect(view.monsterAt(rat)).toBeNull();
 		expect(view.fires).toEqual([]);
 	});
+
+	it('tells what a point falls on: the keeper in front, or a monster on its feet and in sight', () => {
+		const { view, clock } = actorsView();
+		view.setKeeper({ x: 100, row: 0, frame: 0 }, null);
+		const zombie = {}, imp = {};
+		view.addMonster(zombie, 'zombie', 300, false);
+		view.addMonster(imp, 'imp', 200, true);
+		// The keeper is 34 wide and 32 tall, standing on the ground
+		expect(view.figureAt(100, 100)).toBe('keeper');
+		expect(view.figureAt(100, 70)).toBeNull();
+		expect(view.figureAt(300, 100)).toBe(zombie);
+		// A flying monster keeps 24 above the ground
+		expect(view.figureAt(200, 100)).toBeNull();
+		expect(view.figureAt(200, 70)).toBe(imp);
+		// A monster that has fallen, or vanished from sight, is nothing to point at
+		view.killMonster(zombie);
+		expect(view.figureAt(300, 100)).toBeNull();
+		view.updateMonster(imp, { x: 200, row: 0, frame: 0 }, 1, true);
+		clock.now = 200;
+		expect(view.figureAt(200, 70)).toBeNull();
+	});
 });

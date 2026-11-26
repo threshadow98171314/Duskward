@@ -58,4 +58,16 @@ describe('the sky', () => {
 		clock.now = 2100;
 		expect(view.duskness()).toBeCloseTo(0.5);
 	});
+
+	it('tells whether a point falls on the sun or moon, once it is up', () => {
+		const { view } = skyView();
+		expect(view.sunAt(15, 120)).toBe(false);
+		view.showSun(0, 0);
+		view.moveSun(240, 10, 0);
+		// The sun is 30 across, with its top at 10
+		expect(view.sunAt(240, 25)).toBe(true);
+		expect(view.sunAt(254, 39)).toBe(true);
+		expect(view.sunAt(256, 25)).toBe(false);
+		expect(view.sunAt(240, 41)).toBe(false);
+	});
 });

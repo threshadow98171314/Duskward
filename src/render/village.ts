@@ -450,14 +450,55 @@ export class VillageView {
 		return null;
 	}
 
-	// The cell under a point on the screen
+	// The building under a point on the screen that a click can ask for
 	buildingAtClient(clientX: number, clientY: number): object | null {
+		const point = this.toWorld(clientX, clientY);
+		return point === null ? null : this.buildingAt(point.x, point.y);
+	}
+
+	// What a point in the world falls on, for a tip: the bars of a building yet to be
+	// raised, or the stockpile; then, unless only those in front are asked for, the
+	// outline of the building the keeper works towards next, or a building that
+	// stands or is rising (the one in front, if they overlap). Null for none of them,
+	// and for everything once night has fallen.
+	thingAt(x: number, y: number, behind = true): object | 'stockpile' | null {
+		const inside = (box: { left: number; top: number; width: number; height: number } | null) =>
+			box !== null && x >= box.left && x < box.left + box.width && y >= box.top && y < box.top + box.height;
+		const now = this.now();
+		if (this.nightness() > 0.5 || y < 0 || y >= this.size.height) {
+			return null;
+		}
+		for (const [key] of this.buildings) {
+			if (inside(this.barsOf(key))) {
+				return key;
+			}
+		}
+		const frame = this.pileFrame(now);
+		if (this.pileShownAt(now) > 0.5 && inside({ left: frame.left, top: frame.top, width: frame.width + 2, height: frame.height + 2 })) {
+			return 'stockpile';
+		}
+		if (!behind) {
+			return null;
+		}
+		if (this.next !== null && inside(this.outlineOf(this.next))) {
+			return this.next;
+		}
+		let standing: object | null = null;
+		for (const [key, building] of this.buildings) {
+			if (at(building.rise, now) > 0 && !building.sunk && inside(this.placeOf(key))) {
+				standing = key;
+			}
+		}
+		return standing;
+	}
+
+	// A point on the screen, in pixels in the world; null while the canvas is not laid out
+	private toWorld(clientX: number, clientY: number): { x: number; y: number } | null {
 		const rect = this.canvas.getBoundingClientRect();
 		if (rect.width === 0 || rect.height === 0) {
 			return null;
 		}
-		return this.buildingAt((clientX - rect.left) * this.size.width / rect.width,
-			(clientY - rect.top) * this.size.height / rect.height);
+		return { x: (clientX - rect.left) * this.size.width / rect.width, y: (clientY - rect.top) * this.size.height / rect.height };
 	}
 
 	start(): void {

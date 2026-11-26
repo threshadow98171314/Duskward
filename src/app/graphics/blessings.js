@@ -44,14 +44,23 @@ function describe(boon) {
 function card(id, blessing) {
 	return {
 		name: G().getText('BLESSING_NAMES')[id],
-		gift: blessing.gift.map(describe).join('、'),
-		price: blessing.price.length > 0 ? blessing.price.map(describe).join('、') : G().getText('NO_PRICE')
+		gift: blessing.gift.map(describe).join(G().getText('LIST_JOIN')),
+		price: blessing.price.length > 0 ? blessing.price.map(describe).join(G().getText('LIST_JOIN')) : G().getText('NO_PRICE')
 	};
 }
 
-function showBadge(omen, id) {
-	G().status().showBadge(G().getText('OMEN_NAMES')[omen],
+// What the badge says under the mouse: the omen's words, and the blessing's gift and price
+var badgeTip = null;
+
+function showBadge(omen, id, omenText, blessing) {
+	G().status().showBadge(G().getText('OMEN_NAMES')[omen.id],
 		id ? G().getText('TONIGHT', G().getText('BLESSING_NAMES')[id]) : null);
+	var lines = [omenText];
+	if(id) {
+		var chosen = card(id, blessing);
+		lines.push(G().getText('TONIGHT', chosen.name), chosen.gift, G().getText('TIP_PRICE', chosen.price));
+	}
+	badgeTip = { title: G().getText('OMEN', G().getText('OMEN_NAMES')[omen.id]), lines: lines };
 }
 
 export default {
@@ -63,7 +72,7 @@ export default {
 		blessings = blessings || {};
 		var omenText = G().getText('OMEN_WORDS')[omen.id];
 		if(omen.effects.length > 0) {
-			omenText += '（' + omen.effects.map(describe).join('、') + '）';
+			omenText += G().getText('OMEN_EFFECTS', omen.effects.map(describe).join(G().getText('LIST_JOIN')));
 		}
 		offerChoice(document.getElementById('gameContainer'), {
 			omen: { name: G().getText('OMEN', G().getText('OMEN_NAMES')[omen.id]), text: omenText },
@@ -82,13 +91,19 @@ export default {
 			skip: G().getText('NO_BLESSING')
 		}, function(chosen, loadout) {
 			var id = chosen == null ? null : ids[chosen];
-			showBadge(omen.id, id);
+			showBadge(omen, id, omenText, blessings[id]);
 			done(id, loadout);
 		});
 	},
 
 	clear: function() {
 		G().status().clearBadge();
+		badgeTip = null;
+	},
+
+	// The badge's tip, while it is up
+	badgeTip: function() {
+		return badgeTip;
 	},
 
 	describe: describe

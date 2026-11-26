@@ -224,6 +224,32 @@ export class ActorsView {
 		return this.keeper === null ? null : at(this.keeper.x, this.now());
 	}
 
+	// What a point in the world falls on, for a tip: the keeper, who is drawn in front,
+	// or a monster still on its feet and in sight (the one in front, if they overlap);
+	// null for neither
+	figureAt(x: number, y: number): object | 'keeper' | null {
+		const now = this.now();
+		const inside = (figure: Figure) => {
+			const sprite = SPRITES[figure.sprite];
+			if (sprite === undefined) {
+				return false;
+			}
+			const left = at(figure.x, now) - sprite.width / 2;
+			const top = this.size.height - figure.lift - sprite.height;
+			return x >= left && x < left + sprite.width && y >= top && y < top + sprite.height;
+		};
+		if (this.keeper !== null && inside(this.keeper)) {
+			return 'keeper';
+		}
+		let found: object | null = null;
+		for (const [key, figure] of this.monsters) {
+			if (!figure.buried && figure.bar.to > 0 && at(figure.alpha, now) > 0.5 && inside(figure)) {
+				found = key;
+			}
+		}
+		return found;
+	}
+
 	// Where an arrow or fireball is in its flight: x, height off the ground and its tilt
 	flightAt(flight: { from: number; to: number; start: number }, now: number): { x: number; y: number; angle: number } | null {
 		const t = (now - flight.start) / FLIGHT_MS;

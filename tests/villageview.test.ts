@@ -75,6 +75,37 @@ describe('the village', () => {
 		expect(view.barsOf(bricklayer)).not.toBeNull();
 	});
 
+	it('tells what a point falls on, for a tip: bars, the stockpile, the outline of the next building, or one that stands', () => {
+		const { view, clock } = village();
+		const shack = {}, bricklayer = {}, smithy = {};
+		view.add(shack, { sprite: 'shack', row: 0, x: 30, standing: true });
+		view.add(bricklayer, { sprite: 'bricklayer', row: 0, x: 90, standing: false });
+		view.add(smithy, { sprite: 'blacksmith', row: 0, x: 210, standing: false });
+		view.setCosts(smithy, [{ kind: 'wood', share: 0.5, blocks: 2 }]);
+		view.setNext(bricklayer);
+		view.stockpile = [];
+		view.draw();
+		clock.now = 1400;
+		// The stockpile is drawn over the shack
+		expect(view.thingAt(30, 95)).toBe('stockpile');
+		expect(view.thingAt(30, 50)).toBe(shack);
+		expect(view.thingAt(90, 50)).toBe(bricklayer);
+		expect(view.thingAt(90, 100)).toBe(bricklayer);
+		expect(view.thingAt(210, 100)).toBe(smithy);
+		// Underground with only its bars up: nothing above them
+		expect(view.thingAt(210, 50)).toBeNull();
+		expect(view.thingAt(400, 50)).toBeNull();
+		// Only what is in front: the bars and the stockpile
+		expect(view.thingAt(90, 100, false)).toBe(bricklayer);
+		expect(view.thingAt(30, 95, false)).toBe('stockpile');
+		expect(view.thingAt(90, 50, false)).toBeNull();
+		expect(view.thingAt(30, 50, false)).toBeNull();
+		// Nothing once night has fallen
+		view.setNight(true);
+		clock.now = 2800;
+		expect(view.thingAt(30, 50)).toBeNull();
+	});
+
 	it('splits a bar into the blocks it takes, unless there are too many to tell apart', () => {
 		const widths = (width: number, blocks: number) => segments(width, blocks).map((part) => [part.left, part.width]);
 		expect(widths(58, 1)).toEqual([[0, 58]]);

@@ -248,6 +248,17 @@ var World = {
 		return next == null ? null : { next: next.building, bars: siteBars(next, onItsWay()) };
 	},
 
+	// The time of day: whether it is night or dusk, how many moves are left before
+	// it turns, and whether a boss holds back the dawn
+	clock: function() {
+		return {
+			night: clock.night,
+			dusk: clock.dusk,
+			left: Math.max(0, Day.phaseLength(clock, clockLengths()) - clock.position),
+			held: clock.night && field != null && field.boss != null && !!field.boss.def.holdsNight && field.boss.state != 'dying'
+		};
+	},
+
 	// The keeper stops what they are doing, e.g. on levelling up
 	interruptKeeper: function() {
 		if(field != null) {

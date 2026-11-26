@@ -38,7 +38,18 @@ export function heartShares(health: number, hearts: { total: number; big: number
 
 type Meter = 'shield' | 'sword';
 
+// What the status shows now, each as how much out of how much, once it has been set
+export interface Shown {
+	health?: [number, number];
+	shield?: [number, number];
+	sword?: [number, number];
+	experience?: [number, number];
+	ward?: [number, number];
+}
+
 export class StatusBar {
+	// For the tips under the mouse
+	readonly shown: Shown = {};
 	private hearts = { total: 0, big: 0 };
 	private container: HTMLElement | null = null;
 	private badge: HTMLElement | null = null;
@@ -54,6 +65,7 @@ export class StatusBar {
 
 	// The keeper's health, in hearts. Hearts gained pop up one after another.
 	setHealth(health: number, maxHealth: number): void {
+		this.shown.health = [health, maxHealth];
 		this.hearts = heartsFor(maxHealth);
 		const row = this.heartsRow();
 		while (row.children.length < this.hearts.total) {
@@ -89,6 +101,7 @@ export class StatusBar {
 
 	// The experience bar fills towards the next level
 	setExperience(xp: number, toLevel: number): void {
+		this.shown.experience = [xp, toLevel];
 		let bar = this.board.querySelector<HTMLElement>(':scope > .xpBar');
 		if (bar === null) {
 			bar = element('div', 'xpBar litBorder hidden',
@@ -106,6 +119,7 @@ export class StatusBar {
 
 	// The ward raised at dusk: how much of it is left, shown only while there is any
 	setWard(current: number, max: number): void {
+		this.shown.ward = [current, max];
 		const status = this.status();
 		let ward = status.querySelector<HTMLElement>(':scope > .ward');
 		if (ward === null) {
@@ -170,6 +184,7 @@ export class StatusBar {
 	// A meter sits after the hearts. It pops up once it holds something, and goes
 	// away once it is empty, ready to pop up again.
 	private setMeter(kind: Meter, amount: number, max: number): void {
+		this.shown[kind] = [amount, max];
 		let meter = this.status().querySelector<HTMLElement>(':scope > .' + kind);
 		if (meter === null) {
 			meter = element('div', kind + ' prepop', element('div'));

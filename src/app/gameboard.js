@@ -122,6 +122,16 @@ var GameBoard = {
 		return Board.isBound(board, { row: row, column: col });
 	},
 
+	// The tile in a cell, by its code, and the effect on it with the moves it has
+	// left, if any; null before there is a board
+	tileAt: function(row, col) {
+		return board == null ? null : Board.tileAt(board, row, col);
+	},
+
+	effectAt: function(row, col) {
+		return board == null ? null : Board.effectAt(board, row, col);
+	},
+
 	availableTiles: function() {
 		return Object.keys(tileMap());
 	},

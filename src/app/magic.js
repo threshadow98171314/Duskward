@@ -16,5 +16,10 @@ function castSpell(spellName) {
 export default {
 	init: function() {
 		E.bind("castSpell", castSpell);
+	},
+
+	// The dusk crystals a spell takes
+	cost: function() {
+		return MANA_COST;
 	}
 };

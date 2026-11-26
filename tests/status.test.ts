@@ -96,6 +96,17 @@ describe('the keeper’s status', () => {
 		expect(ward.className).toBe('ward hidden');
 	});
 
+	it('remembers what it shows, for the tips under the mouse', () => {
+		const { status } = page();
+		expect(status.shown).toEqual({});
+		status.setHealth(23, 30);
+		status.setShield(2, 6);
+		status.setSword(0, 3);
+		status.setExperience(5, 40);
+		status.setWard(4, 10);
+		expect(status.shown).toEqual({ health: [23, 30], shield: [2, 6], sword: [0, 3], experience: [5, 40], ward: [4, 10] });
+	});
+
 	it('shows tonight’s omen and blessing until they are cleared', () => {
 		const { board, status } = page();
 		status.showBadge('Red moon', 'Tonight: Ember');

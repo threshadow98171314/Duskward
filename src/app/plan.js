@@ -51,7 +51,7 @@ function costText(building) {
 			parts.push(part);
 		}
 	}
-	return parts.length > 0 ? parts.join('、') : G().getText('NO_COST');
+	return parts.length > 0 ? parts.join(G().getText('LIST_JOIN')) : G().getText('NO_COST');
 }
 
 function ask() {
@@ -98,5 +98,6 @@ export default {
 	},
 
 	buildingName: buildingName,
-	costText: costText
+	costText: costText,
+	comesWith: comesWith
 };

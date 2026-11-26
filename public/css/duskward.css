@@ -625,3 +625,35 @@ body.night {
 .night .duskSkills.ready .skill {
 	background-color: #5a3d6b;
 }
+
+/** Tips under the mouse (src/ui/tooltip.ts), over everything else; the mouse goes through them **/
+
+.tooltip {
+	position: fixed;
+	z-index: 1000;
+	left: 0;
+	top: 0;
+	max-width: 260px;
+	padding: 6px 10px;
+	background: rgba(36, 24, 46, 0.94);
+	border: 2px solid #e2a65a;
+	border-radius: 6px;
+	color: #fbe9c8;
+	font-size: 13px;
+	line-height: 1.45;
+	pointer-events: none;
+	transition: opacity 120ms linear;
+}
+
+.tooltip.hidden {
+	transition: opacity 120ms linear !important;
+}
+
+.tooltip .tipTitle {
+	color: #ffd27f;
+	font-weight: bold;
+}
+
+.tooltip .tipLine {
+	margin-top: 2px;
+}

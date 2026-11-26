@@ -162,6 +162,13 @@ export class SkyView {
 		return this.dusk ? t : 1 - t;
 	}
 
+	// Whether a point in the sky falls on the sun or the moon
+	sunAt(x: number, y: number): boolean {
+		const sprite = SPRITES.sun;
+		const sun = this.sun();
+		return sprite !== undefined && sun.shown && Math.abs(x - sun.x) <= sprite.width / 2 && y >= sun.y && y < sun.y + sprite.height;
+	}
+
 	// Where the sun or moon is drawn now, and what of it
 	sun(): { x: number; y: number; face: number; frame: number; bite: number; shown: boolean } {
 		const now = this.now();

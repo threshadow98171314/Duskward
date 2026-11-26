@@ -236,6 +236,20 @@ export class BoardView {
 		return this.cellAt((clientX - rect.left) * this.width() / rect.width, (clientY - rect.top) * this.height() / rect.height);
 	}
 
+	// Where a cell is on the screen; null while the canvas is not laid out
+	clientRectOf(cell: Cell): { left: number; top: number; width: number; height: number } | null {
+		const rect = this.canvas.getBoundingClientRect();
+		if (rect.width === 0 || rect.height === 0) {
+			return null;
+		}
+		const sx = rect.width / this.width(), sy = rect.height / this.height();
+		const { cell: size, pad } = this.layout;
+		return {
+			left: rect.left + (pad + cell.column * size) * sx, top: rect.top + (pad + cell.row * size) * sy,
+			width: size * sx, height: size * sy,
+		};
+	}
+
 	// Where a tile is drawn now, in cells
 	positionOf(tile: DrawnTile): { x: number; y: number } {
 		const now = this.now();

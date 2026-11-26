@@ -331,6 +331,11 @@ export default {
 		view.select(cell ? getTile(cell.row, cell.column) : null);
 	},
 
+	// Where a cell is on the screen
+	cellRect: function(cell) {
+		return view ? view.clientRectOf(cell) : null;
+	},
+
 	// Points out a move, two cells as { row, column }; null takes the hint away
 	hint: function(a, b) {
 		if(view) {

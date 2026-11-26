@@ -93,6 +93,12 @@ describe('the board view', () => {
 		expect(view.nudgeOf(left)).toEqual({ x: 0, y: 0 });
 	});
 
+	it('says where a cell is on the screen', () => {
+		const { view } = boardView();
+		// The canvas is laid out at 484 pixels from (100, 50), just as large as it is drawn
+		expect(view.clientRectOf({ row: 1, column: 2 })).toEqual({ left: 100 + 2 + 120, top: 50 + 2 + 60, width: 60, height: 60 });
+	});
+
 	it('finds the cell under the pointer', () => {
 		const { view } = boardView();
 		expect(view.cellAt(2, 2)).toEqual({ row: 0, column: 0 });

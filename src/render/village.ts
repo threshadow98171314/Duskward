@@ -492,6 +492,17 @@ export class VillageView {
 		return standing;
 	}
 
+	// Where a box in the world is on the screen; null while the canvas is not laid out
+	toClient(box: { left: number; top: number; width: number; height: number } | null):
+		{ left: number; top: number; width: number; height: number } | null {
+		const rect = this.canvas.getBoundingClientRect();
+		if (box === null || rect.width === 0 || rect.height === 0) {
+			return null;
+		}
+		const sx = rect.width / this.size.width, sy = rect.height / this.size.height;
+		return { left: rect.left + box.left * sx, top: rect.top + box.top * sy, width: box.width * sx, height: box.height * sy };
+	}
+
 	// A point on the screen, in pixels in the world; null while the canvas is not laid out
 	private toWorld(clientX: number, clientY: number): { x: number; y: number } | null {
 		const rect = this.canvas.getBoundingClientRect();

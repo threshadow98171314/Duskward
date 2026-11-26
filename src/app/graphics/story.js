@@ -85,5 +85,42 @@ export default {
 		boxes.enqueue(function(next) {
 			drawLines(lines.slice(), onChoice, next);
 		});
+	},
+
+	// A box of the tutorial (see src/ui/story.ts), said by Sera. It waits its turn;
+	// shown() once it comes up, and done('next', 'skip' or 'closed') once it goes.
+	// Returns what closes it: before it has come up, it never does.
+	coach: function(line, shown, done) {
+		var state = { close: null, gone: false };
+		boxes.enqueue(function(next) {
+			if(state.gone) {
+				next();
+				return;
+			}
+			state.close = boxes.coach({
+				speaker: G().getText('CHARACTER_NAMES').sera,
+				portrait: CHARACTERS.sera.portrait,
+				text: line.text,
+				next: line.next,
+				skip: line.skip,
+				below: line.below
+			}, function(how) {
+				state.gone = true;
+				next();
+				done(how);
+			});
+			shown();
+		});
+		return function() {
+			if(state.gone) {
+				return;
+			}
+			if(state.close) {
+				state.close();
+			} else {
+				state.gone = true;
+				done('closed');
+			}
+		};
 	}
 };

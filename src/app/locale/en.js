@@ -73,7 +73,11 @@ export default {
 		envoyClaims: 'Do not forget our bargain, keeper. Give the Dawn Heart to the cult, and the long night will let your village sleep forever.',
 		afterSky: 'The sun shines on the whole world again, and yet I hear monsters beyond the mountains... The long night is back. Child, let us keep watch once more.',
 		afterValley: 'Our sun still shines over the valley, but the dark beyond the mountains is closing in. This time... could we share the light with everyone?',
-		afterCult: 'The sun has never been whole since that day. The cult\'s fires are out, but the long night stayed. Child, stand up once more.'
+		afterCult: 'The sun has never been whole since that day. The cult\'s fires are out, but the long night stayed. Child, stand up once more.',
+		tutorialAsk: 'Is this your first watch? Shall I walk you through the first day?',
+		tutorialYes: 'Yes, please.',
+		tutorialNo: "No, I'll manage.",
+		tutorialStart: "Then let's begin. Don't worry, I'll be right here."
 	},
 	DUSK: 'Dusk',
 	CHAIN_N: 'Chain ×{0}',
@@ -254,6 +258,18 @@ export default {
 		lighthouse: 'Brings lanterns onto the board, and lets the ward hold more. Lighting lanterns at night brings the dawn sooner.',
 		altar: 'Chains and big clears fill the Afterglow gauge; once it is full, cast a dusk skill. Each level adds a skill.'
 	},
+	// The first day's tutorial (src/app/tutorial.js)
+	TUTORIAL_MATCH: 'Swap two neighbouring tiles to line up three of a kind, and you gather them. Try the two that are moving.',
+	TUTORIAL_HUNGER: 'Every move by day makes you a little hungrier, and your hearts go down. Clear grain to eat.',
+	TUTORIAL_STOCKPILE: 'Wood and stone go to the stockpile. Once a block is full, the keeper carries it off to build.',
+	TUTORIAL_BUILDING: 'That is the {0}, the next to be built. The bars below are the materials it needs; each block delivered fills a part. Click the bars to choose what the keeper builds first.',
+	TUTORIAL_SUN: 'The sun moves on with every move you make; {0} more, and night falls. Gather what you can while it is light.',
+	TUTORIAL_SUN_MOUSE: ' Rest the mouse on the sun to see how many are left.',
+	TUTORIAL_NIGHT: 'Night has fallen, and the tiles do other things now: wood fills your shield, stone fills your sword, and the rest call monsters out of the dark. At night, only defeating monsters brings the dawn.',
+	TUTORIAL_END: "That's the first day. When something new comes up, I'll tell you in the journal.",
+	TUTORIAL_END_MOUSE: ' When you are not sure what something is, rest the mouse on it.',
+	TUTORIAL_NEXT: 'Got it',
+	TUTORIAL_SKIP: 'Skip the tutorial',
 	// The tips under the mouse (src/app/graphics/tips.js)
 	TIP_HEALTH: 'Health {0}/{1}',
 	TIP_HEALTH_TEXT: 'Every move by day makes you a little hungrier; clear grain to recover. At zero you fall, and the day starts over from the morning.',

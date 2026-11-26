@@ -73,7 +73,11 @@ export default {
 		envoyClaims: '守暮人，別忘了我們的交易。把晨光之心交給蝕教，長夜會讓你的村子永遠安睡。',
 		afterSky: '太陽照遍了整個世界，可是山的另一邊又傳來怪物的叫聲……長夜回來了。孩子，我們再守一次吧。',
 		afterValley: '谷裡的太陽還亮著，山外的黑暗卻越來越近了。這一次……能不能把光分給所有人？',
-		afterCult: '從那天起，太陽就沒有再完整過。蝕教的火熄了，長夜卻沒有走。孩子，再站起來一次吧。'
+		afterCult: '從那天起，太陽就沒有再完整過。蝕教的火熄了，長夜卻沒有走。孩子，再站起來一次吧。',
+		tutorialAsk: '你是第一次守夜吧？要不要我帶你走一遍第一天？',
+		tutorialYes: '好，麻煩你了。',
+		tutorialNo: '不用了，我自己來。',
+		tutorialStart: '那我們開始吧。別怕，我會一直在旁邊。'
 	},
 	DUSK: '黃昏',
 	CHAIN_N: '連鎖 ×{0}',
@@ -254,6 +258,18 @@ export default {
 		lighthouse: '盤面上會出現燈火，結界也能存得更多。夜裡點亮燈火，天會亮得更快。',
 		altar: '連鎖消除會累積暮光槽，槽滿就能施放暮光技；每升一級，多一種暮光技。'
 	},
+	// The first day's tutorial (src/app/tutorial.js)
+	TUTORIAL_MATCH: '交換相鄰的兩塊方塊，讓三塊一樣的排成一排，就能收集它們。先試試正在晃動的這兩塊。',
+	TUTORIAL_HUNGER: '白天每走一步，你都會餓一點，愛心就少一些。消掉麥穗可以填飽肚子。',
+	TUTORIAL_STOCKPILE: '木材和石材會送進材料堆。一格裝滿了，守暮人就會把它搬去蓋房子。',
+	TUTORIAL_BUILDING: '那是下一棟要蓋的{0}。底下的進度條是它要的材料，每送到一格就填滿一段。點一下進度條，可以指定守暮人先蓋哪一棟。',
+	TUTORIAL_SUN: '太陽會隨著你的每一步往右移；再走 {0} 步，天就黑了。趁天亮多收集一些材料。',
+	TUTORIAL_SUN_MOUSE: '把滑鼠停在太陽上，隨時能看到還剩幾步。',
+	TUTORIAL_NIGHT: '天黑了，方塊的作用也變了：木材會補滿盾，石材會補滿劍，其他方塊會把怪物引出來。夜裡要打倒怪物，天才會亮。',
+	TUTORIAL_END: '第一天就教到這裡。之後遇到新的東西，我會在日誌裡告訴你。',
+	TUTORIAL_END_MOUSE: '不確定是什麼的時候，把滑鼠停在上面看看。',
+	TUTORIAL_NEXT: '知道了',
+	TUTORIAL_SKIP: '跳過教學',
 	// The tips under the mouse (src/app/graphics/tips.js)
 	TIP_HEALTH: '生命 {0}／{1}',
 	TIP_HEALTH_TEXT: '白天每走一步都會餓一點，消掉麥穗可以回復。生命歸零就會倒下，這一天要從早上重來。',

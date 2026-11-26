@@ -106,6 +106,13 @@ describe('the village', () => {
 		expect(view.thingAt(30, 50)).toBeNull();
 	});
 
+	it('says where a box in the world is on the screen, scaled with the page', () => {
+		const canvas = { getContext: () => null, getBoundingClientRect: () => ({ left: 100, top: 20, width: 240, height: 55 }) };
+		const view = new VillageView(canvas as unknown as HTMLCanvasElement, { width: 480, height: 110 }, () => 0);
+		expect(view.toClient({ left: 14, top: 75, width: 32, height: 32 })).toEqual({ left: 107, top: 57.5, width: 16, height: 16 });
+		expect(view.toClient(null)).toBeNull();
+	});
+
 	it('splits a bar into the blocks it takes, unless there are too many to tell apart', () => {
 		const widths = (width: number, blocks: number) => segments(width, blocks).map((part) => [part.left, part.width]);
 		expect(widths(58, 1)).toEqual([[0, 58]]);

@@ -2,7 +2,8 @@
 // over the whole game; Sera's journal entries; and lines of dialogue, each beside
 // the speaker's portrait. A box waits its turn behind the ones before it. A line goes
 // away by itself after a while, or when it is pressed; a line that asks the keeper to
-// choose waits, and holds the game, until an answer is pressed.
+// choose waits, and holds the game, until an answer is pressed. The tutorial's boxes
+// wait their turn too, and stay up, without holding the game, until what they ask is done.
 
 import { element, onPress, pressedIn, settle } from './dom.ts';
 import { iconImage, iconPosition } from './icons.ts';
@@ -15,6 +16,22 @@ export interface DialogueLine {
 	text: string;
 	choices?: string[];
 }
+
+// A box of the tutorial: a line of dialogue that stays up until what it asks is done.
+// One that asks nothing has a button to go on; every one has a button that stops
+// the tutorial. It sits over the world, or below, at the bottom of the board, out
+// of the way of what it points at in the world.
+export interface CoachLine {
+	speaker: string;
+	portrait: number;
+	text: string;
+	next?: string;
+	skip: string;
+	below?: boolean;
+}
+
+// How a box of the tutorial went: its buttons, or closed by the game
+export type CoachEnd = 'next' | 'skip' | 'closed';
 
 export interface StoryOptions {
 	tapToContinue: string;
@@ -107,6 +124,41 @@ export class StoryBoxes {
 			}, TAP, listening.signal);
 		}
 		this.fadeIn(box);
+	}
+
+	// A box of the tutorial; done says how it went. Returns what closes it, for the
+	// game to call once what it asks is done.
+	coach(line: CoachLine, done: (end: CoachEnd) => void): () => void {
+		const portrait = element('div', 'dialoguePortrait');
+		portrait.style.backgroundImage = iconImage('portrait');
+		portrait.style.backgroundPosition = iconPosition({ sprite: 'portrait', frame: line.portrait });
+		const buttons = element('div', 'coachButtons');
+		if (line.next !== undefined) {
+			buttons.append(element('div', 'coachNext litBorder', line.next));
+		}
+		buttons.append(element('div', 'coachSkip', line.skip));
+		const body = element('div', 'dialogueBody',
+			element('div', 'journalSpeaker', line.speaker), element('div', 'journalText', line.text), buttons);
+		const box = this.show(element('div', 'journal dialogue coach hidden' + (line.below ? ' below' : ''), portrait, body));
+		const listening = new AbortController();
+		let closed = false;
+		const close = (end: CoachEnd) => {
+			if (!closed) {
+				closed = true;
+				listening.abort();
+				this.fadeOut(box, () => done(end));
+			}
+		};
+		onPress(box, (event) => {
+			if (pressedIn(box, event, '.coachNext') !== null) {
+				close('next');
+			} else if (pressedIn(box, event, '.coachSkip') !== null) {
+				close('skip');
+			}
+			return false;
+		}, TAP, listening.signal);
+		this.fadeIn(box);
+		return () => close('closed');
 	}
 
 	// Forgets what waits its turn, and takes away whatever is on screen

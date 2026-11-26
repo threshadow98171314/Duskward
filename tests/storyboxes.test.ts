@@ -127,6 +127,47 @@ describe('the story boxes', () => {
 		boxes.enqueue((next) => boxes.journal('Sera', 'Three', next));
 		expect(parent.querySelector('.journalText')?.textContent).toBe('Three');
 	});
+	it('keep a box of the tutorial up, without holding the game, until it is closed or a button is pressed', () => {
+		const { parent, held, boxes } = storyBoxes();
+		const ends: string[] = [];
+		const line = { speaker: 'Sera', portrait: 0, text: 'Swap two tiles', skip: 'Skip' };
+		let close = () => {};
+		boxes.enqueue((next) => {
+			close = boxes.coach(line, (end) => {
+				ends.push(end);
+				next();
+			});
+		});
+		const box = parent.querySelector('.coach') as HTMLElement;
+		expect(box.className).toBe('journal dialogue coach');
+		vi.advanceTimersByTime(60000);
+		expect(parent.querySelector('.coach')).toBe(box);
+		expect(held).toEqual([]);
+		// Pressing it anywhere else does nothing, and goes no further
+		expect(press(box.querySelector('.journalText') as Element)).toBe(false);
+		expect(box.querySelector('.coachNext')).toBeNull();
+		close();
+		close();
+		vi.advanceTimersByTime(500);
+		expect(ends).toEqual(['closed']);
+		expect(parent.querySelector('.coach')).toBeNull();
+
+		// One that only tells: a button to go on, below the board; and the one that stops it all
+		boxes.enqueue((next) => boxes.coach({ ...line, next: 'Got it', below: true }, (end) => {
+			ends.push(end);
+			next();
+		}));
+		boxes.enqueue((next) => boxes.coach(line, (end) => {
+			ends.push(end);
+			next();
+		}));
+		expect(parent.querySelector('.coach')?.classList.contains('below')).toBe(true);
+		press(parent.querySelector('.coachNext') as Element);
+		vi.advanceTimersByTime(500);
+		press(parent.querySelector('.coachSkip') as Element);
+		vi.advanceTimersByTime(500);
+		expect(ends).toEqual(['closed', 'next', 'skip']);
+	});
 });
 
 describe('the choices', () => {

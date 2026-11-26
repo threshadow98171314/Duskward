@@ -22,6 +22,7 @@ import Plan from './plan.js';
 import LongNight from './longnight.js';
 import Tips from './graphics/tips.js';
 import Hints from './hints.js';
+import Tutorial from './tutorial.js';
 import { watchNight } from './effects.js';
 
 var DRAG_THRESHOLD = 30; // in pixels
@@ -373,6 +374,15 @@ var Engine = {
 		}]);
 		// A move is pointed out to a player who stops while they could move
 		modules.push([Hints, { canMove: canMove }]);
+		// A new game offers to show the keeper around the first day
+		modules.push([Tutorial, {
+			plan: function() {
+				return World.plan();
+			},
+			clock: function() {
+				return World.clock();
+			}
+		}]);
 
 		// Start the game
 		GameOptions.load();

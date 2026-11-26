@@ -157,6 +157,64 @@ body.night {
 	color: #f0b866;
 }
 
+/* The tutorial's boxes (src/ui/story.ts): a button to go on, one to stop, and a
+   place at the bottom of the board, out of the way of what they point at in the world */
+.journal.coach {
+	cursor: default;
+}
+
+.journal.coach.below {
+	top: auto;
+	bottom: 6px;
+}
+
+.coachButtons {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-top: 6px;
+}
+
+.coachNext {
+	padding: 3px 14px;
+	border-radius: 4px;
+	background: rgba(242, 154, 58, 0.35);
+	cursor: pointer;
+}
+
+.coachNext:hover {
+	background: rgba(242, 154, 58, 0.55);
+}
+
+.coachSkip {
+	margin-left: auto;
+	font-size: 12px;
+	color: #c9b48e;
+	text-decoration: underline;
+	cursor: pointer;
+}
+
+/* The ring around what the tutorial points at (src/ui/coach.ts) */
+.coachRing {
+	position: fixed;
+	z-index: 900;
+	box-sizing: border-box;
+	border: 3px solid #e0862a;
+	border-radius: 10px;
+	box-shadow: 0 0 0 2px rgba(255, 250, 240, 0.6), 0 0 14px rgba(224, 134, 42, 0.8);
+	pointer-events: none;
+	animation: coachPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes coachPulse {
+	0%, 100% { opacity: 1; }
+	50% { opacity: 0.45; }
+}
+
+.coachRing.hidden {
+	animation: none;
+}
+
 /** Language switch **/
 
 .language li {
